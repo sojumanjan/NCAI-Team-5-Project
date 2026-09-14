@@ -3,9 +3,14 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// The player's single pair of hands: one item at a time, picked up and dropped with left
-/// click. Deliberately separate from <see cref="PlayerInteractor"/> because the design
-/// splits the two verbs — 좌클릭 for carrying things, E for operating stations.
+/// The player's single pair of hands: one item at a time, driven by left click.
+/// Deliberately separate from <see cref="PlayerInteractor"/> because the design splits the
+/// verbs — 좌클릭 for moving things around, E for operating stations.
+///
+/// Left click means three different things depending on context:
+///   empty hands, aiming at an IItemSource    → take it
+///   full hands,  aiming at an IItemReceiver  → put it in
+///   full hands,  anything else               → put it down
 ///
 /// One slot is a rule, not a limitation to work around: it is what forces the player to
 /// walk back and forth, which is the whole game.
@@ -42,7 +47,7 @@ public class PlayerHands : MonoBehaviour
     /// <summary>The carried object itself. Stations need this to consume it.</summary>
     public WorldItem HeldObject => _held;
 
-    /// <summary>Where items sit when carried. Stations can use it to aim animations.</summary>
+    /// <summary>Where items sit when carried.</summary>
     public Transform HoldAnchor => holdAnchor;
 
     /// <summary>Fires whenever the hands change contents. Null means the hands are now empty.</summary>
@@ -104,34 +109,57 @@ public class PlayerHands : MonoBehaviour
             return;
         }
 
-        // One button for both verbs: full hands put down, empty hands pick up.
         if (IsHolding)
         {
-            Drop();
+            // Hand it over, else register a plain click, else put it on the floor.
+            if (!TryGiveToAimed() && !TryClickAimed())
+            {
+                Drop();
+            }
         }
         else
         {
-            TryPickAimed();
+            // Take something, else register a plain click.
+            if (!TryTakeFromAimed())
+            {
+                TryClickAimed();
+            }
         }
     }
 
-    // ---------------------------------------------------------------- picking
+    /// <summary>
+    /// Fires a plain left click at the aimed object — the fallback once the item verbs
+    /// have declined. Returns false if nothing wanted the click.
+    /// </summary>
+    public bool TryClickAimed()
+    {
+        IClickTarget target = interactor.GetAimed<IClickTarget>();
+        if (target == null || !target.CanClick(this))
+        {
+            return false;
+        }
 
-    /// <summary>Tries to take whatever the crosshair is over. Returns false if there was nothing.</summary>
-    public bool TryPickAimed()
+        target.OnClick(this);
+        return true;
+    }
+
+    // ---------------------------------------------------------------- taking
+
+    /// <summary>Takes whatever the crosshair is over. Returns false if there was nothing to take.</summary>
+    public bool TryTakeFromAimed()
     {
         if (IsHolding)
         {
             return false;
         }
 
-        IPickable pickable = interactor.GetAimed<IPickable>();
-        if (pickable == null || !pickable.CanPick(this))
+        IItemSource source = interactor.GetAimed<IItemSource>();
+        if (source == null || !source.CanProvide(this))
         {
             return false;
         }
 
-        GameObject given = pickable.Pick(this);
+        GameObject given = source.Provide(this);
         if (given == null)
         {
             return false;
@@ -150,8 +178,7 @@ public class PlayerHands : MonoBehaviour
     }
 
     /// <summary>
-    /// Puts an item straight into the hands, bypassing the aim check. Stations use this to
-    /// hand over a finished dish.
+    /// Puts an item straight into the hands, bypassing the aim check. For scripted handovers.
     /// </summary>
     public bool TryGive(WorldItem worldItem)
     {
@@ -164,9 +191,35 @@ public class PlayerHands : MonoBehaviour
         return true;
     }
 
+    // ---------------------------------------------------------------- giving
+
+    /// <summary>Offers the held item to an aimed-at receiver. Returns false if nobody took it.</summary>
+    public bool TryGiveToAimed()
+    {
+        if (!IsHolding)
+        {
+            return false;
+        }
+
+        IItemReceiver receiver = interactor.GetAimed<IItemReceiver>();
+        if (receiver == null || !receiver.CanReceive(HeldItem, this))
+        {
+            return false;
+        }
+
+        WorldItem given = TakeHeld();
+        if (given == null)
+        {
+            return false;
+        }
+
+        // The receiver owns the object now, including destroying it.
+        receiver.Receive(given, this);
+        return true;
+    }
+
     /// <summary>
-    /// Removes the held item and gives it to the caller, still deactivated. Stations use
-    /// this to consume an ingredient. Returns null if the hands were empty.
+    /// Removes the held item and gives it to the caller. Returns null if the hands were empty.
     /// </summary>
     public WorldItem TakeHeld()
     {
@@ -183,7 +236,7 @@ public class PlayerHands : MonoBehaviour
         return taken;
     }
 
-    /// <summary>Destroys whatever is being held. For stations that absorb an ingredient.</summary>
+    /// <summary>Destroys whatever is being held.</summary>
     public void ConsumeHeld()
     {
         WorldItem taken = TakeHeld();
@@ -207,7 +260,8 @@ public class PlayerHands : MonoBehaviour
         _held = null;
 
         dropped.transform.SetParent(null, true);
-        dropped.transform.SetPositionAndRotation(ResolveDropPosition(), Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
+        dropped.transform.SetPositionAndRotation(ResolveDropPosition(),
+                                                 Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
         dropped.SetCarried(false);
 
         HeldChanged?.Invoke(null);

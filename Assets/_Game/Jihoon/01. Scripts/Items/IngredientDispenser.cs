@@ -3,13 +3,13 @@ using UnityEngine;
 /// <summary>
 /// An endless source of one ingredient — the bean hopper by the coffee machine, the flour
 /// on the dough table, each shelf slot in the fridge. Aim at it, left click, and a fresh
-/// copy appears in your hands.
+/// copy appears in your hands. The dispenser itself is never carried.
 ///
 /// One dispenser holds exactly one ingredient, so the fridge is several of these rather
 /// than one object with a menu. That keeps "재료 보관 위치" a matter of placing objects.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class IngredientDispenser : MonoBehaviour, IPickable
+public class IngredientDispenser : MonoBehaviour, IItemSource
 {
     [Header("보관 재료")]
     [Tooltip("여기서 꺼낼 재료.")]
@@ -18,7 +18,7 @@ public class IngredientDispenser : MonoBehaviour, IPickable
     [Tooltip("생성된 재료가 나타날 위치. 비워두면 이 오브젝트 위치를 씁니다.")]
     [SerializeField] private Transform spawnPoint;
 
-    public ItemData Item => item;
+    public ItemData ProvidedItem => item;
 
     private void Awake()
     {
@@ -32,11 +32,11 @@ public class IngredientDispenser : MonoBehaviour, IPickable
         }
     }
 
-    public bool CanPick(PlayerHands hands) => item != null && item.WorldPrefab != null;
+    public bool CanProvide(PlayerHands hands) => item != null && item.WorldPrefab != null;
 
-    public GameObject Pick(PlayerHands hands)
+    public GameObject Provide(PlayerHands hands)
     {
-        if (!CanPick(hands))
+        if (!CanProvide(hands))
         {
             return null;
         }
