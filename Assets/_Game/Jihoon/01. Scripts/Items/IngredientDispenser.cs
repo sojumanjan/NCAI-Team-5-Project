@@ -15,9 +15,6 @@ public class IngredientDispenser : MonoBehaviour, IItemSource
     [Tooltip("여기서 꺼낼 재료.")]
     [SerializeField] private ItemData item;
 
-    [Tooltip("생성된 재료가 나타날 위치. 비워두면 이 오브젝트 위치를 씁니다.")]
-    [SerializeField] private Transform spawnPoint;
-
     public ItemData ProvidedItem => item;
 
     private void Awake()
@@ -41,17 +38,14 @@ public class IngredientDispenser : MonoBehaviour, IItemSource
             return null;
         }
 
-        Transform origin = spawnPoint != null ? spawnPoint : transform;
-        GameObject spawned = Instantiate(item.WorldPrefab, origin.position, origin.rotation);
+        // Spawn straight at the hand. Anywhere else is pointless — the hands reparent and
+        // reposition the item in the same frame — and spawning it inside the fridge
+        // geometry gives its collider one live frame to register a bogus overlap.
+        Transform at = hands != null && hands.HoldAnchor != null ? hands.HoldAnchor : transform;
+
+        GameObject spawned = Instantiate(item.WorldPrefab, at.position, at.rotation);
         spawned.name = item.DisplayName;
 
         return spawned;
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Transform origin = spawnPoint != null ? spawnPoint : transform;
-        Gizmos.color = new Color(0.4f, 0.8f, 1f);
-        Gizmos.DrawWireCube(origin.position, Vector3.one * 0.15f);
     }
 }

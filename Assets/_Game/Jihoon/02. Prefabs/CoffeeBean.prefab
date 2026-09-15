@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 396124946313359379}
   - component: {fileID: 6907835129853050149}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: CoffeeBean
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
