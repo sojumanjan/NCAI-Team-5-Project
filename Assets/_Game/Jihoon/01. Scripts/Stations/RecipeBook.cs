@@ -62,6 +62,28 @@ public class RecipeBook : ScriptableObject
     }
 
     /// <summary>
+    /// The recipe that produces this dish, or null. Lets the order board show what a
+    /// customer's drink is made of without anyone authoring that list twice.
+    /// </summary>
+    public RecipeData FindByOutput(ItemData dish)
+    {
+        if (recipes == null || dish == null)
+        {
+            return null;
+        }
+
+        foreach (RecipeData recipe in recipes)
+        {
+            if (recipe != null && recipe.Output == dish)
+            {
+                return recipe;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// One dish at random from everything that can be cooked. This is the menu customers
     /// order from, derived rather than authored so the two can never drift apart.
     /// </summary>
