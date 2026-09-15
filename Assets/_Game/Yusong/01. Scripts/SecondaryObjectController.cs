@@ -13,6 +13,7 @@ public class SecondaryObjectController : MonoBehaviour
     [SerializeField] private float flashInterval = 0.08f;
     [SerializeField] private int flashBlinks = 2;
     [SerializeField] private UITheme theme;
+    [SerializeField] private Image[] hpPips;
 
     [Header("Success Effect")]
     [SerializeField] private RectTransform successRingPrefab;
@@ -40,6 +41,7 @@ public class SecondaryObjectController : MonoBehaviour
         }
 
         originalColor = image.color;
+        UpdateHpText();
     }
 
     private void Update()
@@ -78,6 +80,7 @@ public class SecondaryObjectController : MonoBehaviour
     private void TakeHit()
     {
         hitsTaken++;
+        UpdateHpText();
 
         if (hitsTaken >= hitsToDestroy)
         {
@@ -87,6 +90,23 @@ public class SecondaryObjectController : MonoBehaviour
 
         if (flashRoutine != null) StopCoroutine(flashRoutine);
         flashRoutine = StartCoroutine(FlashHit());
+    }
+
+    private void UpdateHpText()
+    {
+        int remaining = Mathf.Max(hitsToDestroy - hitsTaken, 0);
+
+        if (hpPips != null)
+        {
+            Color onColor = theme != null ? theme.secondaryHpGaugeColor : successColor;
+            Color offColor = theme != null ? theme.hpPipOffColor : new Color(1f, 1f, 1f, 0.25f);
+
+            for (int i = 0; i < hpPips.Length; i++)
+            {
+                if (hpPips[i] == null) continue;
+                hpPips[i].color = i < remaining ? onColor : offColor;
+            }
+        }
     }
 
     private void DestroyByHits()

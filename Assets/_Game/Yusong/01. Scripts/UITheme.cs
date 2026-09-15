@@ -41,6 +41,11 @@ public class UITheme : ScriptableObject
     [Header("Secondary Object")]
     public Color secondarySuccessColor = new Color(0.55f, 1f, 0.35f, 1f);
 
+    [Header("HP Gauge")]
+    public Color centerHpGaugeColor = new Color(0.9f, 0.25f, 0.25f, 1f);
+    public Color secondaryHpGaugeColor = new Color(0.55f, 1f, 0.35f, 1f);
+    public Color hpPipOffColor = new Color(1f, 1f, 1f, 0.25f);
+
     [Header("Game Over")]
     public Color gameOverTextColor = new Color(1f, 0.15f, 0.15f, 1f);
     public Color gameOverBackgroundColor = new Color(0f, 0f, 0f, 0.75f);

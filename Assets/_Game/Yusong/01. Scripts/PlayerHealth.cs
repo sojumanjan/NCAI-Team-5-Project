@@ -13,6 +13,7 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int flashBlinks = 2;
     [SerializeField] private GameObject gameOverScreen;
     [SerializeField] private UITheme theme;
+    [SerializeField] private Image[] hpPips;
 
     private Image image;
     private Color originalColor;
@@ -33,6 +34,7 @@ public class PlayerHealth : MonoBehaviour
         }
 
         originalColor = image.color;
+        UpdateHpText();
     }
 
     public void TakeDamage(int amount)
@@ -40,6 +42,7 @@ public class PlayerHealth : MonoBehaviour
         if (IsGameOver) return;
 
         currentHealth -= amount;
+        UpdateHpText();
 
         if (flashRoutine != null) StopCoroutine(flashRoutine);
         flashRoutine = StartCoroutine(FlashHit());
@@ -47,6 +50,23 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth <= 0)
         {
             TriggerGameOver();
+        }
+    }
+
+    private void UpdateHpText()
+    {
+        int remaining = Mathf.Max(currentHealth, 0);
+
+        if (hpPips != null)
+        {
+            Color onColor = theme != null ? theme.centerHpGaugeColor : new Color(0.9f, 0.25f, 0.25f, 1f);
+            Color offColor = theme != null ? theme.hpPipOffColor : new Color(1f, 1f, 1f, 0.25f);
+
+            for (int i = 0; i < hpPips.Length; i++)
+            {
+                if (hpPips[i] == null) continue;
+                hpPips[i].color = i < remaining ? onColor : offColor;
+            }
         }
     }
 

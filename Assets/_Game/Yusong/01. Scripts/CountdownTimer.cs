@@ -93,7 +93,7 @@ public class CountdownTimer : MonoBehaviour
         {
             state = State.ShowingWaveStart;
             stateTimer = waveStartMessageDuration;
-            timerText.text = currentWave + " WAVE 시작!";
+            timerText.text = GetWaveLabel(currentWave) + " 시작!";
         }
     }
 
@@ -137,7 +137,7 @@ public class CountdownTimer : MonoBehaviour
         {
             state = State.ShowingWaveEnd;
             stateTimer = waveEndMessageDuration;
-            timerText.text = currentWave + " WAVE 종료!";
+            timerText.text = GetWaveLabel(currentWave) + " 종료!";
         }
     }
 
@@ -199,7 +199,7 @@ public class CountdownTimer : MonoBehaviour
             currentWave++;
             state = State.ShowingWaveStart;
             stateTimer = waveStartMessageDuration;
-            timerText.text = currentWave + " WAVE 시작!";
+            timerText.text = GetWaveLabel(currentWave) + " 시작!";
         }
     }
 
@@ -232,5 +232,10 @@ public class CountdownTimer : MonoBehaviour
     private void UpdateCountingText()
     {
         timerText.text = Mathf.CeilToInt(remaining).ToString();
+    }
+
+    private string GetWaveLabel(int wave)
+    {
+        return wave >= totalWaves ? "Final Wave" : wave + " WAVE";
     }
 }
