@@ -21,7 +21,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxPitch = 80f;
 
     [Header("References")]
-    [SerializeField] private Camera playerCamera;
+    [Tooltip("실제 회전을 적용할 대상. 카메라 흔들림 연출을 쓰는 경우 카메라의 부모(피벗)를 지정한다.")]
+    [SerializeField] private Transform cameraPivot;
 
     private CharacterController controller;
     private InputAction moveAction;
@@ -30,6 +31,23 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 verticalVelocity;
     private float pitch;
+    private bool controlsLocked;
+
+    public void SetControlsLocked(bool locked)
+    {
+        controlsLocked = locked;
+
+        if (locked)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
 
     private void Awake()
     {
@@ -51,8 +69,9 @@ public class PlayerController : MonoBehaviour
             jumpAction.Enable();
         }
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // controlsLocked 상태(예: 사망 팝업)를 그대로 유지한 채 재활성화되어야 하므로,
+        // 여기서 커서를 무조건 잠그지 않고 현재 잠금 상태를 다시 적용한다.
+        SetControlsLocked(controlsLocked);
     }
 
     private void OnDisable()
@@ -64,6 +83,11 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (controlsLocked)
+        {
+            return;
+        }
+
         HandleLook();
         HandleMove();
     }
@@ -75,7 +99,7 @@ public class PlayerController : MonoBehaviour
         transform.Rotate(Vector3.up * lookDelta.x);
 
         pitch = Mathf.Clamp(pitch - lookDelta.y, minPitch, maxPitch);
-        playerCamera.transform.localEulerAngles = new Vector3(pitch, 0f, 0f);
+        cameraPivot.localEulerAngles = new Vector3(pitch, 0f, 0f);
     }
 
     private void HandleMove()

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6691865540742386285}
   - component: {fileID: 2932693298974926073}
   - component: {fileID: 6783396212252652729}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cell
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -122,7 +122,7 @@ GameObject:
   m_Component:
   - component: {fileID: 968909474843484188}
   m_Layer: 0
-  m_Name: TetrisBlock_T
+  m_Name: TetrisBlock_T (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -136,7 +136,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6091122205029642179}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -146,7 +146,7 @@ Transform:
   - {fileID: 2013692816052245629}
   - {fileID: 6514017670493053201}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
 --- !u!1 &6198538001127700905
 GameObject:
   m_ObjectHideFlags: 0
@@ -159,7 +159,7 @@ GameObject:
   - component: {fileID: 373325720456709246}
   - component: {fileID: 2332090387703382377}
   - component: {fileID: 8105960387955160899}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cell
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -271,7 +271,7 @@ GameObject:
   - component: {fileID: 5626138077298609702}
   - component: {fileID: 6431196357011319658}
   - component: {fileID: 3098026873683530624}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cell
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -383,7 +383,7 @@ GameObject:
   - component: {fileID: 2830757618350129641}
   - component: {fileID: 8018695566970499969}
   - component: {fileID: 9085924048319777578}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cell
   m_TagString: Untagged
   m_Icon: {fileID: 0}

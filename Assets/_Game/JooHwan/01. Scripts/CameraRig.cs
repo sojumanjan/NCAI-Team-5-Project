@@ -19,6 +19,12 @@ public class CameraRig : MonoBehaviour
     [Header("UI")]
     [SerializeField] private GameObject overviewUI;
 
+    [Header("Lighting")]
+    [Tooltip("1인칭(게임기 내부) 시점의 어두운 환경광 색상")]
+    [SerializeField] private Color firstPersonAmbientColor = new Color(0.03f, 0.03f, 0.06f, 1f);
+    [Tooltip("관전(전략) 시점의 밝은 환경광 색상 — 블록 색 구분이 잘 보여야 함")]
+    [SerializeField] private Color overviewAmbientColor = new Color(0.6f, 0.6f, 0.65f, 1f);
+
     private InputAction cameraSwitchAction;
     private bool isOverviewActive;
 
@@ -67,5 +73,8 @@ public class CameraRig : MonoBehaviour
         }
 
         overviewUI.SetActive(overviewActive);
+
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+        RenderSettings.ambientLight = overviewActive ? overviewAmbientColor : firstPersonAmbientColor;
     }
 }
