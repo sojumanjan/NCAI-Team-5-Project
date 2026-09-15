@@ -26,6 +26,9 @@ public class Customer : MonoBehaviour
     [Tooltip("회전 속도 (deg/sec). 진행 방향을 바라봅니다.")]
     [SerializeField] private float turnSpeed = 540f;
 
+    [Tooltip("목표 지점보다 얼마나 위에 설지 (m). 프리팹 원점이 몸 가운데면 키의 절반을 넣으세요.")]
+    [SerializeField] private float groundOffset = 1f;
+
     private ServingSpot _spot;
     private Phase _phase = Phase.Idle;
     private Vector3 _target;
@@ -47,6 +50,10 @@ public class Customer : MonoBehaviour
 
         _target = spot.CustomerStand.position;
         _phase = Phase.WalkingIn;
+
+        // Stand on the floor rather than in it. Spawn and stand points sit at ground
+        // level, but the prefab's origin is usually its middle, so it needs lifting.
+        SnapToGroundHeight();
     }
 
     /// <summary>Sends the customer away. The object destroys itself on arrival.</summary>
@@ -98,13 +105,25 @@ public class Customer : MonoBehaviour
             return false;
         }
 
+        // Walk on the plane at the destination's height plus the standing offset, so the
+        // customer neither sinks nor floats as it crosses the floor.
+        float walkHeight = destination.y + groundOffset;
+
         transform.position = Vector3.MoveTowards(transform.position,
-                                                 new Vector3(destination.x, transform.position.y, destination.z),
+                                                 new Vector3(destination.x, walkHeight, destination.z),
                                                  moveSpeed * Time.deltaTime);
 
         Quaternion look = Quaternion.LookRotation(flat.normalized, Vector3.up);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, look, turnSpeed * Time.deltaTime);
         return true;
+    }
+
+    /// <summary>Lifts the customer to standing height above its current target point.</summary>
+    private void SnapToGroundHeight()
+    {
+        Vector3 position = transform.position;
+        position.y = _target.y + groundOffset;
+        transform.position = position;
     }
 
     private void FaceCounter()

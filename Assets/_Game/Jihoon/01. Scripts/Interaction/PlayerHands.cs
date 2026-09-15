@@ -53,6 +53,30 @@ public class PlayerHands : MonoBehaviour
     /// <summary>Fires whenever the hands change contents. Null means the hands are now empty.</summary>
     public event Action<ItemData> HeldChanged;
 
+    /// <summary>
+    /// Extra spin applied when putting the item down, in degrees. Driven by the placement
+    /// preview's rotate keys; reset whenever the hands change contents.
+    /// </summary>
+    public float DropYaw { get; private set; }
+
+    /// <summary>Turns the item that is about to be put down.</summary>
+    public void AddDropYaw(float degrees)
+    {
+        DropYaw = Mathf.Repeat(DropYaw + degrees, 360f);
+    }
+
+    /// <summary>
+    /// Where the held item would land if dropped right now. The preview and the actual
+    /// drop both read this, so the ghost can never point at the wrong spot.
+    /// </summary>
+    public Vector3 GetDropPosition() => ResolveDropPosition();
+
+    /// <summary>How the held item would be oriented if dropped right now.</summary>
+    public Quaternion GetDropRotation()
+    {
+        return Quaternion.Euler(0f, transform.eulerAngles.y + DropYaw, 0f);
+    }
+
     // ---------------------------------------------------------------- lifecycle
 
     private void Awake()
@@ -109,52 +133,36 @@ public class PlayerHands : MonoBehaviour
             return;
         }
 
-        if (IsHolding)
+        // The resolver owns the priority order; this just carries out its verdict, so the
+        // prompt and the placement ghost always describe exactly what happens here.
+        LeftClickAction action = InteractionResolver.Resolve(interactor, this);
+
+        switch (action.Kind)
         {
-            // Hand it over, else register a plain click, else put it on the floor.
-            if (!TryGiveToAimed() && !TryClickAimed())
-            {
+            case LeftClickKind.Take:
+                TakeFrom(action.Source);
+                break;
+
+            case LeftClickKind.Put:
+                GiveTo(action.Receiver);
+                break;
+
+            case LeftClickKind.Click:
+                action.Click.OnClick(this);
+                break;
+
+            case LeftClickKind.Drop:
                 Drop();
-            }
+                break;
         }
-        else
-        {
-            // Take something, else register a plain click.
-            if (!TryTakeFromAimed())
-            {
-                TryClickAimed();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Fires a plain left click at the aimed object — the fallback once the item verbs
-    /// have declined. Returns false if nothing wanted the click.
-    /// </summary>
-    public bool TryClickAimed()
-    {
-        IClickTarget target = interactor.GetAimed<IClickTarget>();
-        if (target == null || !target.CanClick(this))
-        {
-            return false;
-        }
-
-        target.OnClick(this);
-        return true;
     }
 
     // ---------------------------------------------------------------- taking
 
-    /// <summary>Takes whatever the crosshair is over. Returns false if there was nothing to take.</summary>
-    public bool TryTakeFromAimed()
+    /// <summary>Takes from a source the resolver already approved.</summary>
+    public bool TakeFrom(IItemSource source)
     {
-        if (IsHolding)
-        {
-            return false;
-        }
-
-        IItemSource source = interactor.GetAimed<IItemSource>();
-        if (source == null || !source.CanProvide(this))
+        if (IsHolding || source == null)
         {
             return false;
         }
@@ -193,16 +201,10 @@ public class PlayerHands : MonoBehaviour
 
     // ---------------------------------------------------------------- giving
 
-    /// <summary>Offers the held item to an aimed-at receiver. Returns false if nobody took it.</summary>
-    public bool TryGiveToAimed()
+    /// <summary>Hands the held item to a receiver the resolver already approved.</summary>
+    public bool GiveTo(IItemReceiver receiver)
     {
-        if (!IsHolding)
-        {
-            return false;
-        }
-
-        IItemReceiver receiver = interactor.GetAimed<IItemReceiver>();
-        if (receiver == null || !receiver.CanReceive(HeldItem, this))
+        if (!IsHolding || receiver == null)
         {
             return false;
         }
@@ -260,10 +262,10 @@ public class PlayerHands : MonoBehaviour
         _held = null;
 
         dropped.transform.SetParent(null, true);
-        dropped.transform.SetPositionAndRotation(ResolveDropPosition(),
-                                                 Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
+        dropped.transform.SetPositionAndRotation(GetDropPosition(), GetDropRotation());
         dropped.SetCarried(false);
 
+        DropYaw = 0f;
         HeldChanged?.Invoke(null);
     }
 
@@ -284,6 +286,7 @@ public class PlayerHands : MonoBehaviour
     private void Attach(WorldItem worldItem)
     {
         _held = worldItem;
+        DropYaw = 0f;
 
         worldItem.SetCarried(true);
         worldItem.transform.SetParent(holdAnchor, false);

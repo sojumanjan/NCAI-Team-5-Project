@@ -12,9 +12,19 @@ public enum ServingSpotState
 
     /// <summary>Order accepted. The kitchen owes them a dish.</summary>
     Accepted,
+}
 
-    /// <summary>Dish handed over, customer on their way out.</summary>
-    Served,
+/// <summary>How an order ended. Everything that moves the rating is one of these.</summary>
+public enum OrderResult
+{
+    /// <summary>Served exactly what was asked for.</summary>
+    Correct,
+
+    /// <summary>Served, but the wrong dish.</summary>
+    Wrong,
+
+    /// <summary>Customer ran out of patience and left. Raised from step 5 onward.</summary>
+    Abandoned,
 }
 
 /// <summary>
@@ -22,7 +32,9 @@ public enum ServingSpotState
 /// There are three of these, so three customers can be served at once.
 ///
 /// This is the coordinator — the terminal and the tray are thin and just forward to it, so
-/// all the ordering rules live in one file.
+/// all the ordering rules live in one file. It is also the single place anything outside
+/// the lane listens to: customers are spawned at runtime and cannot be wired up in the
+/// inspector, so the lane reports on their behalf through <see cref="OrderResolved"/>.
 /// </summary>
 public class ServingSpot : MonoBehaviour
 {
@@ -33,10 +45,10 @@ public class ServingSpot : MonoBehaviour
     [Tooltip("이 자리의 트레이.")]
     [SerializeField] private ServingTray tray;
 
-    [Tooltip("손님이 서 있을 위치. 카운터 바깥쪽에 두세요.")]
+    [Tooltip("손님이 서 있을 위치. 카운터 바깥쪽에, forward가 카운터를 향하게 두세요.")]
     [SerializeField] private Transform customerStand;
 
-    [Tooltip("손님이 떠날 때 걸어갈 위치.")]
+    [Tooltip("손님이 등장하고 떠나갈 위치.")]
     [SerializeField] private Transform exitPoint;
 
     [Header("주문")]
@@ -58,13 +70,13 @@ public class ServingSpot : MonoBehaviour
     /// <summary>What the current customer asked for, or null.</summary>
     public ItemData CurrentOrder { get; private set; }
 
-    /// <summary>Where the customer stands. The customer walks here on arrival.</summary>
+    /// <summary>Where the customer stands.</summary>
     public Transform CustomerStand => customerStand;
 
     /// <summary>Where the customer walks off to.</summary>
     public Transform ExitPoint => exitPoint;
 
-    /// <summary>True while a customer is present and has not been served.</summary>
+    /// <summary>True while a customer is present.</summary>
     public bool HasCustomer => _customer != null;
 
     /// <summary>Fires when a customer states their order.</summary>
@@ -74,10 +86,10 @@ public class ServingSpot : MonoBehaviour
     public event Action<ServingSpot, ItemData> OrderAccepted;
 
     /// <summary>
-    /// Fires when a dish lands on the tray. The bool is whether it was the right dish —
-    /// this is the hook the rating system will use in the next step.
+    /// Fires once per order, however it ended. This is the one event the rating system and
+    /// the day's dish counter listen to — a single hook instead of one per failure mode.
     /// </summary>
-    public event Action<ServingSpot, ItemData, bool> OrderDelivered;
+    public event Action<ServingSpot, OrderResult> OrderResolved;
 
     // ---------------------------------------------------------------- lifecycle
 
@@ -109,7 +121,7 @@ public class ServingSpot : MonoBehaviour
 
     // ---------------------------------------------------------------- customer flow
 
-    /// <summary>Puts a customer at this lane. Returns false if it is already busy.</summary>
+    /// <summary>Puts a customer at this lane. Does nothing if it is already busy.</summary>
     [ContextMenu("손님 소환")]
     public void SpawnCustomer()
     {
@@ -151,6 +163,20 @@ public class ServingSpot : MonoBehaviour
         OrderPlaced?.Invoke(this, wanted);
     }
 
+    /// <summary>
+    /// The customer gave up waiting. Step 5 calls this from the patience timer; nothing
+    /// calls it yet.
+    /// </summary>
+    public void AbandonOrder()
+    {
+        if (State == ServingSpotState.Free)
+        {
+            return;
+        }
+
+        Resolve(OrderResult.Abandoned);
+    }
+
     // ---------------------------------------------------------------- terminal
 
     /// <summary>True when clicking the POS would do something.</summary>
@@ -182,8 +208,8 @@ public class ServingSpot : MonoBehaviour
     }
 
     /// <summary>
-    /// A dish landed on the tray. Judges it against the order and sends the customer off.
-    /// A wrong dish still completes the order — the penalty is the point.
+    /// A dish landed on the tray. A wrong dish is still accepted — the penalty is the
+    /// point, and refusing it would leave the player stuck holding it.
     /// </summary>
     public void DeliverDish(WorldItem dish)
     {
@@ -193,18 +219,8 @@ public class ServingSpot : MonoBehaviour
         }
 
         bool correct = dish.Item == CurrentOrder;
-        ItemData delivered = dish.Item;
 
-        State = ServingSpotState.Served;
-        OrderDelivered?.Invoke(this, delivered, correct);
-
-        if (_customer != null)
-        {
-            _customer.Leave();
-            _customer = null;
-        }
-
-        // The dish itself has done its job; the tray keeps it briefly then clears.
+        // Park the dish on the tray before resolving, so the visual and the score line up.
         if (tray != null)
         {
             tray.PlaceAndClear(dish);
@@ -214,8 +230,23 @@ public class ServingSpot : MonoBehaviour
             Destroy(dish.gameObject);
         }
 
+        Resolve(correct ? OrderResult.Correct : OrderResult.Wrong);
+    }
+
+    // ---------------------------------------------------------------- internals
+
+    private void Resolve(OrderResult result)
+    {
+        if (_customer != null)
+        {
+            _customer.Leave();
+            _customer = null;
+        }
+
         CurrentOrder = null;
         State = ServingSpotState.Free;
+
+        OrderResolved?.Invoke(this, result);
     }
 
     // ---------------------------------------------------------------- gizmos
@@ -226,6 +257,7 @@ public class ServingSpot : MonoBehaviour
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireSphere(customerStand.position, 0.3f);
+            Gizmos.DrawRay(customerStand.position, customerStand.forward);
         }
 
         if (exitPoint != null)

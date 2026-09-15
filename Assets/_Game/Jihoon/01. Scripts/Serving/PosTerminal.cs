@@ -4,11 +4,16 @@ using UnityEngine;
 /// The POS terminal for one lane. Left click it to take the waiting customer's order.
 ///
 /// Nothing enters the hands, so this is an <see cref="IClickTarget"/> rather than an item
-/// verb. It holds no state of its own — <see cref="ServingSpot"/> owns that.
+/// verb. It holds no state of its own — <see cref="ServingSpot"/> owns that, and the
+/// colour here just mirrors the lane's events.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class PosTerminal : MonoBehaviour, IClickTarget
 {
+    [Header("문구")]
+    [Tooltip("조준했을 때 화면에 뜰 문구.")]
+    [SerializeField] private string clickPrompt = "주문 수락";
+
     [Header("색 피드백")]
     [Tooltip("색을 바꿀 렌더러. 비워두면 자기 자신에서 찾습니다.")]
     [SerializeField] private Renderer targetRenderer;
@@ -28,6 +33,8 @@ public class PosTerminal : MonoBehaviour, IClickTarget
     private MaterialPropertyBlock _block;
     private ServingSpot _spot;
 
+    public string ClickPrompt => clickPrompt;
+
     private void Awake()
     {
         if (targetRenderer == null)
@@ -45,7 +52,7 @@ public class PosTerminal : MonoBehaviour, IClickTarget
         _spot = spot;
         _spot.OrderPlaced += (_, __) => ApplyColor(awaitingColor);
         _spot.OrderAccepted += (_, __) => ApplyColor(acceptedColor);
-        _spot.OrderDelivered += (_, __, ___) => ApplyColor(idleColor);
+        _spot.OrderResolved += (_, __) => ApplyColor(idleColor);
     }
 
     public bool CanClick(PlayerHands hands) => _spot != null && _spot.CanAcceptOrder();

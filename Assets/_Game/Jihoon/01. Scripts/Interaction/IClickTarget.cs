@@ -10,6 +10,13 @@
 /// </summary>
 public interface IClickTarget
 {
+    /// <summary>
+    /// What the prompt should say, e.g. "주문 수락". The other two left-click verbs can
+    /// build their own wording from the item involved, but a plain click could mean
+    /// anything, so it has to say so itself.
+    /// </summary>
+    string ClickPrompt { get; }
+
     /// <summary>False when clicking would do nothing right now.</summary>
     bool CanClick(PlayerHands hands);
 

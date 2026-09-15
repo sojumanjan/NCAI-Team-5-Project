@@ -9,11 +9,14 @@ using UnityEngine;
 /// An <see cref="IItemReceiver"/>, because something does leave the player's hands.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class ServingTray : MonoBehaviour, IItemReceiver
+public class ServingTray : MonoBehaviour, IItemReceiver, IPlacementTarget
 {
     [Header("놓이는 위치")]
     [Tooltip("음식이 올라갈 위치. 비워두면 트레이 자신의 위치를 씁니다.")]
     [SerializeField] private Transform dishPoint;
+
+    [Tooltip("그 위치에서 얼마나 띄울지 (m). 트레이 표면에 얹히도록 조절하세요.")]
+    [SerializeField] private float dishHeightOffset = 0.05f;
 
     [Tooltip("음식이 트레이에 남아 있는 시간 (초). 손님이 가져갔다는 연출입니다.")]
     [SerializeField] private float clearDelay = 1.2f;
@@ -34,6 +37,32 @@ public class ServingTray : MonoBehaviour, IItemReceiver
         _spot.DeliverDish(item);
     }
 
+    // ---------------------------------------------------------------- IPlacementTarget
+
+    public bool TryGetPlacement(ItemData item, out Vector3 position, out Quaternion rotation)
+    {
+        if (_spot == null || !_spot.CanReceiveDish(item))
+        {
+            position = default;
+            rotation = default;
+            return false;
+        }
+
+        GetDishPose(out position, out rotation);
+        return true;
+    }
+
+    /// <summary>
+    /// The one definition of where a dish sits on this tray. Both the ghost and the real
+    /// placement read it, so the preview always lands where the dish will.
+    /// </summary>
+    private void GetDishPose(out Vector3 position, out Quaternion rotation)
+    {
+        Transform target = dishPoint != null ? dishPoint : transform;
+        position = target.position + Vector3.up * dishHeightOffset;
+        rotation = Quaternion.Euler(0f, target.eulerAngles.y, 0f);
+    }
+
     /// <summary>
     /// Parks the served dish on the tray for a moment, then removes it. Called by the spot
     /// so the visual and the scoring stay in step.
@@ -45,10 +74,16 @@ public class ServingTray : MonoBehaviour, IItemReceiver
             return;
         }
 
-        Transform target = dishPoint != null ? dishPoint : transform;
         dish.SetCarried(true);
-        dish.transform.SetParent(target, false);
-        dish.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+        // Deliberately left unparented. The tray is a squashed cube, and no parenting mode
+        // survives that: worldPositionStays only preserves scale for the rotation it had at
+        // the moment of attachment, so setting the rotation afterwards shears the dish
+        // again. The tray never moves, so a plain world placement is the honest fix.
+        dish.transform.SetParent(null, true);
+
+        GetDishPose(out Vector3 position, out Quaternion rotation);
+        dish.transform.SetPositionAndRotation(position, rotation);
 
         StartCoroutine(ClearAfterDelay(dish.gameObject));
     }

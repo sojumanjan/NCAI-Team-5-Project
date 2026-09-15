@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fec87b48642a298428b3e4dd9a526c9c, type: 3}
-  m_Name: CoffeeBean
+  m_Name: "\uBC14\uB098\uB098\uC2A4\uBB34\uB514"
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  displayName: Coffee
-  category: 0
-  worldPrefab: {fileID: 8416163186139819023, guid: d2da78c72a138224cbf50b7519278462, type: 3}
+  displayName: "\uBC14\uB098\uB098\uC2A4\uBB34\uB514"
+  category: 1
+  worldPrefab: {fileID: 2184928123173836461, guid: bfe9493f159e0b84f83848098dca7fcc, type: 3}
   icon: {fileID: 0}

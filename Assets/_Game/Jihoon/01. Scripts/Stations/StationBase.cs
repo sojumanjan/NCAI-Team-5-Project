@@ -75,9 +75,6 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     [Tooltip("조리 중일 때.")]
     [SerializeField] private string busyPrompt = "조리 중...";
 
-    [Tooltip("완성품이 나왔을 때. 회수는 좌클릭입니다.")]
-    [SerializeField] private string readyPrompt = "완성! (좌클릭으로 회수)";
-
     // ---------------------------------------------------------------- state
 
     private readonly List<ItemData> _loaded = new();
@@ -117,8 +114,13 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             {
                 case StationState.Processing:
                     return busyPrompt;
+
+                // Nothing for E to do once the dish is ready — taking it is a left click,
+                // and the left-click prompt already says so. An empty string drops the
+                // line from the prompt list entirely.
                 case StationState.Done:
-                    return readyPrompt;
+                    return string.Empty;
+
                 default:
                     if (_loaded.Count == 0)
                     {
@@ -326,7 +328,12 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         if (recipe != null && recipe.Output != null && recipe.Output.WorldPrefab != null)
         {
             Transform origin = outputPoint != null ? outputPoint : transform;
-            GameObject spawned = Instantiate(recipe.Output.WorldPrefab, origin.position, origin.rotation, origin);
+
+            // Left unparented on purpose: appliances are non-uniformly scaled cubes, and
+            // attaching to one squashes the dish no matter which parenting mode is used.
+            GameObject spawned = Instantiate(recipe.Output.WorldPrefab,
+                                             origin.position,
+                                             Quaternion.Euler(0f, origin.eulerAngles.y, 0f));
             spawned.name = recipe.Output.DisplayName;
 
             _output = spawned.GetComponent<WorldItem>();
