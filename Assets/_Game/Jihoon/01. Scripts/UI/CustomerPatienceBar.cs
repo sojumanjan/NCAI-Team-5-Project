@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,6 +23,16 @@ public class CustomerPatienceBar : MonoBehaviour
     [Tooltip("줄어드는 바. Image Type을 Filled로 두세요.")]
     [SerializeField] private Image fillImage;
 
+    [Header("주문 메뉴")]
+    [Tooltip("게이지 위에 뜰 메뉴 아이콘. ItemData의 Icon을 씁니다.")]
+    [SerializeField] private Image dishIcon;
+
+    [Tooltip("메뉴 이름. 아이콘 스프라이트가 준비되면 꺼도 됩니다. (선택)")]
+    [SerializeField] private TMP_Text dishNameText;
+
+    [Tooltip("Icon이 아직 없을 때 아이콘 자리에 칠할 색.")]
+    [SerializeField] private Color iconPlaceholderColor = new Color(1f, 1f, 1f, 0.3f);
+
     [Header("표시")]
     [Tooltip("인내심이 이 비율 아래일 때부터 보입니다. 1이면 도착하자마자 항상 표시.")]
     [Range(0.1f, 1f)]
@@ -41,6 +52,7 @@ public class CustomerPatienceBar : MonoBehaviour
     [SerializeField] private bool billboard = true;
 
     private Camera _camera;
+    private ItemData _shownOrder;
 
     private void Awake()
     {
@@ -79,8 +91,40 @@ public class CustomerPatienceBar : MonoBehaviour
             return;
         }
 
+        UpdateOrder();
         UpdateFill(remaining);
         UpdatePose();
+    }
+
+    /// <summary>
+    /// Draws what this customer asked for. Only rewritten when the order changes, which
+    /// for one customer means exactly once.
+    /// </summary>
+    private void UpdateOrder()
+    {
+        ItemData order = customer.Order;
+        if (order == _shownOrder)
+        {
+            return;
+        }
+
+        _shownOrder = order;
+
+        if (dishNameText != null)
+        {
+            dishNameText.text = order != null ? order.DisplayName : string.Empty;
+        }
+
+        if (dishIcon == null)
+        {
+            return;
+        }
+
+        Sprite icon = order != null ? order.Icon : null;
+        dishIcon.sprite = icon;
+
+        // Flat block while the art is missing, so the slot is still visible and sized.
+        dishIcon.color = icon != null ? Color.white : iconPlaceholderColor;
     }
 
     private void UpdateFill(float remaining)
