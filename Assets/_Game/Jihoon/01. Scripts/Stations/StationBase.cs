@@ -194,10 +194,13 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     public bool CanReceive(ItemData item, PlayerHands hands)
     {
+        // No category check on purpose. AnyAccepts already restricts this to things some
+        // recipe actually uses as an input, and requiring Ingredient would block the
+        // intermediate Container items that chained recipes depend on — dough coming off
+        // the table and going into the oven.
         return State == StationState.Idle
                && _output == null
                && item != null
-               && item.Category == ItemCategory.Ingredient
                && _loaded.Count < maxIngredients
                && recipeBook != null
                && recipeBook.AnyAccepts(kind, item, _loaded);

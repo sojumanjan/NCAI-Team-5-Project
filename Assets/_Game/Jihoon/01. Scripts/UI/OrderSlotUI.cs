@@ -31,6 +31,16 @@ public class OrderSlotUI : MonoBehaviour
     [Tooltip("수락한 뒤 켜질 표시. (선택)")]
     [SerializeField] private GameObject acceptedBadge;
 
+    [Header("인내심 게이지")]
+    [Tooltip("줄어드는 바. Image Type을 Filled로 두세요. (선택)")]
+    [SerializeField] private Image patienceFill;
+
+    [Tooltip("여유 있을 때 색.")]
+    [SerializeField] private Color patienceCalmColor = new Color(0.35f, 0.9f, 0.4f);
+
+    [Tooltip("다 닳아갈 때 색.")]
+    [SerializeField] private Color patienceAngryColor = new Color(0.95f, 0.35f, 0.35f);
+
     // Subscribed in Awake rather than OnEnable on purpose: an empty slot hides itself, and
     // if that means deactivating this very object, OnDisable would tear the subscription
     // down and the row could never come back.
@@ -60,6 +70,22 @@ public class OrderSlotUI : MonoBehaviour
         spot.OrderPlaced -= HandlePlaced;
         spot.OrderAccepted -= HandleAccepted;
         spot.OrderResolved -= HandleResolved;
+    }
+
+    /// <summary>
+    /// The gauge moves every frame, so it is polled rather than event-driven — three rows
+    /// reading one float is cheaper than the subscription plumbing would be.
+    /// </summary>
+    private void Update()
+    {
+        if (patienceFill == null || !Target.activeSelf)
+        {
+            return;
+        }
+
+        float remaining = spot.IsCustomerWaiting ? spot.Patience01 : 1f;
+        patienceFill.fillAmount = remaining;
+        patienceFill.color = Color.Lerp(patienceAngryColor, patienceCalmColor, remaining);
     }
 
     private void HandlePlaced(ServingSpot _, ItemData order) => Show(order, accepted: false);

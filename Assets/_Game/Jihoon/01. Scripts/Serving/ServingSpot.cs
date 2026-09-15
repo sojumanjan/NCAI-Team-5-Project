@@ -55,13 +55,6 @@ public class ServingSpot : MonoBehaviour
     [Tooltip("주문 가능한 메뉴를 여기서 뽑습니다. 레시피북의 완성품 목록을 씁니다.")]
     [SerializeField] private RecipeBook recipeBook;
 
-    [Header("테스트")]
-    [Tooltip("손님 프리팹. 아래 옵션이나 컨텍스트 메뉴로 소환합니다.")]
-    [SerializeField] private GameObject customerPrefab;
-
-    [Tooltip("켜면 플레이 시작과 동시에 손님 한 명이 옵니다. 손님 큐는 5단계에서 붙습니다.")]
-    [SerializeField] private bool spawnOnStart = true;
-
     private Customer _customer;
 
     /// <summary>Current phase of this lane.</summary>
@@ -78,6 +71,15 @@ public class ServingSpot : MonoBehaviour
 
     /// <summary>True while a customer is present.</summary>
     public bool HasCustomer => _customer != null;
+
+    /// <summary>True when a new customer could be sent here.</summary>
+    public bool IsFree => _customer == null;
+
+    /// <summary>The waiting customer's patience, 1 to 0. Zero when nobody is here.</summary>
+    public float Patience01 => _customer != null ? _customer.Patience01 : 0f;
+
+    /// <summary>True only while the customer is actually standing and waiting.</summary>
+    public bool IsCustomerWaiting => _customer != null && _customer.IsWaiting;
 
     /// <summary>Fires when a customer states their order.</summary>
     public event Action<ServingSpot, ItemData> OrderPlaced;
@@ -111,23 +113,18 @@ public class ServingSpot : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        if (spawnOnStart)
-        {
-            SpawnCustomer();
-        }
-    }
-
     // ---------------------------------------------------------------- customer flow
 
-    /// <summary>Puts a customer at this lane. Does nothing if it is already busy.</summary>
-    [ContextMenu("손님 소환")]
-    public void SpawnCustomer()
+    /// <summary>
+    /// Sends a customer to this lane. Called by <see cref="CustomerSpawner"/>, which owns
+    /// the prefab and the timing — the lane only knows whether it is free.
+    /// Returns false when it is already busy or not set up.
+    /// </summary>
+    public bool TrySeatCustomer(GameObject customerPrefab, float patienceSeconds)
     {
-        if (_customer != null || customerPrefab == null || customerStand == null)
+        if (!IsFree || customerPrefab == null || customerStand == null)
         {
-            return;
+            return false;
         }
 
         Vector3 spawnAt = exitPoint != null ? exitPoint.position : customerStand.position;
@@ -138,11 +135,12 @@ public class ServingSpot : MonoBehaviour
         {
             Debug.LogError($"Customer prefab '{go.name}' has no {nameof(Customer)}.", this);
             Destroy(go);
-            return;
+            return false;
         }
 
         _customer = customer;
-        customer.Arrive(this, PickOrder());
+        customer.Arrive(this, PickOrder(), patienceSeconds);
+        return true;
     }
 
     private ItemData PickOrder()

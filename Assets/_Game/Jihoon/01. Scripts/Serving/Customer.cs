@@ -1,10 +1,12 @@
 using UnityEngine;
 
 /// <summary>
-/// A customer: walks to the counter, states an order, waits, then walks off once served.
+/// A customer: walks to the counter, states an order, waits with a shrinking patience
+/// meter, then walks off — served or fed up.
 ///
 /// Movement is a straight walk with no pathfinding, which is enough for a counter you can
-/// reach in a straight line. Patience is deliberately not here yet — that is step 5.
+/// reach in a straight line. Patience only runs once they have actually arrived, so a long
+/// walk never costs them time.
 /// </summary>
 public class Customer : MonoBehaviour
 {
@@ -29,18 +31,39 @@ public class Customer : MonoBehaviour
     [Tooltip("목표 지점보다 얼마나 위에 설지 (m). 프리팹 원점이 몸 가운데면 키의 절반을 넣으세요.")]
     [SerializeField] private float groundOffset = 1f;
 
+    [Header("인내심")]
+    [Tooltip("스포너가 값을 주지 않았을 때 쓸 기본 인내심 (초).")]
+    [SerializeField] private float defaultPatience = 30f;
+
     private ServingSpot _spot;
     private Phase _phase = Phase.Idle;
     private Vector3 _target;
+    private float _patienceMax;
+    private float _patienceLeft;
+    private bool _gaveUp;
 
-    /// <summary>What this customer wants. Null until they reach the counter.</summary>
+    /// <summary>What this customer wants.</summary>
     public ItemData Order { get; private set; }
 
-    /// <summary>Sends the customer to the counter with an order in mind.</summary>
-    public void Arrive(ServingSpot spot, ItemData order)
+    /// <summary>Patience remaining, 1 when fresh and 0 when they walk out.</summary>
+    public float Patience01 => _patienceMax > 0f ? Mathf.Clamp01(_patienceLeft / _patienceMax) : 1f;
+
+    /// <summary>True only while standing at the counter waiting. Patience runs in this phase alone.</summary>
+    public bool IsWaiting => _phase == Phase.Ordering;
+
+    // ---------------------------------------------------------------- flow
+
+    /// <summary>
+    /// Sends the customer to the counter. A patience of zero or less falls back to the
+    /// prefab's own default, so a customer dropped into the scene by hand still behaves.
+    /// </summary>
+    public void Arrive(ServingSpot spot, ItemData order, float patienceSeconds = 0f)
     {
         _spot = spot;
         Order = order;
+
+        _patienceMax = patienceSeconds > 0f ? patienceSeconds : defaultPatience;
+        _patienceLeft = _patienceMax;
 
         if (spot == null || spot.CustomerStand == null)
         {
@@ -72,27 +95,62 @@ public class Customer : MonoBehaviour
 
     private void Update()
     {
-        if (_phase != Phase.WalkingIn && _phase != Phase.Leaving)
+        switch (_phase)
+        {
+            case Phase.WalkingIn:
+                if (!StepToward(_target))
+                {
+                    _phase = Phase.Ordering;
+                    FaceCounter();
+                    _spot.OnCustomerReady(this, Order);
+                }
+                break;
+
+            case Phase.Ordering:
+                TickPatience();
+                break;
+
+            case Phase.Leaving:
+                if (!StepToward(_target))
+                {
+                    Destroy(gameObject);
+                }
+                break;
+        }
+    }
+
+    // ---------------------------------------------------------------- patience
+
+    private void TickPatience()
+    {
+        if (_gaveUp || _patienceMax <= 0f)
         {
             return;
         }
 
-        if (StepToward(_target))
+        _patienceLeft -= Time.deltaTime;
+
+        if (_patienceLeft > 0f)
         {
             return;
         }
 
-        if (_phase == Phase.WalkingIn)
+        // Guarded because AbandonOrder calls straight back into Leave(), and a second
+        // call would report the same customer twice and double the rating penalty.
+        _gaveUp = true;
+        _patienceLeft = 0f;
+
+        if (_spot != null)
         {
-            _phase = Phase.Ordering;
-            FaceCounter();
-            _spot.OnCustomerReady(this, Order);
+            _spot.AbandonOrder();
         }
         else
         {
-            Destroy(gameObject);
+            Leave();
         }
     }
+
+    // ---------------------------------------------------------------- movement
 
     /// <summary>Moves one frame toward the target. Returns true while still travelling.</summary>
     private bool StepToward(Vector3 destination)
@@ -118,14 +176,6 @@ public class Customer : MonoBehaviour
         return true;
     }
 
-    /// <summary>Lifts the customer to standing height above its current target point.</summary>
-    private void SnapToGroundHeight()
-    {
-        Vector3 position = transform.position;
-        position.y = _target.y + groundOffset;
-        transform.position = position;
-    }
-
     private void FaceCounter()
     {
         if (_spot == null || _spot.CustomerStand == null)
@@ -135,5 +185,13 @@ public class Customer : MonoBehaviour
 
         // The stand point's forward is authored to face the counter.
         transform.rotation = Quaternion.LookRotation(_spot.CustomerStand.forward, Vector3.up);
+    }
+
+    /// <summary>Lifts the customer to standing height above its current target point.</summary>
+    private void SnapToGroundHeight()
+    {
+        Vector3 position = transform.position;
+        position.y = _target.y + groundOffset;
+        transform.position = position;
     }
 }
