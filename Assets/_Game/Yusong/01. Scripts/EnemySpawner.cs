@@ -14,8 +14,21 @@ public class EnemySpawner : MonoBehaviour
 
     [SerializeField] private CountdownTimer countdownTimer;
     [SerializeField] private EnemyEntry[] enemyTypes;
+    [SerializeField] private EnemyEntry[] extraEnemyTypesFromWave2;
     [SerializeField] private float spawnOffset = 60f;
     [SerializeField] private float spawnDuration = 60f;
+
+    [Header("Yellow Pacing")]
+    [SerializeField] private int yellowPairSize = 2;
+    [SerializeField] private float yellowSlotJitterFraction = 0.25f;
+    [SerializeField] private float yellowPairSpread = 50f;
+
+    private struct SpawnEvent
+    {
+        public float time;
+        public List<RectTransform> prefabs;
+        public bool isYellowPair;
+    }
 
     private Coroutine spawnRoutine;
 
@@ -41,51 +54,132 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
+    [SerializeField] private int lastConfiguredWave = 2;
+
     private void HandleWaveStarted(int wave)
     {
-        if (wave != 1) return;
+        if (wave > lastConfiguredWave) return;
 
         if (spawnRoutine != null) StopCoroutine(spawnRoutine);
-        spawnRoutine = StartCoroutine(SpawnOverTime());
+        spawnRoutine = StartCoroutine(SpawnOverTime(wave));
     }
 
-    private IEnumerator SpawnOverTime()
+    private IEnumerator SpawnOverTime(int wave)
     {
-        var queue = new List<RectTransform>();
-        foreach (var entry in enemyTypes)
+        var normalQueue = new List<RectTransform>();
+        var yellowQueue = new List<RectTransform>();
+
+        CollectEntries(enemyTypes, normalQueue, yellowQueue);
+        if (wave >= 2 && extraEnemyTypesFromWave2 != null)
         {
-            for (int i = 0; i < entry.count; i++)
+            CollectEntries(extraEnemyTypesFromWave2, normalQueue, yellowQueue);
+        }
+
+        Shuffle(normalQueue);
+        Shuffle(yellowQueue);
+
+        var events = new List<SpawnEvent>();
+
+        if (normalQueue.Count > 0)
+        {
+            float interval = spawnDuration / normalQueue.Count;
+            for (int i = 0; i < normalQueue.Count; i++)
             {
-                queue.Add(entry.prefab);
+                events.Add(new SpawnEvent
+                {
+                    time = interval * i,
+                    prefabs = new List<RectTransform> { normalQueue[i] },
+                    isYellowPair = false
+                });
             }
         }
 
-        for (int i = queue.Count - 1; i > 0; i--)
+        if (yellowQueue.Count > 0)
         {
-            int j = UnityEngine.Random.Range(0, i + 1);
-            var temp = queue[i];
-            queue[i] = queue[j];
-            queue[j] = temp;
+            int slotCount = Mathf.CeilToInt((float)yellowQueue.Count / yellowPairSize);
+            float slotInterval = spawnDuration / slotCount;
+            int idx = 0;
+
+            for (int s = 0; s < slotCount; s++)
+            {
+                var group = new List<RectTransform>();
+                for (int p = 0; p < yellowPairSize && idx < yellowQueue.Count; p++, idx++)
+                {
+                    group.Add(yellowQueue[idx]);
+                }
+
+                float jitter = UnityEngine.Random.Range(-yellowSlotJitterFraction, yellowSlotJitterFraction) * slotInterval;
+                float t = Mathf.Clamp(slotInterval * (s + 0.5f) + jitter, 0f, spawnDuration - 0.01f);
+
+                events.Add(new SpawnEvent
+                {
+                    time = t,
+                    prefabs = group,
+                    isYellowPair = true
+                });
+            }
         }
 
-        if (queue.Count == 0) yield break;
+        if (events.Count == 0) yield break;
 
-        float interval = spawnDuration / queue.Count;
+        events.Sort((a, b) => a.time.CompareTo(b.time));
+
         var parent = (RectTransform)transform;
         Rect rect = parent.rect;
+        float elapsed = 0f;
 
-        foreach (var prefab in queue)
+        foreach (var evt in events)
         {
-            if (prefab != null)
-            {
-                var enemy = Instantiate(prefab, parent);
-                enemy.anchoredPosition = RandomPerimeterPoint(rect);
-            }
+            float wait = evt.time - elapsed;
+            if (wait > 0f) yield return new WaitForSeconds(wait);
+            elapsed = evt.time;
 
-            yield return new WaitForSeconds(interval);
+            if (evt.isYellowPair)
+            {
+                Vector2 basePos = RandomPerimeterPoint(rect);
+                foreach (var prefab in evt.prefabs)
+                {
+                    if (prefab == null) continue;
+                    var enemy = Instantiate(prefab, parent);
+                    enemy.anchoredPosition = basePos + UnityEngine.Random.insideUnitCircle * yellowPairSpread;
+                }
+            }
+            else
+            {
+                foreach (var prefab in evt.prefabs)
+                {
+                    if (prefab == null) continue;
+                    var enemy = Instantiate(prefab, parent);
+                    enemy.anchoredPosition = RandomPerimeterPoint(rect);
+                }
+            }
         }
 
         spawnRoutine = null;
+    }
+
+    private static void CollectEntries(EnemyEntry[] entries, List<RectTransform> normalQueue, List<RectTransform> yellowQueue)
+    {
+        foreach (var entry in entries)
+        {
+            bool isYellow = entry.prefab != null && entry.prefab.name.Contains("Yellow");
+
+            for (int i = 0; i < entry.count; i++)
+            {
+                (isYellow ? yellowQueue : normalQueue).Add(entry.prefab);
+            }
+        }
+    }
+
+    private static void Shuffle(List<RectTransform> list)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = UnityEngine.Random.Range(0, i + 1);
+            var temp = list[i];
+            list[i] = list[j];
+            list[j] = temp;
+        }
     }
 
     private Vector2 RandomPerimeterPoint(Rect rect)

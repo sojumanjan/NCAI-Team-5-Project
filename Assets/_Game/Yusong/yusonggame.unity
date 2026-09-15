@@ -284,6 +284,38 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: enemyTypes.Array.data[3].count
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: enemyTypes.Array.data[4].count
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: enemyTypes.Array.data[5].count
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: extraEnemyTypesFromWave2.Array.data[0].count
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: extraEnemyTypesFromWave2.Array.data[1].count
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: extraEnemyTypesFromWave2.Array.data[2].count
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3722407200871253303, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4287372031
+      objectReference: {fileID: 0}
+    - target: {fileID: 3722407200871253303, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 3734633384979326416, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4278190080

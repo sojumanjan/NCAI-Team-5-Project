@@ -20,6 +20,18 @@ public class CountdownTimer : MonoBehaviour
     [SerializeField] private float preNextWaveSeconds = 5f;
     [SerializeField] private float waveStartMessageDuration = 2f;
 
+    [Header("Secondary Object")]
+    [SerializeField] private RectTransform secondaryObjectPrefab;
+    [SerializeField] private Transform secondaryObjectParent;
+    [SerializeField] private float secondaryObjectMinDistance = 90f;
+    [SerializeField] private float secondaryObjectMaxDistance = 160f;
+    [SerializeField] private float secondaryObjectSpawnAtRemaining = 30f;
+    [SerializeField] private float secondaryObjectWarningLeadTime = 5f;
+    [SerializeField] private RectTransform spawnMarkerPrefab;
+    [SerializeField] private float secondaryAnnounceDuration = 1.5f;
+    [SerializeField] private int secondaryObjectLastConfiguredWave = 2;
+    [SerializeField] private UITheme theme;
+
     public event System.Action<int> WaveStarted;
 
     private TextMeshProUGUI timerText;
@@ -28,10 +40,21 @@ public class CountdownTimer : MonoBehaviour
     private float preNextWaveRemaining;
     private float stateTimer;
     private int currentWave = 1;
+    private bool secondaryWarningStarted;
+    private bool secondaryObjectSpawned;
+    private Vector2 pendingSecondaryPosition;
+    private RectTransform activeMarker;
+    private float secondaryAnnounceTimer;
 
     private void Awake()
     {
         timerText = GetComponent<TextMeshProUGUI>();
+
+        if (theme != null && theme.primaryFont != null)
+        {
+            timerText.font = theme.primaryFont;
+        }
+
         state = State.PreGame;
         preNextWaveRemaining = preGameSeconds;
         UpdateCountdownMessage(preNextWaveRemaining, "{0}초 후 게임이 시작됩니다..");
@@ -79,7 +102,36 @@ public class CountdownTimer : MonoBehaviour
         if (remaining <= 0f) return;
 
         remaining = Mathf.Max(0f, remaining - Time.deltaTime);
-        UpdateCountingText();
+
+        if (currentWave <= secondaryObjectLastConfiguredWave && !secondaryWarningStarted
+            && remaining <= secondaryObjectSpawnAtRemaining + secondaryObjectWarningLeadTime)
+        {
+            secondaryWarningStarted = true;
+            pendingSecondaryPosition = RollSecondaryPosition();
+            SpawnPositionMarker(pendingSecondaryPosition);
+        }
+
+        if (currentWave <= secondaryObjectLastConfiguredWave && !secondaryObjectSpawned && remaining <= secondaryObjectSpawnAtRemaining)
+        {
+            SpawnSecondaryObject(pendingSecondaryPosition);
+            secondaryObjectSpawned = true;
+            DestroyPositionMarker();
+            secondaryAnnounceTimer = secondaryAnnounceDuration;
+        }
+
+        if (secondaryAnnounceTimer > 0f)
+        {
+            secondaryAnnounceTimer -= Time.deltaTime;
+            timerText.text = "이름미정이 생성되었습니다!";
+        }
+        else if (currentWave <= secondaryObjectLastConfiguredWave && secondaryWarningStarted && !secondaryObjectSpawned)
+        {
+            timerText.text = "잠시 후에 이름미정이 생성됩니다";
+        }
+        else
+        {
+            UpdateCountingText();
+        }
 
         if (remaining <= 0f)
         {
@@ -87,6 +139,38 @@ public class CountdownTimer : MonoBehaviour
             stateTimer = waveEndMessageDuration;
             timerText.text = currentWave + " WAVE 종료!";
         }
+    }
+
+    private Vector2 RollSecondaryPosition()
+    {
+        float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+        float distance = Random.Range(secondaryObjectMinDistance, secondaryObjectMaxDistance);
+        return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
+    }
+
+    private void SpawnPositionMarker(Vector2 position)
+    {
+        if (spawnMarkerPrefab == null || secondaryObjectParent == null) return;
+
+        activeMarker = Instantiate(spawnMarkerPrefab, secondaryObjectParent);
+        activeMarker.anchoredPosition = position;
+    }
+
+    private void DestroyPositionMarker()
+    {
+        if (activeMarker != null)
+        {
+            Destroy(activeMarker.gameObject);
+            activeMarker = null;
+        }
+    }
+
+    private void SpawnSecondaryObject(Vector2 position)
+    {
+        if (secondaryObjectPrefab == null || secondaryObjectParent == null) return;
+
+        var obj = Instantiate(secondaryObjectPrefab, secondaryObjectParent);
+        obj.anchoredPosition = position;
     }
 
     private void TickWaveEnd()
@@ -131,6 +215,10 @@ public class CountdownTimer : MonoBehaviour
     {
         remaining = startSeconds;
         state = State.Counting;
+        secondaryWarningStarted = false;
+        secondaryObjectSpawned = false;
+        secondaryAnnounceTimer = 0f;
+        DestroyPositionMarker();
         UpdateCountingText();
         WaveStarted?.Invoke(currentWave);
     }

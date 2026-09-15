@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -6,6 +7,7 @@ using UnityEngine.UI;
 public class EnemyHealth : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private int hitsToDestroy = 1;
+    [SerializeField] private int scoreValue = 10;
     [SerializeField] private Color hitFlashColor = Color.white;
     [SerializeField] private float flashDuration = 0.08f;
     [SerializeField] private float punchScale = 1.3f;
@@ -15,6 +17,18 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
     [SerializeField] private float sparkSpeed = 400f;
     [SerializeField] private float sparkLifetime = 0.25f;
     [SerializeField] private RectTransform hitMarkPrefab;
+    [SerializeField] private RectTransform aoeRingPrefab;
+
+    [Header("Explosive (yellow variant)")]
+    [SerializeField] private bool isExplosive = false;
+    [SerializeField] private int explosionDamage = 1;
+    [SerializeField] private float explosionRadius = 150f;
+    [SerializeField] private float feverExplosionRadiusMultiplier = 1.5f;
+    [SerializeField] private RectTransform explosionRingPrefab;
+
+    [Header("Theme")]
+    [SerializeField] private UITheme theme;
+    [SerializeField] private EnemyShape shape = EnemyShape.Circle;
 
     private Image image;
     private RectTransform rt;
@@ -28,11 +42,115 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
     {
         image = GetComponent<Image>();
         rt = GetComponent<RectTransform>();
-        originalColor = image.color;
         originalScale = rt.localScale;
+
+        if (theme != null)
+        {
+            hitFlashColor = theme.enemyHitFlashColor;
+            ApplyShapeSprite();
+        }
+
+        originalColor = image.color;
+    }
+
+    private void ApplyShapeSprite()
+    {
+        Sprite sprite = shape switch
+        {
+            EnemyShape.Circle => theme.circleSprite,
+            EnemyShape.Triangle => theme.triangleSprite,
+            EnemyShape.Square => theme.squareSprite,
+            _ => null
+        };
+
+        if (sprite != null)
+        {
+            image.sprite = sprite;
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
+    {
+        if (isDestroyed) return;
+
+        if (ComboManager.IsAoeActive)
+        {
+            TriggerAoe();
+        }
+        else
+        {
+            ApplyHit();
+        }
+    }
+
+    private void TriggerAoe()
+    {
+        Vector2 center = rt.anchoredPosition;
+        Transform parent = transform.parent;
+        float radius = ComboManager.AoeRadius;
+
+        SpawnAoeRing(center, radius);
+
+        var targets = new List<EnemyHealth>();
+        foreach (Transform child in parent)
+        {
+            var eh = child.GetComponent<EnemyHealth>();
+            if (eh != null && !eh.isDestroyed)
+            {
+                float dist = Vector2.Distance(eh.rt.anchoredPosition, center);
+                if (dist <= radius)
+                {
+                    targets.Add(eh);
+                }
+            }
+        }
+
+        foreach (var target in targets)
+        {
+            target.ApplyHit();
+        }
+    }
+
+    private void TriggerExplosion()
+    {
+        Vector2 center = rt.anchoredPosition;
+        Transform parent = transform.parent;
+        float radius = ComboManager.IsAoeActive ? explosionRadius * feverExplosionRadiusMultiplier : explosionRadius;
+
+        SpawnExplosionRing(center, radius);
+
+        var targets = new List<EnemyHealth>();
+        foreach (Transform child in parent)
+        {
+            if (child == transform) continue;
+
+            var eh = child.GetComponent<EnemyHealth>();
+            if (eh != null && !eh.isDestroyed)
+            {
+                float dist = Vector2.Distance(eh.rt.anchoredPosition, center);
+                if (dist <= radius)
+                {
+                    targets.Add(eh);
+                }
+            }
+        }
+
+        foreach (var target in targets)
+        {
+            target.ReceiveSplashDamage(explosionDamage);
+        }
+    }
+
+    public void ReceiveSplashDamage(int hits)
+    {
+        for (int i = 0; i < hits; i++)
+        {
+            if (isDestroyed) break;
+            ApplyHit();
+        }
+    }
+
+    private void ApplyHit()
     {
         if (isDestroyed) return;
 
@@ -44,9 +162,23 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         {
             isDestroyed = true;
 
+            bool bonusActive = ComboManager.IsAoeActive;
+
             if (ComboManager.Instance != null)
             {
-                ComboManager.Instance.RegisterKill();
+                ComboManager.Instance.RegisterKill(rt.anchoredPosition, transform.parent);
+            }
+
+            if (ScoreManager.Instance != null)
+            {
+                int points = bonusActive ? scoreValue * 2 : scoreValue;
+                Vector2 scorePopupPos = rt.anchoredPosition + new Vector2(-40f, -15f);
+                ScoreManager.Instance.AddScore(points, scorePopupPos, transform.parent);
+            }
+
+            if (isExplosive)
+            {
+                TriggerExplosion();
             }
 
             Destroy(gameObject);
@@ -117,5 +249,35 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
 
         var mark = Instantiate(hitMarkPrefab, transform.parent);
         mark.anchoredPosition = rt.anchoredPosition;
+    }
+
+    private void SpawnAoeRing(Vector2 position, float radius)
+    {
+        if (aoeRingPrefab == null) return;
+
+        var ring = Instantiate(aoeRingPrefab, transform.parent);
+        ring.anchoredPosition = position;
+        ring.sizeDelta = new Vector2(radius * 2f, radius * 2f);
+
+        if (theme != null)
+        {
+            var ringImage = ring.GetComponent<Image>();
+            if (ringImage != null) ringImage.color = theme.aoeRingColor;
+        }
+    }
+
+    private void SpawnExplosionRing(Vector2 position, float radius)
+    {
+        if (explosionRingPrefab == null) return;
+
+        var ring = Instantiate(explosionRingPrefab, transform.parent);
+        ring.anchoredPosition = position;
+        ring.sizeDelta = new Vector2(radius * 2f, radius * 2f);
+
+        if (theme != null)
+        {
+            var ringImage = ring.GetComponent<Image>();
+            if (ringImage != null) ringImage.color = theme.explosionRingColor;
+        }
     }
 }
