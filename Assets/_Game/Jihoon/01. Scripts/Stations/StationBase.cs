@@ -62,6 +62,16 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     [Tooltip("완성품이 놓일 위치. 비워두면 스테이션 자신의 위치를 씁니다.")]
     [SerializeField] private Transform outputPoint;
 
+    [Header("흔들림")]
+    [Tooltip("조리 중에 흔들 부분. 비워두면 흔들지 않습니다. 보통 이 오브젝트 자신을 넣습니다.")]
+    [SerializeField] private Transform shakeTarget;
+
+    [Tooltip("흔들림 크기 (m). 0.02면 2cm 정도로 은근합니다.")]
+    [SerializeField] private float shakeAmount = 0.02f;
+
+    [Tooltip("흔들림 속도. 클수록 잘게 떱니다.")]
+    [SerializeField] private float shakeSpeed = 40f;
+
     [Header("문구")]
     [Tooltip("재료가 하나도 없을 때.")]
     [SerializeField] private string emptyPrompt = "재료를 넣으세요";
@@ -83,6 +93,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     private float _timer;
     private WorldItem _output;
     private bool _focused;
+    private Vector3 _shakeOrigin;
 
     /// <summary>Current phase of the cycle.</summary>
     public StationState State { get; private set; } = StationState.Idle;
@@ -169,12 +180,14 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     {
         // Only HoldToRun stations get here, since everyone else reports HoldDuration 0.
         OnProcessingProgress(normalized);
+        ApplyShake(normalized);
         ProgressChanged?.Invoke(normalized);
     }
 
     public override void OnHoldCanceled(PlayerInteractor interactor)
     {
         OnProcessingProgress(0f);
+        ApplyShake(0f);
         ProgressChanged?.Invoke(0f);
     }
 
@@ -291,6 +304,11 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         {
             Debug.LogError($"{name}: Recipe Book is not assigned, so this station can never cook.", this);
         }
+
+        if (shakeTarget != null)
+        {
+            _shakeOrigin = shakeTarget.localPosition;
+        }
     }
 
     protected virtual void Update()
@@ -310,6 +328,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
         float progress = Mathf.Clamp01(_timer / _active.Duration);
         OnProcessingProgress(progress);
+        ApplyShake(progress);
         ProgressChanged?.Invoke(progress);
 
         if (_timer >= _active.Duration)
@@ -325,6 +344,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         RecipeData recipe = _active;
         _active = null;
         _timer = 0f;
+        ApplyShake(0f);
         _loaded.Clear();
         RecomputePending();
 
@@ -359,6 +379,27 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         }
 
         OnCompleted(recipe);
+    }
+
+    /// <summary>
+    /// Rattles the machine while it works. Strength follows progress, so it builds toward
+    /// the finish. Passing 0 snaps it back to rest.
+    /// </summary>
+    private void ApplyShake(float strength)
+    {
+        if (shakeTarget == null || shakeAmount <= 0f)
+        {
+            return;
+        }
+
+        if (strength <= 0f)
+        {
+            shakeTarget.localPosition = _shakeOrigin;
+            return;
+        }
+
+        float offset = Mathf.Sin(Time.time * shakeSpeed) * shakeAmount * strength;
+        shakeTarget.localPosition = _shakeOrigin + new Vector3(offset, 0f, offset * 0.5f);
     }
 
     private void RecomputePending()
