@@ -5,6 +5,7 @@ public class EnemyMover : MonoBehaviour
     [SerializeField] private float speed = 120f;
     [SerializeField] private Vector2 target = Vector2.zero;
     [SerializeField] private float hitRadius = 80f;
+    [SerializeField] private int damageOnHit = 1;
 
     private RectTransform rt;
     private bool hasHit;
@@ -32,7 +33,7 @@ public class EnemyMover : MonoBehaviour
 
         if (PlayerHealth.Instance != null)
         {
-            PlayerHealth.Instance.TakeDamage(1);
+            PlayerHealth.Instance.TakeDamage(damageOnHit);
         }
 
         Destroy(gameObject);

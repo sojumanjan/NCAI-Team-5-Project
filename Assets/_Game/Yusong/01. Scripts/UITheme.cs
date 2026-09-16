@@ -45,6 +45,8 @@ public class UITheme : ScriptableObject
     public Color centerHpGaugeColor = new Color(0.9f, 0.25f, 0.25f, 1f);
     public Color secondaryHpGaugeColor = new Color(0.55f, 1f, 0.35f, 1f);
     public Color hpPipOffColor = new Color(1f, 1f, 1f, 0.25f);
+    public Color bossHealthBarColor = new Color(0.75f, 0.2f, 0.85f, 1f);
+    public Color bossIndicatorColor = new Color(1f, 0.55f, 0f, 1f);
 
     [Header("Game Over")]
     public Color gameOverTextColor = new Color(1f, 0.15f, 0.15f, 1f);

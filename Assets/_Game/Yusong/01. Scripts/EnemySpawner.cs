@@ -21,7 +21,9 @@ public class EnemySpawner : MonoBehaviour
     [Header("Yellow Pacing")]
     [SerializeField] private int yellowPairSize = 2;
     [SerializeField] private float yellowSlotJitterFraction = 0.25f;
-    [SerializeField] private float yellowPairSpread = 50f;
+    [SerializeField] private float yellowPairSeparation = 220f;
+    [SerializeField] private float yellowCrowdMixJitter = 100f;
+    [SerializeField] private float densityClusterRadius = 200f;
 
     private struct SpawnEvent
     {
@@ -127,6 +129,8 @@ public class EnemySpawner : MonoBehaviour
         var parent = (RectTransform)transform;
         Rect rect = parent.rect;
         float elapsed = 0f;
+        Vector2 lastNormalSpawnPosition = Vector2.zero;
+        bool hasNormalSpawnPosition = false;
 
         foreach (var evt in events)
         {
@@ -136,12 +140,44 @@ public class EnemySpawner : MonoBehaviour
 
             if (evt.isYellowPair)
             {
-                Vector2 basePos = RandomPerimeterPoint(rect);
-                foreach (var prefab in evt.prefabs)
+                // Spawn from the perimeter like every other enemy (so it's visible immediately
+                // instead of appearing already overlapped by the crowd), but aim it toward
+                // whichever direction currently has the densest cluster of enemies.
+                Vector2 anchor;
+                float densestAngle;
+                if (TryFindDensestDirection(parent, out densestAngle))
                 {
-                    if (prefab == null) continue;
-                    var enemy = Instantiate(prefab, parent);
-                    enemy.anchoredPosition = basePos + UnityEngine.Random.insideUnitCircle * yellowPairSpread;
+                    anchor = PerimeterPointAtAngle(rect, densestAngle);
+                }
+                else
+                {
+                    anchor = hasNormalSpawnPosition
+                        ? lastNormalSpawnPosition + UnityEngine.Random.insideUnitCircle * yellowCrowdMixJitter
+                        : RandomPerimeterPoint(rect);
+                }
+
+                if (evt.prefabs.Count >= 2)
+                {
+                    // Spread the pair apart (up to just under the explosion radius) instead of
+                    // stacking them, so a chain reaction sweeps a wider area rather than one spot.
+                    Vector2 dir = UnityEngine.Random.insideUnitCircle.normalized;
+                    for (int k = 0; k < evt.prefabs.Count; k++)
+                    {
+                        var prefab = evt.prefabs[k];
+                        if (prefab == null) continue;
+                        Vector2 offset = dir * (yellowPairSeparation * 0.5f) * (k == 0 ? 1f : -1f);
+                        var enemy = Instantiate(prefab, parent);
+                        enemy.anchoredPosition = anchor + offset;
+                    }
+                }
+                else
+                {
+                    foreach (var prefab in evt.prefabs)
+                    {
+                        if (prefab == null) continue;
+                        var enemy = Instantiate(prefab, parent);
+                        enemy.anchoredPosition = anchor + UnityEngine.Random.insideUnitCircle * (yellowPairSeparation * 0.25f);
+                    }
                 }
             }
             else
@@ -150,12 +186,49 @@ public class EnemySpawner : MonoBehaviour
                 {
                     if (prefab == null) continue;
                     var enemy = Instantiate(prefab, parent);
-                    enemy.anchoredPosition = RandomPerimeterPoint(rect);
+                    Vector2 spawnPos = RandomPerimeterPoint(rect);
+                    enemy.anchoredPosition = spawnPos;
+                    lastNormalSpawnPosition = spawnPos;
+                    hasNormalSpawnPosition = true;
                 }
             }
         }
 
         spawnRoutine = null;
+    }
+
+    private bool TryFindDensestDirection(RectTransform parent, out float angle)
+    {
+        angle = 0f;
+        int bestScore = -1;
+        bool found = false;
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            var candidate = parent.GetChild(i);
+            if (candidate.GetComponent<EnemyMover>() == null || candidate.name.Contains("Boss")) continue;
+
+            Vector2 candidatePos = candidate.GetComponent<RectTransform>().anchoredPosition;
+            int score = 0;
+
+            for (int j = 0; j < parent.childCount; j++)
+            {
+                var other = parent.GetChild(j);
+                if (other.GetComponent<EnemyMover>() == null || other.name.Contains("Boss")) continue;
+
+                Vector2 otherPos = other.GetComponent<RectTransform>().anchoredPosition;
+                if (Vector2.Distance(candidatePos, otherPos) <= densityClusterRadius) score++;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                angle = Mathf.Atan2(candidatePos.y, candidatePos.x);
+                found = true;
+            }
+        }
+
+        return found;
     }
 
     private static void CollectEntries(EnemyEntry[] entries, List<RectTransform> normalQueue, List<RectTransform> yellowQueue)
@@ -184,10 +257,15 @@ public class EnemySpawner : MonoBehaviour
 
     private Vector2 RandomPerimeterPoint(Rect rect)
     {
+        float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        return PerimeterPointAtAngle(rect, angle);
+    }
+
+    private Vector2 PerimeterPointAtAngle(Rect rect, float angle)
+    {
         float halfWidth = rect.width * 0.5f;
         float halfHeight = rect.height * 0.5f;
 
-        float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
         float cos = Mathf.Cos(angle);
         float sin = Mathf.Sin(angle);
 

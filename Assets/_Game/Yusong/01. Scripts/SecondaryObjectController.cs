@@ -7,8 +7,8 @@ public class SecondaryObjectController : MonoBehaviour
     [SerializeField] private float lifetime = 10f;
     [SerializeField] private float hitRadius = 80f;
     [SerializeField] private int hitsToDestroy = 3;
-    [SerializeField] private int destroyedPenalty = 100;
-    [SerializeField] private int survivedBonus = 200;
+    [SerializeField] private int destroyedPenalty = 2000;
+    [SerializeField] private int survivedBonusPerHp = 1000;
     [SerializeField] private Color hitColor = new Color(0.6f, 0.1f, 0.9f, 1f);
     [SerializeField] private float flashInterval = 0.08f;
     [SerializeField] private int flashBlinks = 2;
@@ -22,13 +22,19 @@ public class SecondaryObjectController : MonoBehaviour
     [SerializeField] private float successAnimDuration = 0.35f;
     [SerializeField] private float successScalePunch = 1.4f;
 
+    [Header("Survival Warning")]
+    [SerializeField] private float warningLeadTime = 3f;
+    [SerializeField] private float warningBlinkInterval = 0.15f;
+
     private RectTransform rt;
     private Image image;
     private Color originalColor;
     private Coroutine flashRoutine;
+    private Coroutine warningRoutine;
     private int hitsTaken;
     private float age;
     private bool resolved;
+    private bool warningStarted;
 
     private void Awake()
     {
@@ -53,6 +59,12 @@ public class SecondaryObjectController : MonoBehaviour
         {
             ExpireNormally();
             return;
+        }
+
+        if (!warningStarted && lifetime - age <= warningLeadTime)
+        {
+            warningStarted = true;
+            warningRoutine = StartCoroutine(PlayWarningBlink());
         }
 
         Transform parent = transform.parent;
@@ -115,7 +127,7 @@ public class SecondaryObjectController : MonoBehaviour
 
         if (ScoreManager.Instance != null)
         {
-            ScoreManager.Instance.AddScore(-destroyedPenalty, rt.anchoredPosition, transform.parent);
+            ScoreManager.Instance.AddSecondaryScore(-destroyedPenalty, rt.anchoredPosition, transform.parent, false);
         }
 
         Destroy(gameObject);
@@ -125,15 +137,33 @@ public class SecondaryObjectController : MonoBehaviour
     {
         resolved = true;
 
+        int remainingHp = Mathf.Max(hitsToDestroy - hitsTaken, 0);
+        int bonus = survivedBonusPerHp * remainingHp;
+
         if (ScoreManager.Instance != null)
         {
-            ScoreManager.Instance.AddScore(survivedBonus, rt.anchoredPosition, transform.parent, true);
+            ScoreManager.Instance.AddSecondaryScore(bonus, rt.anchoredPosition, transform.parent, true);
         }
 
         SpawnSuccessRing();
 
         if (flashRoutine != null) StopCoroutine(flashRoutine);
+        if (warningRoutine != null) StopCoroutine(warningRoutine);
         StartCoroutine(PlaySuccessAnimation());
+    }
+
+    private IEnumerator PlayWarningBlink()
+    {
+        Color blinkColor = theme != null ? theme.secondarySuccessColor : successColor;
+
+        while (!resolved)
+        {
+            image.color = blinkColor;
+            yield return new WaitForSeconds(warningBlinkInterval);
+            if (resolved) yield break;
+            image.color = originalColor;
+            yield return new WaitForSeconds(warningBlinkInterval);
+        }
     }
 
     private void SpawnSuccessRing()

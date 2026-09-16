@@ -245,8 +245,8 @@ MonoBehaviour:
   lifetime: 10
   hitRadius: 80
   hitsToDestroy: 3
-  destroyedPenalty: 100
-  survivedBonus: 200
+  destroyedPenalty: 2000
+  survivedBonusPerHp: 1000
   hitColor: {r: 0.6, g: 0.1, b: 0.9, a: 1}
   flashInterval: 0.08
   flashBlinks: 2
@@ -260,6 +260,8 @@ MonoBehaviour:
   successColor: {r: 0.55, g: 1, b: 0.35, a: 1}
   successAnimDuration: 0.35
   successScalePunch: 1.4
+  warningLeadTime: 3
+  warningBlinkInterval: 0.15
 --- !u!1 &7573124279065046787
 GameObject:
   m_ObjectHideFlags: 0

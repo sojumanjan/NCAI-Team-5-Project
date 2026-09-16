@@ -54,6 +54,8 @@ public class ComboManager : MonoBehaviour
     {
         if (aoeActive)
         {
+            if (!CountdownTimer.IsWaveActive) return;
+
             aoeTimer -= Time.deltaTime;
 
             if (aoeTimer <= 0f)
@@ -67,6 +69,7 @@ public class ComboManager : MonoBehaviour
         }
 
         if (!active) return;
+        if (!CountdownTimer.IsWaveActive) return;
 
         timer -= Time.deltaTime;
 
@@ -81,10 +84,10 @@ public class ComboManager : MonoBehaviour
         gaugeFill.fillAmount = timer / graceDuration;
     }
 
-    public int RegisterKill(Vector2 popupPosition, Transform popupParent)
+    public int RegisterKill(Vector2 popupPosition, Transform popupParent, int stacks = 1)
     {
-        comboCount++;
-        comboText.text = comboCount + "!";
+        comboCount += stacks;
+        comboText.text = comboCount + " Combo!";
         SetVisible(true);
 
         SpawnPopup(popupPosition, popupParent);

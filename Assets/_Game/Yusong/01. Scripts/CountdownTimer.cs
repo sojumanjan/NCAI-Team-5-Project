@@ -32,7 +32,19 @@ public class CountdownTimer : MonoBehaviour
     [SerializeField] private int secondaryObjectLastConfiguredWave = 2;
     [SerializeField] private UITheme theme;
 
+    [Header("Final Wave Boss")]
+    [SerializeField] private RectTransform bossPrefab;
+    [SerializeField] private float bossSpawnAtRemaining = 45f;
+    [SerializeField] private float bossWarningLeadTime = 5f;
+    [SerializeField] private float bossAnnounceDuration = 2f;
+    [SerializeField] private float bossSpawnOffset = 60f;
+
+    [Header("Game Clear")]
+    [SerializeField] private GameObject gameOverScreen;
+
     public event System.Action<int> WaveStarted;
+
+    public static bool IsWaveActive { get; private set; }
 
     private TextMeshProUGUI timerText;
     private State state;
@@ -45,6 +57,11 @@ public class CountdownTimer : MonoBehaviour
     private Vector2 pendingSecondaryPosition;
     private RectTransform activeMarker;
     private float secondaryAnnounceTimer;
+    private bool bossWarningStarted;
+    private bool bossSpawned;
+    private Vector2 pendingBossPosition;
+    private RectTransform activeBossMarker;
+    private float bossAnnounceTimer;
 
     private void Awake()
     {
@@ -62,6 +79,8 @@ public class CountdownTimer : MonoBehaviour
 
     private void Update()
     {
+        IsWaveActive = state == State.Counting;
+
         switch (state)
         {
             case State.PreGame:
@@ -103,6 +122,23 @@ public class CountdownTimer : MonoBehaviour
 
         remaining = Mathf.Max(0f, remaining - Time.deltaTime);
 
+        bool isFinalWave = currentWave >= totalWaves;
+
+        if (isFinalWave && !bossWarningStarted && remaining <= bossSpawnAtRemaining + bossWarningLeadTime)
+        {
+            bossWarningStarted = true;
+            pendingBossPosition = RollBossPosition();
+            SpawnBossPositionMarker(pendingBossPosition);
+        }
+
+        if (isFinalWave && !bossSpawned && remaining <= bossSpawnAtRemaining)
+        {
+            SpawnBoss(pendingBossPosition);
+            bossSpawned = true;
+            DestroyBossPositionMarker();
+            bossAnnounceTimer = bossAnnounceDuration;
+        }
+
         if (currentWave <= secondaryObjectLastConfiguredWave && !secondaryWarningStarted
             && remaining <= secondaryObjectSpawnAtRemaining + secondaryObjectWarningLeadTime)
         {
@@ -119,7 +155,16 @@ public class CountdownTimer : MonoBehaviour
             secondaryAnnounceTimer = secondaryAnnounceDuration;
         }
 
-        if (secondaryAnnounceTimer > 0f)
+        if (bossAnnounceTimer > 0f)
+        {
+            bossAnnounceTimer -= Time.deltaTime;
+            timerText.text = "파이널 보스 등장!";
+        }
+        else if (isFinalWave && bossWarningStarted && !bossSpawned)
+        {
+            timerText.text = "보스가 접근하고 있습니다!";
+        }
+        else if (secondaryAnnounceTimer > 0f)
         {
             secondaryAnnounceTimer -= Time.deltaTime;
             timerText.text = "이름미정이 생성되었습니다!";
@@ -139,6 +184,74 @@ public class CountdownTimer : MonoBehaviour
             stateTimer = waveEndMessageDuration;
             timerText.text = GetWaveLabel(currentWave) + " 종료!";
         }
+    }
+
+    private Vector2 RollBossPosition()
+    {
+        var rectTransform = secondaryObjectParent as RectTransform;
+        if (rectTransform == null) return Vector2.zero;
+
+        Rect rect = rectTransform.rect;
+        float halfWidth = rect.width * 0.5f;
+        float halfHeight = rect.height * 0.5f;
+
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        float cos = Mathf.Cos(angle);
+        float sin = Mathf.Sin(angle);
+
+        float tx = Mathf.Approximately(cos, 0f) ? float.MaxValue : halfWidth / Mathf.Abs(cos);
+        float ty = Mathf.Approximately(sin, 0f) ? float.MaxValue : halfHeight / Mathf.Abs(sin);
+        float t = Mathf.Min(tx, ty) + bossSpawnOffset;
+
+        return new Vector2(cos * t, sin * t);
+    }
+
+    private void SpawnBossPositionMarker(Vector2 position)
+    {
+        if (spawnMarkerPrefab == null || secondaryObjectParent == null) return;
+
+        activeBossMarker = Instantiate(spawnMarkerPrefab, secondaryObjectParent);
+        activeBossMarker.anchoredPosition = position;
+    }
+
+    private void DestroyBossPositionMarker()
+    {
+        if (activeBossMarker != null)
+        {
+            Destroy(activeBossMarker.gameObject);
+            activeBossMarker = null;
+        }
+    }
+
+    private void SpawnBoss(Vector2 position)
+    {
+        if (bossPrefab == null || secondaryObjectParent == null) return;
+
+        var boss = Instantiate(bossPrefab, secondaryObjectParent);
+        boss.anchoredPosition = position;
+    }
+
+    private void TriggerGameClear()
+    {
+        if (ScoreManager.Instance != null && PlayerHealth.Instance != null)
+        {
+            ScoreManager.Instance.AddRemainingHpScore(PlayerHealth.Instance.CalculateRemainingHpScore());
+        }
+
+        if (gameOverScreen != null)
+        {
+            var screen = gameOverScreen.GetComponent<GameOverScreen>();
+            if (screen != null) screen.Show("CLEAR!");
+            else gameOverScreen.SetActive(true);
+        }
+
+        var raycaster = GetComponentInParent<Canvas>()?.GetComponent<UnityEngine.UI.GraphicRaycaster>();
+        if (raycaster != null)
+        {
+            raycaster.enabled = false;
+        }
+
+        Time.timeScale = 0f;
     }
 
     private Vector2 RollSecondaryPosition()
@@ -181,6 +294,7 @@ public class CountdownTimer : MonoBehaviour
         if (currentWave >= totalWaves)
         {
             state = State.Finished;
+            TriggerGameClear();
             return;
         }
 
@@ -219,6 +333,10 @@ public class CountdownTimer : MonoBehaviour
         secondaryObjectSpawned = false;
         secondaryAnnounceTimer = 0f;
         DestroyPositionMarker();
+        bossWarningStarted = false;
+        bossSpawned = false;
+        bossAnnounceTimer = 0f;
+        DestroyBossPositionMarker();
         UpdateCountingText();
         WaveStarted?.Invoke(currentWave);
     }

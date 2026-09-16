@@ -8,6 +8,7 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private int hitsToDestroy = 1;
     [SerializeField] private int scoreValue = 10;
+    [SerializeField] private int comboStacksOnKill = 1;
     [SerializeField] private Color hitFlashColor = Color.white;
     [SerializeField] private float flashDuration = 0.08f;
     [SerializeField] private float punchScale = 1.3f;
@@ -30,6 +31,9 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
     [SerializeField] private UITheme theme;
     [SerializeField] private EnemyShape shape = EnemyShape.Circle;
 
+    [Header("Health Bar (optional, e.g. boss)")]
+    [SerializeField] private Image healthBarFill;
+
     private Image image;
     private RectTransform rt;
     private Color originalColor;
@@ -48,9 +52,15 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         {
             hitFlashColor = theme.enemyHitFlashColor;
             ApplyShapeSprite();
+
+            if (healthBarFill != null)
+            {
+                healthBarFill.color = theme.bossHealthBarColor;
+            }
         }
 
         originalColor = image.color;
+        UpdateHealthBar();
     }
 
     private void ApplyShapeSprite()
@@ -157,6 +167,7 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         hitsTaken++;
         SpawnSparks();
         SpawnHitMark();
+        UpdateHealthBar();
 
         if (hitsTaken >= hitsToDestroy)
         {
@@ -166,14 +177,14 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
 
             if (ComboManager.Instance != null)
             {
-                ComboManager.Instance.RegisterKill(rt.anchoredPosition, transform.parent);
+                ComboManager.Instance.RegisterKill(rt.anchoredPosition, transform.parent, comboStacksOnKill);
             }
 
             if (ScoreManager.Instance != null)
             {
-                int points = bonusActive ? scoreValue * 2 : scoreValue;
+                int feverBonus = bonusActive ? scoreValue : 0;
                 Vector2 scorePopupPos = rt.anchoredPosition + new Vector2(-40f, -15f);
-                ScoreManager.Instance.AddScore(points, scorePopupPos, transform.parent);
+                ScoreManager.Instance.AddEnemyKillScore(scoreValue, feverBonus, scorePopupPos, transform.parent);
             }
 
             if (isExplosive)
@@ -223,6 +234,13 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         rt.localScale = originalScale;
         image.color = originalColor;
         hitRoutine = null;
+    }
+
+    private void UpdateHealthBar()
+    {
+        if (healthBarFill == null) return;
+
+        healthBarFill.fillAmount = 1f - (float)hitsTaken / hitsToDestroy;
     }
 
     private void SpawnSparks()

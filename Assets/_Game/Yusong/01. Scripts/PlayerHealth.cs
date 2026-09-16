@@ -6,6 +6,7 @@ public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
     public static bool IsGameOver { get; private set; }
+    public int CurrentHealth => currentHealth;
 
     [SerializeField] private int maxHealth = 5;
     [SerializeField] private Color hitColor = new Color(0.6f, 0.1f, 0.9f, 1f);
@@ -14,6 +15,7 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private GameObject gameOverScreen;
     [SerializeField] private UITheme theme;
     [SerializeField] private Image[] hpPips;
+    [SerializeField] private int remainingHpScoreMultiplier = 1000;
 
     private Image image;
     private Color originalColor;
@@ -41,7 +43,7 @@ public class PlayerHealth : MonoBehaviour
     {
         if (IsGameOver) return;
 
-        currentHealth -= amount;
+        currentHealth = Mathf.Max(currentHealth - amount, 0);
         UpdateHpText();
 
         if (flashRoutine != null) StopCoroutine(flashRoutine);
@@ -70,13 +72,25 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    public int CalculateRemainingHpScore()
+    {
+        return currentHealth * remainingHpScoreMultiplier;
+    }
+
     private void TriggerGameOver()
     {
         IsGameOver = true;
 
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddRemainingHpScore(CalculateRemainingHpScore());
+        }
+
         if (gameOverScreen != null)
         {
-            gameOverScreen.SetActive(true);
+            var screen = gameOverScreen.GetComponent<GameOverScreen>();
+            if (screen != null) screen.Show("GAME OVER");
+            else gameOverScreen.SetActive(true);
         }
 
         var raycaster = GetComponentInParent<Canvas>()?.GetComponent<UnityEngine.UI.GraphicRaycaster>();

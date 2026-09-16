@@ -294,15 +294,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
       propertyPath: enemyTypes.Array.data[3].count
-      value: 7
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
       propertyPath: enemyTypes.Array.data[4].count
-      value: 7
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
       propertyPath: enemyTypes.Array.data[5].count
-      value: 7
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 3540039596871415643, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
       propertyPath: extraEnemyTypesFromWave2.Array.data[0].count
@@ -336,6 +336,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: UI_Canvas
       objectReference: {fileID: 0}
+    - target: {fileID: 5590278422964551111, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
+      propertyPath: bossPrefab
+      value: 
+      objectReference: {fileID: 899173528457478201, guid: fc5b4754dc70ea34db35f7c663867985, type: 3}
     - target: {fileID: 5590278422964551111, guid: 1040dc0250b51c24a9a1ba3e841e662f, type: 3}
       propertyPath: secondaryObjectLastConfiguredWave
       value: 3

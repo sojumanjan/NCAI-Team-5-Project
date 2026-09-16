@@ -4,6 +4,11 @@ using TMPro;
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
+    public int TotalScore => totalScore;
+    public int EnemyKillScore => enemyKillScore;
+    public int FeverBonusScore => feverBonusScore;
+    public int SecondaryBonusScore => secondaryBonusScore;
+    public int RemainingHpScore => remainingHpScore;
 
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private RectTransform scorePopupPrefab;
@@ -14,6 +19,10 @@ public class ScoreManager : MonoBehaviour
 
     private Color emphasisColor;
     private int totalScore;
+    private int enemyKillScore;
+    private int feverBonusScore;
+    private int secondaryBonusScore;
+    private int remainingHpScore;
 
     private void Awake()
     {
@@ -36,21 +45,29 @@ public class ScoreManager : MonoBehaviour
         UpdateText();
     }
 
-    public void AddScore(int amount)
+    public void AddEnemyKillScore(int baseAmount, int feverBonusAmount, Vector2 popupPosition, Transform popupParent)
     {
-        AddScore(amount, Vector2.zero, null);
+        int total = baseAmount + feverBonusAmount;
+        totalScore += total;
+        enemyKillScore += baseAmount;
+        feverBonusScore += feverBonusAmount;
+        UpdateText();
+        SpawnPopup(total, popupPosition, popupParent, false);
     }
 
-    public void AddScore(int amount, Vector2 popupPosition, Transform popupParent)
-    {
-        AddScore(amount, popupPosition, popupParent, false);
-    }
-
-    public void AddScore(int amount, Vector2 popupPosition, Transform popupParent, bool emphasize)
+    public void AddSecondaryScore(int amount, Vector2 popupPosition, Transform popupParent, bool emphasize)
     {
         totalScore += amount;
+        secondaryBonusScore += amount;
         UpdateText();
         SpawnPopup(amount, popupPosition, popupParent, emphasize);
+    }
+
+    public void AddRemainingHpScore(int amount)
+    {
+        totalScore += amount;
+        remainingHpScore += amount;
+        UpdateText();
     }
 
     private void SpawnPopup(int amount, Vector2 position, Transform parent, bool emphasize)
