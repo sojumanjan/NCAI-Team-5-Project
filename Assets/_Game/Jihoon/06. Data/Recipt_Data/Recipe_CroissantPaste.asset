@@ -10,10 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 866ca767b6979c849b430d8192729d8c, type: 3}
-  m_Name: Recipe_Croissant
+  m_Name: Recipe_CroissantPaste
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  station: 1
+  station: 4
   inputs:
-  - {fileID: 11400000, guid: e7a0a656cf29d1f419de6490f15635d7, type: 2}
-  duration: 6
-  output: {fileID: 11400000, guid: ae3a6c8c0878f0c41b42cf8de3b3cafe, type: 2}
+  - {fileID: 11400000, guid: 6a792e318c7a4034189029b2cb85602a, type: 2}
+  - {fileID: 11400000, guid: a4a6fc0b6cd7f1e4cbc396b5f124a14d, type: 2}
+  - {fileID: 11400000, guid: 80a0cb64d7fc3a545ab3363397638a8c, type: 2}
+  duration: 3
+  output: {fileID: 11400000, guid: e7a0a656cf29d1f419de6490f15635d7, type: 2}

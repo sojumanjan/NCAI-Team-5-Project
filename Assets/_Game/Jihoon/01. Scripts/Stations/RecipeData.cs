@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>어느 기구의 레시피인지. 스테이션은 자기 종류만 골라 본다.</summary>
@@ -8,6 +8,7 @@ public enum StationKind
     Oven,
     Blender,
     DoughTable,
+    Bowl,
 }
 
 /// <summary>

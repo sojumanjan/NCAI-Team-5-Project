@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -83,8 +83,11 @@ public class RecipeBook : ScriptableObject
     }
 
     /// <summary>
-    /// 만들 수 있는 것 중 무작위로 하나. 손님이 주문하는 메뉴판이며, 따로 적지 않고
-    /// 레시피에서 끌어내기 때문에 둘이 어긋날 수가 없다.
+    /// 손님이 주문할 메뉴 하나를 무작위로. 따로 적지 않고 레시피에서 끌어내기 때문에
+    /// 메뉴판과 실제로 만들 수 있는 것이 어긋날 수가 없다.
+    ///
+    /// Dish만 뽑는다. 반죽처럼 중간 산출물인 레시피가 생기면 그것도 '만들 수 있는 것'이라,
+    /// 거르지 않으면 손님이 반죽을 주문한다.
     /// </summary>
     public ItemData GetRandomOutput()
     {
@@ -97,7 +100,7 @@ public class RecipeBook : ScriptableObject
         int usable = 0;
         foreach (RecipeData recipe in recipes)
         {
-            if (recipe != null && recipe.Output != null)
+            if (IsOrderable(recipe))
             {
                 usable++;
             }
@@ -105,14 +108,14 @@ public class RecipeBook : ScriptableObject
 
         if (usable == 0)
         {
-            Debug.LogError($"{name}: Output이 지정된 레시피가 하나도 없어 손님이 주문할 수 없습니다.", this);
+            Debug.LogError($"{name}: 완성 요리(Dish)를 만드는 레시피가 하나도 없어 손님이 주문할 수 없습니다.", this);
             return null;
         }
 
         int chosen = Random.Range(0, usable);
         foreach (RecipeData recipe in recipes)
         {
-            if (recipe == null || recipe.Output == null)
+            if (!IsOrderable(recipe))
             {
                 continue;
             }
@@ -126,5 +129,13 @@ public class RecipeBook : ScriptableObject
         }
 
         return null;
+    }
+
+    /// <summary>손님이 시킬 수 있는 레시피인지. 중간 산출물은 메뉴가 아니다.</summary>
+    private static bool IsOrderable(RecipeData recipe)
+    {
+        return recipe != null
+               && recipe.Output != null
+               && recipe.Output.Category == ItemCategory.Dish;
     }
 }
