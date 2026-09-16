@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -106,6 +106,12 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     public StationKind Kind => kind;
 
+    /// <summary>지금 담긴 재료로 만들 수 있는 레시피가 있는지. 하위 클래스의 문구 판단용.</summary>
+    protected bool HasPendingRecipe => _pending != null;
+
+    /// <summary>완성품과 되돌려주는 재료가 나올 자리. 오븐은 재료를 넣은 슬롯으로 바꾼다.</summary>
+    protected virtual Transform OutputOrigin => outputPoint != null ? outputPoint : transform;
+
     /// <summary>상태가 바뀔 때마다. UI용.</summary>
     public event Action<StationState> StateChanged;
 
@@ -201,7 +207,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     // ---------------------------------------------------------------- IItemReceiver
 
-    public bool CanReceive(ItemData item, PlayerHands hands)
+    public virtual bool CanReceive(ItemData item, PlayerHands hands)
     {
         // Category 검사를 일부러 넣지 않는다. AnyAccepts가 이미 "어떤 레시피의 재료로 쓰이는
         // 것"만 통과시키고, Ingredient를 강제하면 연쇄 레시피의 중간 산출물(Container)이
@@ -222,10 +228,11 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         }
 
         ItemData data = item.Item;
+        int index = _loaded.Count;
         _loaded.Add(data);
 
-        // 스테이션은 무엇이 들어갔는지만 기억한다. 실물은 사라진다.
-        Destroy(item.gameObject);
+        // 실물을 어떻게 할지는 기구마다 다르다. 기본은 없애는 것.
+        OnIngredientObjectReceived(item, index);
 
         RecomputePending();
         OnIngredientReceived(data);
@@ -246,7 +253,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         }
     }
 
-    public bool CanProvide(PlayerHands hands)
+    public virtual bool CanProvide(PlayerHands hands)
     {
         return _output != null || (State == StationState.Idle && _loaded.Count > 0);
     }
@@ -275,12 +282,20 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             _loaded.RemoveAt(last);
             RecomputePending();
 
+            // 실물을 세워두는 기구(오븐)는 그걸 그대로 돌려준다. 새로 만들면 두 개가 된다.
+            GameObject parked = TakeBackIngredientObject(last);
+            if (parked != null)
+            {
+                OnIngredientReturned(data);
+                return parked;
+            }
+
             if (data == null || data.WorldPrefab == null)
             {
                 return null;
             }
 
-            Transform origin = outputPoint != null ? outputPoint : transform;
+            Transform origin = OutputOrigin;
             GameObject spawned = Instantiate(data.WorldPrefab, origin.position, origin.rotation);
             spawned.name = data.DisplayName;
 
@@ -340,12 +355,14 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         _active = null;
         _timer = 0f;
         ApplyShake(0f);
+
+        ClearIngredientObjects();
         _loaded.Clear();
         RecomputePending();
 
         if (recipe != null && recipe.Output != null && recipe.Output.WorldPrefab != null)
         {
-            Transform origin = outputPoint != null ? outputPoint : transform;
+            Transform origin = OutputOrigin;
 
             // 일부러 부모로 붙이지 않는다. 기구들이 비균일 스케일 큐브라, 어떤 부모 모드를
             // 써도 완성품이 찌그러진다.
@@ -435,6 +452,23 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     /// <summary>E를 눌렀지만 시작할 수 없었다. 실패음을 넣기 좋은 자리.</summary>
     protected virtual void OnStartRejected() { }
+
+    /// <summary>
+    /// 받은 재료의 실물을 어떻게 할지. 기본은 없애는 것 — 기구 대부분은 속이 안 보인다.
+    /// 오븐처럼 들여다보이는 기구는 재정의해서 슬롯에 세워둔다.
+    /// </summary>
+    protected virtual void OnIngredientObjectReceived(WorldItem item, int index)
+    {
+        Destroy(item.gameObject);
+    }
+
+    /// <summary>
+    /// 되돌려줄 실물이 이미 있으면 그걸 내준다. null이면 기본 경로가 프리팹으로 새로 만든다.
+    /// </summary>
+    protected virtual GameObject TakeBackIngredientObject(int index) => null;
+
+    /// <summary>조리가 끝나 재료 실물들이 사라져야 한다.</summary>
+    protected virtual void ClearIngredientObjects() { }
 
     protected virtual void OnValidate()
     {

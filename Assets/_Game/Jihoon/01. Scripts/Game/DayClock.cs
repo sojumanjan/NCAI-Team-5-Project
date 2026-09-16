@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -77,6 +77,33 @@ public class DayClock : MonoBehaviour
 
     /// <summary>멈춘 지점부터 이어서.</summary>
     public void Resume() => IsRunning = true;
+
+    /// <summary>
+    /// 게임 안 시각을 <paramref name="hours"/>시간만큼 앞으로 당긴다. 종료 시각을 넘기면
+    /// Update와 똑같은 경로로 하루를 끝내므로, 결과 화면까지 정상적으로 이어진다.
+    /// 5분짜리 하루를 매번 다 기다리지 않고 후반부를 확인하려고 둔 구멍이다.
+    /// </summary>
+    public void SkipHours(float hours)
+    {
+        if (!IsRunning || hours <= 0f)
+        {
+            return;
+        }
+
+        int span = Mathf.Max(1, endHour - startHour);
+        _elapsed += dayLengthSeconds / span * hours;
+
+        if (_elapsed < dayLengthSeconds)
+        {
+            Ticked?.Invoke(Progress01);
+            return;
+        }
+
+        _elapsed = dayLengthSeconds;
+        IsRunning = false;
+        Ticked?.Invoke(Progress01);
+        DayEnded?.Invoke();
+    }
 
     private void Update()
     {

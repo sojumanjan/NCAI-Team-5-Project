@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,8 +25,9 @@ public class PlayerHands : MonoBehaviour
     [SerializeField] private PlayerInteractor interactor;
 
     [Header("내려놓기")]
-    [Tooltip("조준한 표면 위에 놓을 때 살짝 띄우는 높이 (m). 바닥에 파묻히는 걸 막습니다.")]
-    [SerializeField] private float dropSurfaceOffset = 0.05f;
+    [Tooltip("표면에 놓을 때 바닥을 띄우는 여유 높이 (m). 물체 크기는 자동 보정되므로 " +
+             "표면에 딱 붙이려면 0에 가깝게 두세요.")]
+    [SerializeField] private float dropSurfaceOffset = 0.001f;
 
     [Tooltip("아무것도 조준하지 않았을 때 몸 앞 어느 거리에 놓을지 (m).")]
     [SerializeField] private float dropForwardDistance = 1.2f;
@@ -49,6 +50,12 @@ public class PlayerHands : MonoBehaviour
 
     /// <summary>Where items sit when carried.</summary>
     public Transform HoldAnchor => holdAnchor;
+
+    /// <summary>
+    /// 조준 담당. 리시버가 "지금 내 어느 부분을 보고 있나"를 되물을 수 있어야 해서 열어둔다 —
+    /// 오븐은 입구를 볼 때만 재료를 받고, 문을 볼 때는 문에 양보해야 한다.
+    /// </summary>
+    public PlayerInteractor Interactor => interactor;
 
     /// <summary>Fires whenever the hands change contents. Null means the hands are now empty.</summary>
     public event Action<ItemData> HeldChanged;
@@ -259,11 +266,23 @@ public class PlayerHands : MonoBehaviour
         }
 
         WorldItem dropped = _held;
+
+        // 자세를 먼저 구한다. _held를 비운 뒤에 부르면 바닥 보정이 0으로 계산돼서
+        // 고스트가 가리킨 곳보다 물체가 파묻히고, 콜라이더가 켜지며 위로 튄다.
+        Vector3 position = GetDropPosition();
+        Quaternion rotation = GetDropRotation();
+
         _held = null;
 
         dropped.transform.SetParent(null, true);
-        dropped.transform.SetPositionAndRotation(GetDropPosition(), GetDropRotation());
+        dropped.transform.SetPositionAndRotation(position, rotation);
         dropped.SetCarried(false);
+
+        // 표면에 얹은 경우에만 고정한다. 허공에서 놓은 건 떨어지는 게 맞다.
+        if (interactor.HasHit)
+        {
+            dropped.RestOnSurface();
+        }
 
         DropYaw = 0f;
         HeldChanged?.Invoke(null);
@@ -274,7 +293,11 @@ public class PlayerHands : MonoBehaviour
         // Prefer the surface under the crosshair so putting things on counters feels aimed.
         if (interactor.HasHit)
         {
-            return interactor.LastHitPoint + Vector3.up * dropSurfaceOffset;
+            // 피벗이 아니라 물체의 바닥을 표면에 맞춘다. 프리팹 피벗이 메시 한가운데인
+            // 경우가 많아, 이 보정이 없으면 고스트가 파묻혀 보이고 실제로 놓는 순간
+            // 콜라이더가 켜지며 물리가 위로 튕겨낸다.
+            float clearance = _held != null ? _held.GetPivotToBottom(GetDropRotation()) : 0f;
+            return interactor.LastHitPoint + Vector3.up * (clearance + dropSurfaceOffset);
         }
 
         Transform origin = interactor.RayOrigin != null ? interactor.RayOrigin : transform;

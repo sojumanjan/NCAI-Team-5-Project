@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fec87b48642a298428b3e4dd9a526c9c, type: 3}
-  m_Name: "\uCEE4\uD53C\uC6D0\uB450"
+  m_Name: "\uBC14\uB098\uB098"
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  displayName: "\uCEE4\uD53C \uC6D0\uB450"
+  displayName: "\uBC14\uB098\uB098"
   category: 0
-  worldPrefab: {fileID: 8416163186139819023, guid: d2da78c72a138224cbf50b7519278462, type: 3}
-  icon: {fileID: 21300000, guid: 303d13d3e34fbde458a286b62f521612, type: 3}
+  worldPrefab: {fileID: 4871766255676245410, guid: 374a9fab9379cf94e90bdda4c9a92db1, type: 3}
+  icon: {fileID: 0}

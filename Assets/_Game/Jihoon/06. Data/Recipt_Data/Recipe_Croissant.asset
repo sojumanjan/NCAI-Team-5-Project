@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 866ca767b6979c849b430d8192729d8c, type: 3}
-  m_Name: Recipe_Banana_Smoothie
+  m_Name: Recipe_Croissant
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  station: 2
+  station: 0
   inputs:
-  - {fileID: 11400000, guid: 6a792e318c7a4034189029b2cb85602a, type: 2}
-  - {fileID: 11400000, guid: b2a106b63a48da2489bd14207fe68b61, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
   duration: 3
-  output: {fileID: 11400000, guid: bad3e33c7f87acc4db3ec0827462b81a, type: 2}
+  output: {fileID: 11400000, guid: ae3a6c8c0878f0c41b42cf8de3b3cafe, type: 2}

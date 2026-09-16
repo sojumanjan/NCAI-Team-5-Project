@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DG.Tweening;
 using UnityEngine;
 
@@ -58,6 +58,9 @@ public class OpenableDoor : MonoBehaviour, IClickTarget
     [Tooltip("열려 있을 때 표시할 문구.")]
     [SerializeField] private string closePrompt = "닫기";
 
+    [Tooltip("잠겨 있을 때 표시할 문구.")]
+    [SerializeField] private string lockedPrompt = "지금은 열 수 없음";
+
     [Header("움직이는 부분")]
     [Tooltip("문을 이루는 조각들. 하나의 클릭으로 전부 같이 움직입니다.")]
     [SerializeField] private DoorPart[] parts;
@@ -77,6 +80,14 @@ public class OpenableDoor : MonoBehaviour, IClickTarget
 
     /// <summary>True while the door is open or opening.</summary>
     public bool IsOpen { get; private set; }
+
+    /// <summary>
+    /// 참이면 클릭해도 움직이지 않는다. 오븐이 조리 중에 잠근다.
+    ///
+    /// CanClick을 false로 만들지 않는 이유: 그러면 리졸버가 좌클릭을 '내려놓기'로 떨어뜨려,
+    /// 문을 열려던 플레이어가 들고 있던 재료를 바닥에 놓아버린다.
+    /// </summary>
+    public bool Locked { get; set; }
 
     /// <summary>Fires on every toggle with the new state.</summary>
     public event Action<bool> OpenStateChanged;
@@ -119,11 +130,19 @@ public class OpenableDoor : MonoBehaviour, IClickTarget
 
     // ---------------------------------------------------------------- IClickTarget
 
-    public string ClickPrompt => IsOpen ? closePrompt : openPrompt;
+    public string ClickPrompt => Locked ? lockedPrompt : (IsOpen ? closePrompt : openPrompt);
 
     public bool CanClick(PlayerHands hands) => parts != null && parts.Length > 0;
 
-    public void OnClick(PlayerHands hands) => Toggle();
+    public void OnClick(PlayerHands hands)
+    {
+        if (Locked)
+        {
+            return;
+        }
+
+        Toggle();
+    }
 
     // ---------------------------------------------------------------- opening
 

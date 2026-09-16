@@ -1,9 +1,12 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// 영업이 끝난 뒤의 결과 화면. 세션이 넘겨주는 MiniGameResult만 읽고, 판정은 하지 않는다.
+///
+/// 이 컴포넌트는 자기가 켜야 할 panel 위에 붙이면 안 된다. 꺼진 오브젝트는 Awake조차 돌지
+/// 않아 구독을 못 하고, 그러면 영영 켜지지 않는다. 항상 살아 있는 Canvas에 둔다.
 /// </summary>
 public class ResultUI : MonoBehaviour
 {
@@ -76,11 +79,19 @@ public class ResultUI : MonoBehaviour
         {
             hubButton.onClick.AddListener(session.ReturnToHub);
         }
+
+        session.SessionEnded += Show;
     }
 
-    private void OnEnable() => session.SessionEnded += Show;
-
-    private void OnDisable() => session.SessionEnded -= Show;
+    // 구독을 OnEnable이 아니라 Awake에 두는 이유는 위의 주석과 같다. 이 오브젝트가
+    // 어떤 이유로든 꺼졌다 켜지는 상황에서도 구독이 끊기지 않는다.
+    private void OnDestroy()
+    {
+        if (session != null)
+        {
+            session.SessionEnded -= Show;
+        }
+    }
 
     private void Show(MiniGameResult result)
     {
