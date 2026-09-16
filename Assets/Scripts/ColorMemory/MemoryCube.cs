@@ -48,6 +48,8 @@ public sealed class MemoryCube : MonoBehaviour
             audioSource.Play();
         }
         flash = StartCoroutine(Flash(duration));
+        var noteEffect = GetComponent<JukeboxNoteEffect>();
+        if (noteEffect != null) noteEffect.Show(baseColor, duration);
     }
 
 private IEnumerator Flash(float duration)
@@ -65,6 +67,8 @@ public void ResetFeedback()
         flash = null;
         if (runtimeMaterial != null) runtimeMaterial.SetColor(colorProperty, idleColor);
         if (audioSource != null) audioSource.Stop();
+        var noteEffect = GetComponent<JukeboxNoteEffect>();
+        if (noteEffect != null) noteEffect.Hide();
     }
 
     private void OnDisable() => ResetFeedback();
