@@ -2,15 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Every recipe in the game, in one asset. Stations reference the same book and filter by
-/// their own <see cref="StationKind"/>. Customers order from it too, so a dish becomes
-/// orderable the moment its recipe exists — no separate menu asset to keep in sync.
+/// 게임의 모든 레시피를 담은 에셋 하나. 스테이션들은 같은 책을 참조하고 자기
+/// <see cref="StationKind"/>로 걸러 쓴다. 손님 주문도 여기서 뽑으므로, 레시피를 만드는
+/// 순간 그 메뉴는 주문 가능해진다 — 따로 관리할 메뉴 에셋이 없다.
 ///
-/// The alternative — a recipe list per station — means maintaining the espresso recipe in
-/// both coffee machines and forgetting one. With a shared book, adding a menu item is:
-/// create the RecipeData, drag it in here, done.
+/// 대안이었던 "스테이션마다 레시피 배열"은 커피머신 두 대에 같은 레시피를 넣다가 한쪽을
+/// 빠뜨리는 길이다. 공용 책이면 메뉴 추가는 RecipeData 만들어 여기 끌어다 놓으면 끝이다.
 ///
-/// Create via: Assets > Create > Cooking > Recipe Book
+/// 생성: Assets > Create > Cooking > Recipe Book
 /// </summary>
 [CreateAssetMenu(fileName = "RecipeBook", menuName = "Cooking/Recipe Book")]
 public class RecipeBook : ScriptableObject
@@ -20,7 +19,7 @@ public class RecipeBook : ScriptableObject
 
     public IReadOnlyList<RecipeData> Recipes => recipes;
 
-    /// <summary>The recipe whose ingredients exactly match what is loaded, or null.</summary>
+    /// <summary>담긴 재료와 정확히 맞아떨어지는 레시피. 없으면 null.</summary>
     public RecipeData FindMatch(StationKind kind, IReadOnlyList<ItemData> loaded)
     {
         if (recipes == null || loaded == null || loaded.Count == 0)
@@ -40,8 +39,8 @@ public class RecipeBook : ScriptableObject
     }
 
     /// <summary>
-    /// True when at least one recipe for this station could still use the candidate on top
-    /// of what is loaded. Used to refuse ingredients that lead nowhere.
+    /// 이 스테이션의 레시피 중 하나라도 지금 담긴 것 위에 후보 재료를 더 쓸 수 있는지.
+    /// 어디에도 쓰이지 않을 재료를 거절하는 데 쓴다.
     /// </summary>
     public bool AnyAccepts(StationKind kind, ItemData candidate, IReadOnlyList<ItemData> loaded)
     {
@@ -62,8 +61,8 @@ public class RecipeBook : ScriptableObject
     }
 
     /// <summary>
-    /// The recipe that produces this dish, or null. Lets the order board show what a
-    /// customer's drink is made of without anyone authoring that list twice.
+    /// 이 음식을 만드는 레시피. 없으면 null. 메뉴판이 손님 주문의 재료 구성을 보여줄 때
+    /// 쓴다 — 덕분에 그 목록을 어디에도 두 번 적지 않아도 된다.
     /// </summary>
     public RecipeData FindByOutput(ItemData dish)
     {
@@ -84,8 +83,8 @@ public class RecipeBook : ScriptableObject
     }
 
     /// <summary>
-    /// One dish at random from everything that can be cooked. This is the menu customers
-    /// order from, derived rather than authored so the two can never drift apart.
+    /// 만들 수 있는 것 중 무작위로 하나. 손님이 주문하는 메뉴판이며, 따로 적지 않고
+    /// 레시피에서 끌어내기 때문에 둘이 어긋날 수가 없다.
     /// </summary>
     public ItemData GetRandomOutput()
     {
@@ -94,7 +93,7 @@ public class RecipeBook : ScriptableObject
             return null;
         }
 
-        // Count first so the pick is uniform without allocating a list every order.
+        // 주문마다 리스트를 만들지 않으면서도 균등하게 뽑으려고 개수를 먼저 센다.
         int usable = 0;
         foreach (RecipeData recipe in recipes)
         {
@@ -106,7 +105,7 @@ public class RecipeBook : ScriptableObject
 
         if (usable == 0)
         {
-            Debug.LogError($"{name}: no recipe has an Output assigned, so customers cannot order.", this);
+            Debug.LogError($"{name}: Output이 지정된 레시피가 하나도 없어 손님이 주문할 수 없습니다.", this);
             return null;
         }
 

@@ -1,16 +1,15 @@
 using UnityEngine;
 
 /// <summary>
-/// The blender. Load it with the right ingredients, then hold E while looking at it; let
-/// go or look away and the progress drops straight back to zero. When the bar fills, the
-/// drink pops out the same way the coffee machine's cup does.
+/// 블렌더. 맞는 재료를 넣고 바라본 채 E를 누르고 있어야 한다. 손을 떼거나 시선이 벗어나면
+/// 진행도가 그대로 0으로 떨어진다. 다 채우면 커피머신의 컵처럼 음료가 튀어나온다.
 ///
-/// All of that comes from <see cref="StationDriveMode.HoldToRun"/> — the interactor's own
-/// hold timer is the blend timer, and it already cancels on release and on losing focus.
-/// Shaking is handled by <see cref="StationBase"/>; this class only adds the colour.
+/// 이 동작은 전부 <see cref="StationDriveMode.HoldToRun"/>에서 온다 — 조준 쪽의 홀드
+/// 타이머가 곧 블렌딩 타이머이고, 떼거나 포커스를 잃으면 알아서 취소된다. 흔들림은
+/// <see cref="StationBase"/>가 처리하므로 이 클래스는 색만 담당한다.
 ///
-/// Set Drive Mode to HoldToRun and Kind to Blender on the component. The blend time comes
-/// from the recipe's Duration, not from here, so different drinks can take different times.
+/// 컴포넌트에서 Drive Mode를 HoldToRun, Kind를 Blender로 두면 된다. 블렌딩 시간은 여기가
+/// 아니라 레시피의 Duration에서 오므로 음료마다 다르게 줄 수 있다.
 /// </summary>
 public class BlenderStation : StationBase
 {
@@ -56,8 +55,8 @@ public class BlenderStation : StationBase
 
     public override void OnHoldCanceled(PlayerInteractor interactor)
     {
-        // Let go or looked away — the interactor already zeroed the timer, so just undo
-        // the colour. Nothing is kept: the next attempt starts from scratch.
+        // 손을 뗐거나 시선이 벗어났다. 타이머는 조준 쪽이 이미 0으로 돌렸으니 색만 되돌린다.
+        // 진행분은 남기지 않는다 — 다음 시도는 처음부터다.
         base.OnHoldCanceled(interactor);
         ApplyRestingColor();
     }
@@ -66,7 +65,7 @@ public class BlenderStation : StationBase
 
     protected override void OnOutputTaken(ItemData item) => ApplyRestingColor();
 
-    // ---------------------------------------------------------------- colour
+    // ---------------------------------------------------------------- 색
 
     private void ApplyRestingColor()
     {

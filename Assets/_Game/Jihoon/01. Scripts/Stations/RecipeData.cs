@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>Which appliance a recipe belongs to. Stations only match their own kind.</summary>
+/// <summary>어느 기구의 레시피인지. 스테이션은 자기 종류만 골라 본다.</summary>
 public enum StationKind
 {
     CoffeeMachine,
@@ -11,13 +11,13 @@ public enum StationKind
 }
 
 /// <summary>
-/// One recipe: put these ingredients into that station, wait this long, get that dish.
+/// 레시피 하나: 이 재료들을 저 스테이션에 넣고, 이만큼 기다리면, 저 음식이 나온다.
 ///
-/// Ingredient order is deliberately ignored. The game rule is "하나라도 재료가 다르면"
-/// — a rule about *which* ingredients, not the sequence — so matching is a multiset
-/// comparison. Order sensitivity is easy to add later and hard to remove.
+/// 재료 순서는 일부러 무시한다. 게임 규칙이 "하나라도 재료가 다르면"이라 *무엇을* 넣었는지의
+/// 문제이지 순서의 문제가 아니기 때문에, 판정은 다중집합 비교다. 순서를 나중에 보게
+/// 만드는 건 쉽지만, 이미 본 걸 걷어내는 건 어렵다.
 ///
-/// Create via: Assets > Create > Cooking > Recipe Data
+/// 생성: Assets > Create > Cooking > Recipe Data
 /// </summary>
 [CreateAssetMenu(fileName = "Recipe_", menuName = "Cooking/Recipe Data")]
 public class RecipeData : ScriptableObject
@@ -46,8 +46,8 @@ public class RecipeData : ScriptableObject
     public int InputCount => inputs != null ? inputs.Length : 0;
 
     /// <summary>
-    /// True when the loaded ingredients are exactly this recipe's ingredients, in any
-    /// order. Same count, same items, duplicates respected.
+    /// 담긴 재료가 이 레시피의 재료와 정확히 같은지. 순서는 무관하고, 개수와 종류가 같아야
+    /// 하며 중복도 개수까지 맞아야 한다.
     /// </summary>
     public bool Matches(IReadOnlyList<ItemData> loaded)
     {
@@ -56,7 +56,7 @@ public class RecipeData : ScriptableObject
             return false;
         }
 
-        // Recipes have at most a handful of ingredients, so the naive pairing is fine.
+        // 레시피 재료는 많아야 서너 개라 단순 짝짓기로 충분하다.
         bool[] claimed = new bool[inputs.Length];
 
         foreach (ItemData candidate in loaded)
@@ -83,9 +83,8 @@ public class RecipeData : ScriptableObject
     }
 
     /// <summary>
-    /// True when adding <paramref name="candidate"/> to what is already loaded still
-    /// leaves this recipe reachable. Lets a station refuse an ingredient it could never
-    /// use instead of swallowing it.
+    /// 이미 담긴 것 위에 <paramref name="candidate"/>를 더해도 이 레시피에 아직 도달할 수
+    /// 있는지. 스테이션이 영영 쓸 수 없는 재료를 삼키지 않고 거절할 수 있게 해준다.
     /// </summary>
     public bool CouldAccept(ItemData candidate, IReadOnlyList<ItemData> loaded)
     {

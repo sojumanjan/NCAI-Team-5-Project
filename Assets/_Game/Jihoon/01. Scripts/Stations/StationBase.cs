@@ -2,48 +2,45 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>How the processing timer is driven. This is the only real difference between the appliances.</summary>
+/// <summary>조리 타이머를 무엇이 밀어주는가. 기구들 사이의 유일한 실질적 차이다.</summary>
 public enum StationDriveMode
 {
-    /// <summary>E to start, then it runs on its own. You can walk away. (오븐)</summary>
+    /// <summary>E로 시작한 뒤 알아서 돈다. 자리를 떠도 된다. (오븐)</summary>
     PressAndWait,
 
-    /// <summary>E to start, but the timer only advances while you keep looking at it. (커피 머신)</summary>
+    /// <summary>E로 시작하되 바라보는 동안에만 진행한다. (커피 머신)</summary>
     PressAndStay,
 
-    /// <summary>Hold E; the hold itself is the progress. Blocks you completely. (블렌더)</summary>
+    /// <summary>E를 누르고 있는 것 자체가 진행이다. 그동안 아무것도 못 한다. (블렌더)</summary>
     HoldToRun,
 }
 
-/// <summary>Where a station is in its cycle.</summary>
+/// <summary>스테이션이 한 사이클 중 어디쯤인지.</summary>
 public enum StationState
 {
-    /// <summary>Accepting ingredients, nothing cooking.</summary>
+    /// <summary>재료를 받는 중. 조리는 안 하고 있다.</summary>
     Idle,
 
-    /// <summary>Cooking.</summary>
+    /// <summary>조리 중.</summary>
     Processing,
 
-    /// <summary>Finished dish sitting on the station, waiting to be taken.</summary>
+    /// <summary>완성품이 올라와 있고 회수를 기다린다.</summary>
     Done,
 }
 
 /// <summary>
-/// Shared behaviour for every appliance: hold ingredients, match a recipe, run a timer,
-/// produce a dish, hand it over.
+/// 모든 기구가 공유하는 동작: 재료를 담고, 레시피를 맞추고, 타이머를 돌리고, 완성품을 내준다.
 ///
-/// A station wears three hats at once, which is the whole reason the interaction verbs
-/// were split into interfaces:
-///   IItemReceiver  — 좌클릭 with full hands: put an ingredient in
-///   IInteractable  — E: run it
-///   IItemSource    — 좌클릭 with empty hands: take the dish out (or pull an ingredient back)
+/// 스테이션은 모자를 셋 쓴다. 상호작용 동사를 인터페이스로 쪼갠 이유가 바로 이것이다.
+///   IItemReceiver  — 든 손 좌클릭: 재료를 넣는다
+///   IInteractable  — E: 작동시킨다
+///   IItemSource    — 빈 손 좌클릭: 완성품을 꺼낸다 (또는 재료를 되돌려 받는다)
 ///
-/// Subclasses exist to add feedback (colour, sound, animation) through the On... hooks;
-/// none of them need to touch the state machine.
+/// 하위 클래스는 On... 훅으로 연출(색·소리·애니메이션)만 얹는다. 상태 기계는 건드릴 일이 없다.
 /// </summary>
 public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 {
-    // ---------------------------------------------------------------- inspector
+    // ---------------------------------------------------------------- 인스펙터
 
     [Header("스테이션 설정")]
     [Tooltip("이 스테이션의 종류. 같은 종류의 레시피만 처리합니다.")]
@@ -85,23 +82,23 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     [Tooltip("조리 중일 때.")]
     [SerializeField] private string busyPrompt = "조리 중...";
 
-    // ---------------------------------------------------------------- state
+    // ---------------------------------------------------------------- 상태
 
     private readonly List<ItemData> _loaded = new();
-    private RecipeData _pending;      // recipe that the current load would make, if any
-    private RecipeData _active;       // recipe currently cooking
+    private RecipeData _pending;      // 지금 담긴 재료로 만들 수 있는 레시피
+    private RecipeData _active;       // 지금 조리 중인 레시피
     private float _timer;
     private WorldItem _output;
     private bool _focused;
     private Vector3 _shakeOrigin;
 
-    /// <summary>Current phase of the cycle.</summary>
+    /// <summary>지금 사이클의 단계.</summary>
     public StationState State { get; private set; } = StationState.Idle;
 
-    /// <summary>Ingredients sitting in the station right now.</summary>
+    /// <summary>현재 담겨 있는 재료들.</summary>
     public IReadOnlyList<ItemData> Loaded => _loaded;
 
-    /// <summary>Cooking progress from 0 to 1. Zero unless processing.</summary>
+    /// <summary>조리 진행도 0~1. 조리 중이 아니면 0.</summary>
     public float Progress01 =>
         State == StationState.Processing && _active != null
             ? Mathf.Clamp01(_timer / _active.Duration)
@@ -109,10 +106,10 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     public StationKind Kind => kind;
 
-    /// <summary>Fires on every state change, for UI.</summary>
+    /// <summary>상태가 바뀔 때마다. UI용.</summary>
     public event Action<StationState> StateChanged;
 
-    /// <summary>Fires while cooking, 0 to 1.</summary>
+    /// <summary>조리 중 진행도 0~1.</summary>
     public event Action<float> ProgressChanged;
 
     // ---------------------------------------------------------------- IInteractable
@@ -126,9 +123,8 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
                 case StationState.Processing:
                     return busyPrompt;
 
-                // Nothing for E to do once the dish is ready — taking it is a left click,
-                // and the left-click prompt already says so. An empty string drops the
-                // line from the prompt list entirely.
+                // 완성 후에는 E가 할 일이 없다. 회수는 좌클릭 담당이고 그쪽 프롬프트가 이미
+                // 안내한다. 빈 문자열을 주면 프롬프트 목록에서 줄 자체가 빠진다.
                 case StationState.Done:
                     return string.Empty;
 
@@ -142,8 +138,8 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         }
     }
 
-    // For HoldToRun the interactor's own hold timer *is* the cooking timer, so we report
-    // the recipe duration and let Interact fire when the hold completes.
+    // HoldToRun은 조준 쪽의 홀드 타이머가 곧 조리 타이머다. 그래서 레시피 시간을 그대로
+    // 넘기고, 홀드가 끝나면 Interact가 불리게 둔다.
     public override float HoldDuration =>
         driveMode == StationDriveMode.HoldToRun && State == StationState.Idle && _pending != null
             ? _pending.Duration
@@ -167,7 +163,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
         if (driveMode == StationDriveMode.HoldToRun)
         {
-            // The hold already took the full duration, so it is finished on arrival.
+            // 홀드로 이미 전체 시간을 채웠으므로 도착하자마자 완성이다.
             Complete();
             return;
         }
@@ -178,7 +174,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     public override void OnHoldProgress(PlayerInteractor interactor, float normalized)
     {
-        // Only HoldToRun stations get here, since everyone else reports HoldDuration 0.
+        // HoldToRun만 여기 들어온다. 나머지는 HoldDuration을 0으로 보고하기 때문.
         OnProcessingProgress(normalized);
         ApplyShake(normalized);
         ProgressChanged?.Invoke(normalized);
@@ -207,10 +203,9 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     public bool CanReceive(ItemData item, PlayerHands hands)
     {
-        // No category check on purpose. AnyAccepts already restricts this to things some
-        // recipe actually uses as an input, and requiring Ingredient would block the
-        // intermediate Container items that chained recipes depend on — dough coming off
-        // the table and going into the oven.
+        // Category 검사를 일부러 넣지 않는다. AnyAccepts가 이미 "어떤 레시피의 재료로 쓰이는
+        // 것"만 통과시키고, Ingredient를 강제하면 연쇄 레시피의 중간 산출물(Container)이
+        // 막힌다 — 반죽대에서 나온 반죽이 오븐에 못 들어가게 된다.
         return State == StationState.Idle
                && _output == null
                && item != null
@@ -229,7 +224,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         ItemData data = item.Item;
         _loaded.Add(data);
 
-        // The station only tracks what went in; the physical object is gone.
+        // 스테이션은 무엇이 들어갔는지만 기억한다. 실물은 사라진다.
         Destroy(item.gameObject);
 
         RecomputePending();
@@ -258,7 +253,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     public GameObject Provide(PlayerHands hands)
     {
-        // Finished dish first.
+        // 완성품이 있으면 그것부터.
         if (_output != null)
         {
             WorldItem taken = _output;
@@ -272,7 +267,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             return taken.gameObject;
         }
 
-        // Otherwise pull the last ingredient back out — the way to undo a mistake.
+        // 없으면 마지막 재료를 도로 꺼내준다. 잘못 넣었을 때의 되돌리기 수단.
         if (State == StationState.Idle && _loaded.Count > 0)
         {
             int last = _loaded.Count - 1;
@@ -296,13 +291,13 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         return null;
     }
 
-    // ---------------------------------------------------------------- lifecycle
+    // ---------------------------------------------------------------- 수명주기
 
     protected virtual void Awake()
     {
         if (recipeBook == null)
         {
-            Debug.LogError($"{name}: Recipe Book is not assigned, so this station can never cook.", this);
+            Debug.LogError($"{name}: 레시피북이 연결되지 않아 이 스테이션은 아무것도 만들 수 없습니다.", this);
         }
 
         if (shakeTarget != null)
@@ -318,7 +313,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             return;
         }
 
-        // "자리를 지켜야 함" — the coffee machine stops the moment you look away.
+        // 명세의 "자리를 지켜야 함" — 커피 머신은 고개를 돌리는 순간 멈춘다.
         if (driveMode == StationDriveMode.PressAndStay && !_focused)
         {
             return;
@@ -337,7 +332,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         }
     }
 
-    // ---------------------------------------------------------------- internals
+    // ---------------------------------------------------------------- 내부
 
     private void Complete()
     {
@@ -352,8 +347,8 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         {
             Transform origin = outputPoint != null ? outputPoint : transform;
 
-            // Left unparented on purpose: appliances are non-uniformly scaled cubes, and
-            // attaching to one squashes the dish no matter which parenting mode is used.
+            // 일부러 부모로 붙이지 않는다. 기구들이 비균일 스케일 큐브라, 어떤 부모 모드를
+            // 써도 완성품이 찌그러진다.
             GameObject spawned = Instantiate(recipe.Output.WorldPrefab,
                                              origin.position,
                                              Quaternion.Euler(0f, origin.eulerAngles.y, 0f));
@@ -362,13 +357,13 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             _output = spawned.GetComponent<WorldItem>();
             if (_output != null)
             {
-                // Parked, not carried: physics off so it sits still and does not block aim.
+                // 들린 게 아니라 얹힌 상태. 물리를 꺼야 가만히 있고 조준도 안 가린다.
                 _output.SetCarried(true);
                 SetState(StationState.Done);
             }
             else
             {
-                Debug.LogError($"Output prefab '{spawned.name}' has no {nameof(WorldItem)}.", this);
+                Debug.LogError($"완성품 프리팹 '{spawned.name}'에 {nameof(WorldItem)}이 없습니다.", this);
                 Destroy(spawned);
                 SetState(StationState.Idle);
             }
@@ -382,8 +377,8 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     }
 
     /// <summary>
-    /// Rattles the machine while it works. Strength follows progress, so it builds toward
-    /// the finish. Passing 0 snaps it back to rest.
+    /// 조리 중 기계를 떨게 한다. 세기가 진행도를 따라가서 끝으로 갈수록 강해진다.
+    /// 0을 넘기면 원위치로 스냅.
     /// </summary>
     private void ApplyShake(float strength)
     {
@@ -418,27 +413,27 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         StateChanged?.Invoke(next);
     }
 
-    // ---------------------------------------------------------------- subclass hooks
+    // ---------------------------------------------------------------- 하위 클래스 훅
 
-    /// <summary>An ingredient went in.</summary>
+    /// <summary>재료가 하나 들어왔다.</summary>
     protected virtual void OnIngredientReceived(ItemData item) { }
 
-    /// <summary>An ingredient was pulled back out.</summary>
+    /// <summary>재료를 도로 꺼냈다.</summary>
     protected virtual void OnIngredientReturned(ItemData item) { }
 
-    /// <summary>Cooking started. Not called for HoldToRun, which completes instantly.</summary>
+    /// <summary>조리를 시작했다. 즉시 완성되는 HoldToRun에서는 불리지 않는다.</summary>
     protected virtual void OnProcessingStarted(RecipeData recipe) { }
 
-    /// <summary>Cooking progress, 0 to 1.</summary>
+    /// <summary>조리 진행도 0~1.</summary>
     protected virtual void OnProcessingProgress(float normalized) { }
 
-    /// <summary>Cooking finished and the dish exists.</summary>
+    /// <summary>조리가 끝나 완성품이 생겼다.</summary>
     protected virtual void OnCompleted(RecipeData recipe) { }
 
-    /// <summary>The player took the finished dish.</summary>
+    /// <summary>플레이어가 완성품을 가져갔다.</summary>
     protected virtual void OnOutputTaken(ItemData item) { }
 
-    /// <summary>E was pressed but nothing could start. Good place for a buzz.</summary>
+    /// <summary>E를 눌렀지만 시작할 수 없었다. 실패음을 넣기 좋은 자리.</summary>
     protected virtual void OnStartRejected() { }
 
     protected virtual void OnValidate()

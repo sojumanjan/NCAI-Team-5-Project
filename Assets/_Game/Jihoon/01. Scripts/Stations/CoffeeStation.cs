@@ -1,10 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// The coffee machine. All of the actual logic lives in <see cref="StationBase"/>; this
-/// subclass only adds colour feedback so the state is readable without any UI yet.
+/// 커피 머신. 실제 로직은 전부 <see cref="StationBase"/>에 있고, 이 하위 클래스는 UI 없이도
+/// 상태가 읽히도록 색 연출만 얹는다.
 ///
-/// Every appliance gets a class like this — small, and only about how it looks and sounds.
+/// 기구마다 이런 클래스를 하나씩 둔다. 작고, 보이고 들리는 것만 담당한다.
 /// </summary>
 public class CoffeeStation : StationBase
 {
@@ -81,7 +81,7 @@ public class CoffeeStation : StationBase
         }
 
         targetRenderer.GetPropertyBlock(_block);
-        // URP Lit uses _BaseColor; _Color keeps built-in/unlit shaders working too.
+        // URP Lit은 _BaseColor를 쓴다. _Color도 같이 넣어 빌트인·언릿 셰이더까지 대응한다.
         _block.SetColor(BaseColorId, color);
         _block.SetColor(ColorId, color);
         targetRenderer.SetPropertyBlock(_block);

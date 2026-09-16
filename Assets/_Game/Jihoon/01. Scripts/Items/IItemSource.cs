@@ -1,27 +1,26 @@
 using UnityEngine;
 
 /// <summary>
-/// Something that can hand an item to the player's empty hands (left click).
+/// 플레이어의 빈 손에 아이템을 넘겨줄 수 있는 것 (좌클릭).
 ///
-/// The name is deliberately about *providing*, not about being picked up: most
-/// implementers are never carried themselves. A <see cref="WorldItem"/> lying on a table
-/// happens to hand over itself, an <see cref="IngredientDispenser"/> spawns a fresh copy,
-/// and a <see cref="StationBase"/> hands over the dish it just finished. The player's
-/// hands cannot tell the three apart.
+/// 이름을 "집힌다"가 아니라 "내준다"로 지은 건 일부러다. 구현체 대부분은 자기 자신이
+/// 들리지 않는다. 테이블에 놓인 <see cref="WorldItem"/>은 마침 자기를 넘길 뿐이고,
+/// <see cref="IngredientDispenser"/>는 새로 만들어 넘기며, <see cref="StationBase"/>는
+/// 방금 완성한 음식을 넘긴다. 플레이어의 손은 셋을 구분하지 못한다.
 ///
-/// Paired with <see cref="IItemReceiver"/>, which is the same thing in reverse.
+/// 반대 방향인 <see cref="IItemReceiver"/>와 짝이다.
 /// </summary>
 public interface IItemSource
 {
-    /// <summary>What would end up in the hands. Used for prompts before taking anything.</summary>
+    /// <summary>손에 들어올 것. 집기 전에 프롬프트를 만들 때 쓴다.</summary>
     ItemData ProvidedItem { get; }
 
-    /// <summary>False when there is nothing to hand over right now.</summary>
+    /// <summary>지금 내줄 게 없으면 false.</summary>
     bool CanProvide(PlayerHands hands);
 
     /// <summary>
-    /// Hand the item over. Return the GameObject that should end up in the hands —
-    /// this one, or a newly spawned instance. Return null to refuse.
+    /// 넘겨준다. 손에 들어갈 GameObject를 반환한다 — 자기 자신이든, 새로 만든 인스턴스든.
+    /// 거절하려면 null.
     /// </summary>
     GameObject Provide(PlayerHands hands);
 }

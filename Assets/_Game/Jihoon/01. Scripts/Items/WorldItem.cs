@@ -1,13 +1,11 @@
 using UnityEngine;
 
 /// <summary>
-/// A physical instance of an <see cref="ItemData"/> sitting in the world. Goes on every
-/// item prefab. Picking it up parents it to the player's hand and switches off its
-/// physics; dropping it puts the physics back.
+/// 월드에 실제로 놓여 있는 <see cref="ItemData"/>의 실물. 모든 아이템 프리팹에 붙는다.
+/// 집으면 손에 부모로 붙고 물리가 꺼지며, 내려놓으면 물리가 돌아온다.
 ///
-/// This is the one <see cref="IItemSource"/> that hands over itself rather than spawning
-/// something — which is exactly why the interface is named for providing, not for being
-/// picked up.
+/// 새로 만들어 넘기지 않고 자기 자신을 넘기는 유일한 <see cref="IItemSource"/>다.
+/// 인터페이스 이름이 "집힌다"가 아니라 "내준다"인 이유가 바로 이 예외 때문이다.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class WorldItem : MonoBehaviour, IItemSource
@@ -26,10 +24,10 @@ public class WorldItem : MonoBehaviour, IItemSource
     private Collider[] _colliders;
     private Rigidbody _rigidbody;
 
-    /// <summary>What this object is. Recipes compare these by reference.</summary>
+    /// <summary>이 오브젝트가 무엇인지. 레시피는 이걸 참조로 비교한다.</summary>
     public ItemData Item => item;
 
-    /// <summary>True while parented to a hand or a station rather than lying in the world.</summary>
+    /// <summary>손이나 스테이션에 붙어 있는 동안 참. 월드에 놓여 있으면 거짓.</summary>
     public bool IsCarried { get; private set; }
 
     public Vector3 HeldPositionOffset => heldPositionOffset;
@@ -44,7 +42,7 @@ public class WorldItem : MonoBehaviour, IItemSource
 
     public GameObject Provide(PlayerHands hands) => gameObject;
 
-    // ---------------------------------------------------------------- lifecycle
+    // ---------------------------------------------------------------- 수명주기
 
     private void Awake()
     {
@@ -53,14 +51,14 @@ public class WorldItem : MonoBehaviour, IItemSource
 
         if (item == null)
         {
-            Debug.LogError($"{nameof(WorldItem)} on '{name}' has no ItemData assigned.", this);
+            Debug.LogError($"'{name}'의 {nameof(WorldItem)}에 ItemData가 연결되지 않았습니다.", this);
         }
     }
 
     /// <summary>
-    /// Switches between "held by something" and "lying in the world". Held items must not
-    /// collide with anything, or they shove the player around and block their own aim ray.
-    /// Stations also use this to park a finished dish on the counter.
+    /// "무언가에 들려 있음"과 "월드에 놓여 있음"을 오간다. 들린 아이템은 아무것과도
+    /// 충돌하면 안 된다 — 플레이어를 밀어내고 자기 조준 레이까지 가로막는다.
+    /// 스테이션이 완성품을 카운터에 얹어둘 때도 이걸 쓴다.
     /// </summary>
     public void SetCarried(bool carried)
     {

@@ -1,40 +1,38 @@
 using System;
 using UnityEngine;
 
-/// <summary>Where one lane of the counter is in its cycle.</summary>
+/// <summary>카운터 한 레인이 어느 단계에 있는지.</summary>
 public enum ServingSpotState
 {
-    /// <summary>No customer. Nothing to do here.</summary>
+    /// <summary>손님이 없다. 할 일도 없다.</summary>
     Free,
 
-    /// <summary>Customer has arrived and stated their order; the player has not taken it yet.</summary>
+    /// <summary>손님이 도착해 주문을 말했지만 아직 수락 전.</summary>
     AwaitingAccept,
 
-    /// <summary>Order accepted. The kitchen owes them a dish.</summary>
+    /// <summary>주문 수락됨. 주방이 음식을 빚졌다.</summary>
     Accepted,
 }
 
-/// <summary>How an order ended. Everything that moves the rating is one of these.</summary>
+/// <summary>주문이 어떻게 끝났는지. 평점을 움직이는 모든 경우가 여기 들어 있다.</summary>
 public enum OrderResult
 {
-    /// <summary>Served exactly what was asked for.</summary>
+    /// <summary>주문대로 정확히 만들어 줬다.</summary>
     Correct,
 
-    /// <summary>Served, but the wrong dish.</summary>
+    /// <summary>주긴 줬는데 다른 음식이었다.</summary>
     Wrong,
 
-    /// <summary>Customer ran out of patience and left. Raised from step 5 onward.</summary>
+    /// <summary>손님이 기다리다 지쳐 떠났다.</summary>
     Abandoned,
 }
 
 /// <summary>
-/// One lane of the counter: a POS terminal, a tray, and the spot the customer stands on.
-/// There are three of these, so three customers can be served at once.
+/// 카운터의 한 레인: 포스기, 트레이, 손님이 설 자리. 셋이 있어서 동시에 세 명을 받는다.
 ///
-/// This is the coordinator — the terminal and the tray are thin and just forward to it, so
-/// all the ordering rules live in one file. It is also the single place anything outside
-/// the lane listens to: customers are spawned at runtime and cannot be wired up in the
-/// inspector, so the lane reports on their behalf through <see cref="OrderResolved"/>.
+/// 이 클래스가 조정자다. 포스기와 트레이는 얇게 두고 전부 여기로 넘기므로, 주문 규칙이
+/// 한 파일에만 있다. 레인 밖에서 듣는 창구도 여기 하나다 — 손님은 런타임에 생성돼서
+/// 인스펙터로 연결할 수 없기 때문에, 레인이 <see cref="OrderResolved"/>로 대신 알린다.
 /// </summary>
 public class ServingSpot : MonoBehaviour
 {
@@ -57,43 +55,43 @@ public class ServingSpot : MonoBehaviour
 
     private Customer _customer;
 
-    /// <summary>Current phase of this lane.</summary>
+    /// <summary>이 레인의 현재 단계.</summary>
     public ServingSpotState State { get; private set; } = ServingSpotState.Free;
 
-    /// <summary>What the current customer asked for, or null.</summary>
+    /// <summary>지금 손님이 시킨 것. 없으면 null.</summary>
     public ItemData CurrentOrder { get; private set; }
 
-    /// <summary>Where the customer stands.</summary>
+    /// <summary>손님이 서는 자리.</summary>
     public Transform CustomerStand => customerStand;
 
-    /// <summary>Where the customer walks off to.</summary>
+    /// <summary>손님이 걸어 나가는 곳.</summary>
     public Transform ExitPoint => exitPoint;
 
-    /// <summary>True while a customer is present.</summary>
+    /// <summary>손님이 있는지.</summary>
     public bool HasCustomer => _customer != null;
 
-    /// <summary>True when a new customer could be sent here.</summary>
+    /// <summary>새 손님을 보낼 수 있는지.</summary>
     public bool IsFree => _customer == null;
 
-    /// <summary>The waiting customer's patience, 1 to 0. Zero when nobody is here.</summary>
+    /// <summary>기다리는 손님의 인내심 1~0. 아무도 없으면 0.</summary>
     public float Patience01 => _customer != null ? _customer.Patience01 : 0f;
 
-    /// <summary>True only while the customer is actually standing and waiting.</summary>
+    /// <summary>손님이 실제로 서서 기다리는 동안에만 참.</summary>
     public bool IsCustomerWaiting => _customer != null && _customer.IsWaiting;
 
-    /// <summary>Fires when a customer states their order.</summary>
+    /// <summary>손님이 주문을 말했을 때.</summary>
     public event Action<ServingSpot, ItemData> OrderPlaced;
 
-    /// <summary>Fires when the player accepts the order at the terminal.</summary>
+    /// <summary>플레이어가 포스기에서 주문을 수락했을 때.</summary>
     public event Action<ServingSpot, ItemData> OrderAccepted;
 
     /// <summary>
-    /// Fires once per order, however it ended. This is the one event the rating system and
-    /// the day's dish counter listen to — a single hook instead of one per failure mode.
+    /// 주문 하나가 어떻게 끝났든 한 번 발생한다. 평점 시스템과 하루 집계가 듣는 유일한
+    /// 창구 — 실패 유형마다 이벤트를 두지 않고 하나로 합쳤다.
     /// </summary>
     public event Action<ServingSpot, OrderResult> OrderResolved;
 
-    // ---------------------------------------------------------------- lifecycle
+    // ---------------------------------------------------------------- 수명주기
 
     private void Awake()
     {
@@ -109,16 +107,15 @@ public class ServingSpot : MonoBehaviour
 
         if (customerStand == null)
         {
-            Debug.LogError($"{name}: Customer Stand is not assigned.", this);
+            Debug.LogError($"{name}: 손님 대기 위치(Customer Stand)가 연결되지 않았습니다.", this);
         }
     }
 
-    // ---------------------------------------------------------------- customer flow
+    // ---------------------------------------------------------------- 손님 흐름
 
     /// <summary>
-    /// Sends a customer to this lane. Called by <see cref="CustomerSpawner"/>, which owns
-    /// the prefab and the timing — the lane only knows whether it is free.
-    /// Returns false when it is already busy or not set up.
+    /// 이 레인으로 손님을 보낸다. 프리팹과 타이밍을 쥔 <see cref="CustomerSpawner"/>가 호출한다.
+    /// 레인은 자기가 비었는지만 안다. 이미 차 있거나 설정이 덜 됐으면 false.
     /// </summary>
     public bool TrySeatCustomer(GameObject customerPrefab, float patienceSeconds)
     {
@@ -133,7 +130,7 @@ public class ServingSpot : MonoBehaviour
         Customer customer = go.GetComponent<Customer>();
         if (customer == null)
         {
-            Debug.LogError($"Customer prefab '{go.name}' has no {nameof(Customer)}.", this);
+            Debug.LogError($"손님 프리팹 '{go.name}'에 {nameof(Customer)}가 없습니다.", this);
             Destroy(go);
             return false;
         }
@@ -148,7 +145,7 @@ public class ServingSpot : MonoBehaviour
         return recipeBook != null ? recipeBook.GetRandomOutput() : null;
     }
 
-    /// <summary>Called by the customer once they reach the counter.</summary>
+    /// <summary>손님이 카운터에 도착하면 손님 쪽에서 부른다.</summary>
     public void OnCustomerReady(Customer customer, ItemData wanted)
     {
         if (customer != _customer)
@@ -161,10 +158,7 @@ public class ServingSpot : MonoBehaviour
         OrderPlaced?.Invoke(this, wanted);
     }
 
-    /// <summary>
-    /// The customer gave up waiting. Step 5 calls this from the patience timer; nothing
-    /// calls it yet.
-    /// </summary>
+    /// <summary>손님이 기다리다 포기했다. 인내심 타이머가 0이 되면 손님 쪽에서 부른다.</summary>
     public void AbandonOrder()
     {
         if (State == ServingSpotState.Free)
@@ -175,12 +169,12 @@ public class ServingSpot : MonoBehaviour
         Resolve(OrderResult.Abandoned);
     }
 
-    // ---------------------------------------------------------------- terminal
+    // ---------------------------------------------------------------- 포스기
 
-    /// <summary>True when clicking the POS would do something.</summary>
+    /// <summary>포스기를 눌렀을 때 할 일이 있는지.</summary>
     public bool CanAcceptOrder() => State == ServingSpotState.AwaitingAccept;
 
-    /// <summary>The player clicked the POS. Takes the order so the tray starts accepting.</summary>
+    /// <summary>플레이어가 포스기를 눌렀다. 주문을 받아야 트레이가 음식을 받기 시작한다.</summary>
     public void AcceptOrder()
     {
         if (!CanAcceptOrder())
@@ -192,11 +186,11 @@ public class ServingSpot : MonoBehaviour
         OrderAccepted?.Invoke(this, CurrentOrder);
     }
 
-    // ---------------------------------------------------------------- tray
+    // ---------------------------------------------------------------- 트레이
 
     /// <summary>
-    /// True when this dish may go on the tray. Ingredients are refused outright, and
-    /// nothing is accepted until the order has been taken at the terminal.
+    /// 이 음식을 트레이에 올릴 수 있는지. 재료는 아예 거부하고, 포스기에서 주문을 받기
+    /// 전에는 무엇도 받지 않는다.
     /// </summary>
     public bool CanReceiveDish(ItemData dish)
     {
@@ -206,8 +200,8 @@ public class ServingSpot : MonoBehaviour
     }
 
     /// <summary>
-    /// A dish landed on the tray. A wrong dish is still accepted — the penalty is the
-    /// point, and refusing it would leave the player stuck holding it.
+    /// 음식이 트레이에 올라왔다. 틀린 음식도 받는다 — 감점이 목적이고, 거부하면 플레이어가
+    /// 그걸 들고 오도 가도 못 한다.
     /// </summary>
     public void DeliverDish(WorldItem dish)
     {
@@ -218,7 +212,7 @@ public class ServingSpot : MonoBehaviour
 
         bool correct = dish.Item == CurrentOrder;
 
-        // Park the dish on the tray before resolving, so the visual and the score line up.
+        // 판정 전에 먼저 얹어야 화면과 점수가 같은 타이밍에 움직인다.
         if (tray != null)
         {
             tray.PlaceAndClear(dish);
@@ -231,7 +225,7 @@ public class ServingSpot : MonoBehaviour
         Resolve(correct ? OrderResult.Correct : OrderResult.Wrong);
     }
 
-    // ---------------------------------------------------------------- internals
+    // ---------------------------------------------------------------- 내부
 
     private void Resolve(OrderResult result)
     {
@@ -247,7 +241,7 @@ public class ServingSpot : MonoBehaviour
         OrderResolved?.Invoke(this, result);
     }
 
-    // ---------------------------------------------------------------- gizmos
+    // ---------------------------------------------------------------- 기즈모
 
     private void OnDrawGizmosSelected()
     {

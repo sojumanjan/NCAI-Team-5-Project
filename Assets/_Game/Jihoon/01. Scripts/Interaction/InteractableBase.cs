@@ -1,9 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Convenience base for interactable objects. Override <see cref="Interact"/> and you are
-/// done; everything else has a working default. Objects that already inherit something
-/// else can implement <see cref="IInteractable"/> directly instead.
+/// 상호작용 물체용 편의 베이스. <see cref="Interact"/> 하나만 override하면 끝이고,
+/// 나머지는 전부 동작하는 기본값이 있다. 이미 다른 클래스를 상속 중이라면
+/// <see cref="IInteractable"/>을 직접 구현하면 된다.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public abstract class InteractableBase : MonoBehaviour, IInteractable
@@ -34,6 +34,6 @@ public abstract class InteractableBase : MonoBehaviour, IInteractable
 
     public virtual void OnHoldCanceled(PlayerInteractor interactor) { }
 
-    /// <summary>Turns interaction on or off at runtime, e.g. after a quest step.</summary>
+    /// <summary>런타임에 상호작용을 켜고 끈다. 퀘스트 단계가 넘어갔을 때 같은 경우.</summary>
     public void SetInteractable(bool value) => interactable = value;
 }

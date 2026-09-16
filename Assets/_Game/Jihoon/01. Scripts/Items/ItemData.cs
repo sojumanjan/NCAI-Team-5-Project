@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// What kind of thing this is. Recipes only ever match on Ingredient and Dish;
-/// Container exists for cups and dough that carry state but are not themselves food.
+/// 이게 어떤 종류인지. 레시피 판정에는 Ingredient와 Dish만 쓰이고, Container는 컵이나
+/// 반죽처럼 상태는 지니지만 그 자체로는 음식이 아닌 것들을 위해 있다.
 /// </summary>
 public enum ItemCategory
 {
@@ -12,13 +12,12 @@ public enum ItemCategory
 }
 
 /// <summary>
-/// Definition of one carryable thing — 원두, 우유, 아메리카노, and so on.
+/// 들고 다닐 수 있는 것 하나의 정의 — 원두, 우유, 아메리카노 같은.
 ///
-/// This is the single source of truth for an item's identity. Recipes compare these
-/// assets by reference, so adding a new ingredient or menu item is a matter of creating
-/// an asset, not editing code.
+/// 아이템의 정체성은 오직 여기에 있다. 레시피는 이 에셋을 참조로 비교하므로, 재료나
+/// 메뉴를 추가하는 일은 코드 수정이 아니라 에셋 생성이다.
 ///
-/// Create via: Assets > Create > Cooking > Item Data
+/// 생성: Assets > Create > Cooking > Item Data
 /// </summary>
 [CreateAssetMenu(fileName = "Item_", menuName = "Cooking/Item Data")]
 public class ItemData : ScriptableObject
