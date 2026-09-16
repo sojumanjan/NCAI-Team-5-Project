@@ -51,3 +51,7 @@ MonoBehaviour:
     prefab: {fileID: 5052522664539031995, guid: 664b5ffefeaa22a4688f39ebb6976d42, type: 3}
   - lane: 4
     prefab: {fileID: 2988839340656116777, guid: 07c982cab7bbe584abcecf346ba46005, type: 3}
+  - lane: 0
+    prefab: {fileID: 6091122205029642179, guid: 06b85dcc2b63da745b31f6c5d9e143bd, type: 3}
+  - lane: 3
+    prefab: {fileID: 2988839340656116777, guid: 6b8c993fcff679f42b5aeaddf3f2c573, type: 3}
