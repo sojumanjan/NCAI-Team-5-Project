@@ -150,7 +150,7 @@ public sealed class ColorMemoryGame : MonoBehaviour
 
     private void Update()
     {
-        if (state != GameState.Input || inputCamera == null) return;
+        if (state != GameState.Input || inputCamera == null || !inputCamera.isActiveAndEnabled) return;
         if (!TryGetPress(out Vector2 screenPosition)) return;
         Ray ray = inputCamera.ScreenPointToRay(screenPosition);
         if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity,

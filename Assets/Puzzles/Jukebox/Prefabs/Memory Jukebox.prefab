@@ -126,7 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e8449c4885b36746aae2fd2f1bb1050, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryCube
-  note: {fileID: 0}
+  note: {fileID: 8300000, guid: c66fd234da9a5424aaf356094d84c25f, type: 3}
   idleColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!114 &5742726840323045099
 MonoBehaviour:
@@ -991,7 +991,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e8449c4885b36746aae2fd2f1bb1050, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryCube
-  note: {fileID: 0}
+  note: {fileID: 8300000, guid: 04450ca8dd3d5dc4aa6267a715490d82, type: 3}
   idleColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!114 &6583677469423628366
 MonoBehaviour:
@@ -1254,7 +1254,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 9bd14642957c61444ba3e71d62290d04, type: 3}
-    m_FontSize: 26
+    m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -1265,7 +1265,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 3
+  m_Text: "\uBBF8"
 --- !u!1 &3119019933218837096
 GameObject:
   m_ObjectHideFlags: 0
@@ -1954,7 +1954,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e8449c4885b36746aae2fd2f1bb1050, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryCube
-  note: {fileID: 0}
+  note: {fileID: 8300000, guid: 9cb1debd8ea4d664eb61eb852d92663a, type: 3}
   idleColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!114 &1745909008343224066
 MonoBehaviour:
@@ -2358,7 +2358,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e8449c4885b36746aae2fd2f1bb1050, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryCube
-  note: {fileID: 0}
+  note: {fileID: 8300000, guid: 37b133d0ad5ab4442817346a71d9263a, type: 3}
   idleColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!114 &6611330730917266929
 MonoBehaviour:
@@ -3614,7 +3614,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 9bd14642957c61444ba3e71d62290d04, type: 3}
-    m_FontSize: 26
+    m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -3625,7 +3625,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 1
+  m_Text: "\uB3C4"
 --- !u!1 &7049113917541228200
 GameObject:
   m_ObjectHideFlags: 0
@@ -5093,7 +5093,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 9bd14642957c61444ba3e71d62290d04, type: 3}
-    m_FontSize: 26
+    m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -5104,7 +5104,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 2
+  m_Text: "\uB808"
 --- !u!1 &8628675377965522935
 GameObject:
   m_ObjectHideFlags: 0
@@ -5231,7 +5231,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e8449c4885b36746aae2fd2f1bb1050, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryCube
-  note: {fileID: 0}
+  note: {fileID: 8300000, guid: 81e03069d2d0b064cba0ce3f9f559ad9, type: 3}
   idleColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!114 &4048947518470001172
 MonoBehaviour:
@@ -5314,7 +5314,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 9bd14642957c61444ba3e71d62290d04, type: 3}
-    m_FontSize: 26
+    m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -5325,7 +5325,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 4
+  m_Text: "\uD30C"
 --- !u!1 &8717289426060596996
 GameObject:
   m_ObjectHideFlags: 0
@@ -5672,7 +5672,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 9bd14642957c61444ba3e71d62290d04, type: 3}
-    m_FontSize: 26
+    m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -5683,7 +5683,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 5
+  m_Text: "\uC194"
 --- !u!1 &9107891056668597764
 GameObject:
   m_ObjectHideFlags: 0

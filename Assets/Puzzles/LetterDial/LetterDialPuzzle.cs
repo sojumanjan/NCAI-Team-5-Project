@@ -43,7 +43,7 @@ public sealed class LetterDialPuzzle : MonoBehaviour
 
     private void Update()
     {
-        if (IsSolved || inputCamera == null || !ReadPress(out Vector2 position)) return;
+        if (IsSolved || inputCamera == null || !inputCamera.isActiveAndEnabled || !ReadPress(out Vector2 position)) return;
         if (UnityEngine.EventSystems.EventSystem.current != null &&
             UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
         if (!Physics.Raycast(inputCamera.ScreenPointToRay(position), out RaycastHit hit, 100f,

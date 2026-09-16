@@ -126,6 +126,7 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
 
 private void Update()
     {
+        if (inputCamera == null || !inputCamera.isActiveAndEnabled) { dragging = false; return; }
         ReadPointer(out Vector2 pointer, out bool down, out bool up);
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) { ResetPuzzle(); return; }
@@ -181,7 +182,7 @@ public void EndDragAt(Vector2 pointer)
 
 public void BeginDragAt(Vector2 pointer)
     {
-        if (inputCamera == null || IsMoving) return;
+        if (inputCamera == null || !inputCamera.isActiveAndEnabled || IsMoving) return;
         dragging = false;
         if (!Physics.Raycast(inputCamera.ScreenPointToRay(pointer), out RaycastHit hit, 100f,
             Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
