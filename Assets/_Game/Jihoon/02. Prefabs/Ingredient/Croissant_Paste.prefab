@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 4987688912158627578}
   - component: {fileID: 1724595949994320171}
   - component: {fileID: 8040189547076312965}
+  - component: {fileID: 3692619716499620656}
   m_Layer: 0
   m_Name: Croissant_Paste
   m_TagString: Untagged
@@ -128,3 +129,15 @@ MonoBehaviour:
   item: {fileID: 11400000, guid: e7a0a656cf29d1f419de6490f15635d7, type: 2}
   heldPositionOffset: {x: 0, y: 0, z: 0}
   heldRotationOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &3692619716499620656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6762073686625933980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickableItem

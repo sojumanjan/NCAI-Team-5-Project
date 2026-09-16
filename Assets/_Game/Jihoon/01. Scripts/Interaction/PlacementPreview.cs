@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.Rendering;
@@ -7,8 +7,10 @@ using UnityEngine.Rendering;
 /// Shows a translucent copy of the held item where it would land, and lets the player spin
 /// it before letting go. Put this on the Player next to <see cref="PlayerHands"/>.
 ///
-/// The ghost is a stripped clone of the item's own prefab — no colliders, no physics, no
+/// The ghost is a stripped clone of the held object itself — no colliders, no physics, no
 /// scripts — so it always matches what will actually appear, including any art changes.
+/// 프리팹이 아니라 손에 든 실물에서 복제하는 이유: 재료통처럼 프리팹이 없는 것도 옮길 수
+/// 있어야 하고, 실물에서 뜨면 고스트가 실제로 놓일 것과 어긋날 수가 없다.
 /// It reads the landing spot from <see cref="PlayerHands.GetDropPosition"/>, the same
 /// method the real drop uses, so the preview cannot disagree with the result.
 /// </summary>
@@ -55,7 +57,7 @@ public class PlacementPreview : MonoBehaviour
     private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
 
     private GameObject _ghost;
-    private ItemData _ghostFor;
+    private WorldItem _ghostFor;
     private Material _runtimeMaterial;
     private float _holdTime;
 
@@ -94,7 +96,7 @@ public class PlacementPreview : MonoBehaviour
 
     private void Update()
     {
-        ItemData held = hands.HeldItem;
+        WorldItem held = hands.HeldObject;
 
         // The ghost is built once per item and then shown or hidden. Destroying and
         // respawning it instead would leak a clone into the scene every single frame.
@@ -215,23 +217,27 @@ public class PlacementPreview : MonoBehaviour
 
     // ---------------------------------------------------------------- ghost
 
-    private void EnsureGhost(ItemData item)
+    private void EnsureGhost(WorldItem held)
     {
-        if (_ghostFor == item && _ghost != null)
+        if (_ghostFor == held && _ghost != null)
         {
             return;
         }
 
         DestroyGhost();
 
-        if (item == null || item.WorldPrefab == null)
+        if (held == null)
         {
             return;
         }
 
-        _ghost = Instantiate(item.WorldPrefab);
-        _ghost.name = $"[Ghost] {item.DisplayName}";
-        _ghostFor = item;
+        // 손에 든 실물을 그대로 복제한다. 복제본은 손의 자식으로 태어나므로 바로 떼어내지
+        // 않으면 시점을 따라 흔들린다.
+        _ghost = Instantiate(held.gameObject);
+        _ghost.transform.SetParent(null, true);
+        _ghost.transform.localScale = held.transform.lossyScale;
+        _ghost.name = $"[Ghost] {held.name}";
+        _ghostFor = held;
 
         StripForDisplay(_ghost);
         ApplyGhostMaterial(_ghost);

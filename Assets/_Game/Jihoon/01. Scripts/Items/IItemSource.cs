@@ -1,10 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 플레이어의 빈 손에 아이템을 넘겨줄 수 있는 것 (좌클릭).
 ///
 /// 이름을 "집힌다"가 아니라 "내준다"로 지은 건 일부러다. 구현체 대부분은 자기 자신이
-/// 들리지 않는다. 테이블에 놓인 <see cref="WorldItem"/>은 마침 자기를 넘길 뿐이고,
+/// 들리지 않는다. 테이블에 놓인 <see cref="PickableItem"/>은 마침 자기를 넘길 뿐이고,
 /// <see cref="IngredientDispenser"/>는 새로 만들어 넘기며, <see cref="StationBase"/>는
 /// 방금 완성한 음식을 넘긴다. 플레이어의 손은 셋을 구분하지 못한다.
 ///

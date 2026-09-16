@@ -1,14 +1,16 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// 월드에 실제로 놓여 있는 <see cref="ItemData"/>의 실물. 모든 아이템 프리팹에 붙는다.
+/// 월드에 실제로 놓여 있는 <see cref="ItemData"/>의 실물. 들고 다닐 수 있는 모든 것에 붙는다.
 /// 집으면 손에 부모로 붙고 물리가 꺼지며, 내려놓으면 물리가 돌아온다.
 ///
-/// 새로 만들어 넘기지 않고 자기 자신을 넘기는 유일한 <see cref="IItemSource"/>다.
-/// 인터페이스 이름이 "집힌다"가 아니라 "내준다"인 이유가 바로 이 예외 때문이다.
+/// 좌클릭으로 집히는 역할은 일부러 여기에 없다. 그건 <see cref="PickableItem"/>이 맡는다.
+/// 디스펜서는 옮길 수 있으면서도 좌클릭은 내용물을 꺼내야 하는데, 이 클래스가
+/// <see cref="IItemSource"/>까지 겸하면 한 오브젝트에 소스가 둘이 되어 어느 쪽이 잡힐지
+/// 컴포넌트 순서에 달리게 된다.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class WorldItem : MonoBehaviour, IItemSource
+public class WorldItem : MonoBehaviour
 {
     [Header("아이템")]
     [Tooltip("이 오브젝트가 어떤 아이템인지. 반드시 지정해야 합니다.")]
@@ -37,14 +39,6 @@ public class WorldItem : MonoBehaviour, IItemSource
     public Vector3 HeldPositionOffset => heldPositionOffset;
 
     public Quaternion HeldRotationOffset => Quaternion.Euler(heldRotationOffset);
-
-    // ---------------------------------------------------------------- IItemSource
-
-    public ItemData ProvidedItem => item;
-
-    public bool CanProvide(PlayerHands hands) => item != null && !IsCarried;
-
-    public GameObject Provide(PlayerHands hands) => gameObject;
 
     // ---------------------------------------------------------------- 놓을 자리
 

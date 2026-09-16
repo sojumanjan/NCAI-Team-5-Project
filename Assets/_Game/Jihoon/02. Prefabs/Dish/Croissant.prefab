@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8500899418556760007}
   - component: {fileID: 8701589925210561829}
   - component: {fileID: 2781652737705881918}
+  - component: {fileID: 6857828008603319366}
   m_Layer: 0
   m_Name: Croissant
   m_TagString: Untagged
@@ -128,3 +129,15 @@ MonoBehaviour:
   item: {fileID: 11400000, guid: ae3a6c8c0878f0c41b42cf8de3b3cafe, type: 2}
   heldPositionOffset: {x: 0, y: 0, z: 0}
   heldRotationOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &6857828008603319366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7333289619251008819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickableItem

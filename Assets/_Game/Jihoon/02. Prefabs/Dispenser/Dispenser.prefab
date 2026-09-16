@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 8959763829117964327}
   - component: {fileID: 6900309439042903276}
   - component: {fileID: 6751006599212072514}
+  - component: {fileID: 8065425811478793529}
+  - component: {fileID: 3262171544259485483}
   m_Layer: 0
   m_Name: Dispenser
   m_TagString: Untagged
@@ -126,3 +128,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IngredientDispenser
   item: {fileID: 11400000, guid: 6b18293749d47694ebd5106b98888008, type: 2}
+--- !u!114 &8065425811478793529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4149765479079702131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3026a1faf058b944ea00861df8fba357, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldItem
+  item: {fileID: 11400000, guid: dafc52da429741a44958c30c9ce75942, type: 2}
+  heldPositionOffset: {x: 0, y: 0, z: 0}
+  heldRotationOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &3262171544259485483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4149765479079702131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29b35b60c60306e4a8eb9be7ea228ee2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CarryHandle
+  prompt: "\uC7AC\uB8CC\uD1B5 \uC62E\uAE30\uAE30"
+  holdDuration: 0
+  interactable: 1
+  handsFullPrompt: "\uC190\uC774 \uBE44\uC5B4\uC57C \uD569\uB2C8\uB2E4"

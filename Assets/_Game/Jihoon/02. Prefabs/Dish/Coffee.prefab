@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8719016784174465824}
   - component: {fileID: 5026029963788129121}
   - component: {fileID: 480587266094811684}
+  - component: {fileID: 800020390227009007}
   m_Layer: 0
   m_Name: Coffee
   m_TagString: Untagged
@@ -130,3 +131,15 @@ MonoBehaviour:
   item: {fileID: 11400000, guid: d4c579004f3cc634a8f276872110da45, type: 2}
   heldPositionOffset: {x: 0, y: 0, z: 0}
   heldRotationOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &800020390227009007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5719083757837828265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickableItem

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5399312728354501415}
   - component: {fileID: 1743290948551531626}
   - component: {fileID: 2014985452216286021}
+  - component: {fileID: 8511227690517912557}
   m_Layer: 0
   m_Name: Donut
   m_TagString: Untagged
@@ -128,3 +129,15 @@ MonoBehaviour:
   item: {fileID: 11400000, guid: e028dc49265b2af46b946b420017a0b8, type: 2}
   heldPositionOffset: {x: 0, y: 0, z: 0}
   heldRotationOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &8511227690517912557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687673354554679563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickableItem

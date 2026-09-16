@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7980681547243698045}
   - component: {fileID: 396124946313359379}
   - component: {fileID: 6907835129853050149}
+  - component: {fileID: 2439285176965114098}
   m_Layer: 0
   m_Name: CoffeeBean
   m_TagString: Untagged
@@ -156,3 +157,15 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &2439285176965114098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8416163186139819023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickableItem
