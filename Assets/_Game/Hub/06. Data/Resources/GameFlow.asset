@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bbd31e1797c5b846b14def505429ad8, type: 3}
+  m_Name: GameFlow
+  m_EditorClassIdentifier: Assembly-CSharp::GameFlow
+  mainScene: {fileID: 102900000, guid: 51910e552a21e5846b5809b0ca3ab200, type: 3}
+  mainSceneName: Main
+  miniGames:
+  - {fileID: 11400000, guid: 07588765116b0c943a210a72d63312de, type: 2}
+  - {fileID: 11400000, guid: 110bc64213b342b4db45cffdd9c1c219, type: 2}
+  - {fileID: 11400000, guid: 729d02c86bd09214e97bbfe7109650d7, type: 2}
+  - {fileID: 11400000, guid: 5c19aca88337ac94993bed044bbdac82, type: 2}
