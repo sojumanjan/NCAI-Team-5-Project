@@ -37,7 +37,7 @@ public class ThrownPellet : MonoBehaviour
     private void HandleHit(GameObject hitObject)
     {
         // 고스트에 맞았다면 고스트 쪽에서 처치 판정을 처리하도록 알린다.
-        var ghost = hitObject.GetComponentInParent<GhostHittable>();
+        var ghost = hitObject.GetComponentInParent<Ghost>();
         if (ghost != null)
         {
             ghost.HandlePelletHit();
