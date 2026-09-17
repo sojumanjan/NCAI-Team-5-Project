@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class FireOverlayEffect : MonoBehaviour
 {
     [SerializeField] private float baseAlpha = 0.55f;
@@ -32,4 +34,5 @@ public class FireOverlayEffect : MonoBehaviour
         c.a = Mathf.Clamp01(alpha);
         image.color = c;
     }
+}
 }

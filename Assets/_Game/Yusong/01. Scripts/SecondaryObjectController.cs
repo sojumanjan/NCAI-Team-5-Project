@@ -2,6 +2,8 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class SecondaryObjectController : MonoBehaviour
 {
     [SerializeField] private float lifetime = 10f;
@@ -215,4 +217,5 @@ public class SecondaryObjectController : MonoBehaviour
 
         flashRoutine = null;
     }
+}
 }

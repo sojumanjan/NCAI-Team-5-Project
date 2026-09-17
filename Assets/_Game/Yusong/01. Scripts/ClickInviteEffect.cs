@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class ClickInviteEffect : MonoBehaviour
 {
     [SerializeField] private float scaleAmplitude = 0.12f;
@@ -37,4 +39,5 @@ public class ClickInviteEffect : MonoBehaviour
         if (rt != null) rt.localScale = baseScale;
         if (image != null) image.color = baseColor;
     }
+}
 }

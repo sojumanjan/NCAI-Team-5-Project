@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class PositionMarkerEffect : MonoBehaviour
 {
     [SerializeField] private float pulseSpeed = 4f;
@@ -23,4 +25,5 @@ public class PositionMarkerEffect : MonoBehaviour
         c.a = Mathf.Lerp(minAlpha, maxAlpha, t);
         image.color = c;
     }
+}
 }
