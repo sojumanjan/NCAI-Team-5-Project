@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>카운터 한 레인이 어느 단계에 있는지.</summary>
@@ -46,8 +46,17 @@ public class ServingSpot : MonoBehaviour
     [Tooltip("손님이 서 있을 위치. 카운터 바깥쪽에, forward가 카운터를 향하게 두세요.")]
     [SerializeField] private Transform customerStand;
 
-    [Tooltip("손님이 등장하고 떠나갈 위치.")]
+    [Tooltip("손님이 등장하고 사라지는 위치. 경로를 연결하면 '사라지는 지점'으로만 쓰이며, " +
+             "경로가 문 밖까지 데려다준다면 비워둬도 됩니다.")]
     [SerializeField] private Transform exitPoint;
+
+    [Header("경로 (선택)")]
+    [Tooltip("들어올 때 밟고 올 경유지. 비워두면 지금처럼 곧장 걸어옵니다. " +
+             "레인 세 개가 같은 것을 가리켜도 됩니다.")]
+    [SerializeField] private CustomerPath entryPath;
+
+    [Tooltip("나갈 때 밟고 갈 경유지. 비워두면 Entry Path를 역순으로 되돌아갑니다.")]
+    [SerializeField] private CustomerPath exitPath;
 
     [Header("주문")]
     [Tooltip("주문 가능한 메뉴를 여기서 뽑습니다. 레시피북의 완성품 목록을 씁니다.")]
@@ -66,6 +75,15 @@ public class ServingSpot : MonoBehaviour
 
     /// <summary>손님이 걸어 나가는 곳.</summary>
     public Transform ExitPoint => exitPoint;
+
+    /// <summary>들어올 때의 경유지. 없으면 null.</summary>
+    public CustomerPath EntryPath => entryPath;
+
+    /// <summary>나갈 때의 경유지. 지정하지 않았으면 들어온 길을 그대로 쓴다.</summary>
+    public CustomerPath ExitPath => exitPath != null ? exitPath : entryPath;
+
+    /// <summary>나갈 때 경로를 뒤집어야 하는지. 들어온 길을 재활용할 때만 그렇다.</summary>
+    public bool ReverseExitPath => exitPath == null;
 
     /// <summary>손님이 있는지.</summary>
     public bool HasCustomer => _customer != null;
@@ -124,7 +142,14 @@ public class ServingSpot : MonoBehaviour
             return false;
         }
 
-        Vector3 spawnAt = exitPoint != null ? exitPoint.position : customerStand.position;
+        // 경로가 있으면 그 시작점에서 태어나야 첫 걸음부터 경로를 탄다.
+        Transform start = entryPath != null ? entryPath.First : null;
+        if (start == null)
+        {
+            start = exitPoint;
+        }
+
+        Vector3 spawnAt = start != null ? start.position : customerStand.position;
         GameObject go = Instantiate(customerPrefab, spawnAt, Quaternion.identity);
 
         Customer customer = go.GetComponent<Customer>();
