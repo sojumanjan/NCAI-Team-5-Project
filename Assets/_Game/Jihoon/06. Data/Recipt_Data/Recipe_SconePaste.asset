@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 866ca767b6979c849b430d8192729d8c, type: 3}
+  m_Name: Recipe_SconePaste
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeData
+  station: 4
+  inputs:
+  - {fileID: 11400000, guid: 80a0cb64d7fc3a545ab3363397638a8c, type: 2}
+  - {fileID: 11400000, guid: 6a792e318c7a4034189029b2cb85602a, type: 2}
+  - {fileID: 11400000, guid: a4a6fc0b6cd7f1e4cbc396b5f124a14d, type: 2}
+  duration: 3
+  output: {fileID: 11400000, guid: aa6febabe1068914daed02668a081055, type: 2}
