@@ -31,20 +31,20 @@ public class TetrisGameManager : MonoBehaviour
     /// 씬 오브젝트는 항상 활성 상태를 유지하고, 이 메서드로 테트리스 진행 여부만 켜고 끈다.
     /// (테트리스 <-> 팩맨 전환 시 SetActive 대신 사용)
     /// </summary>
-    public void SetGameActive(bool active)
+    public void SetGameActive(bool isActive)
     {
         // 1인칭 카메라는 MainUI 상태에서도 켜둔다. 꺼버리면 씬에 활성 카메라가 하나도
         // 남지 않아 화면이 렌더링되지 않으므로(과거 SelectSceneCamera로 임시 땜빵했던 문제),
         // 대신 playerController.enabled=false로 조작만 막아 화면은 정지된 채로 유지한다.
         overviewCamera.gameObject.SetActive(false);
 
-        playerController.enabled = active;
-        cameraRig.enabled = active;
+        playerController.enabled = isActive;
+        cameraRig.enabled = isActive;
 
-        FallingBlock.GlobalPaused = !active;
-        fallSequencer.SetPaused(!active);
+        FallingBlock.IsGlobalPaused = !isActive;
+        fallSequencer.SetPaused(!isActive);
 
-        if (!active)
+        if (!isActive)
         {
             deathPopupRoot.SetActive(false);
         }
@@ -52,21 +52,21 @@ public class TetrisGameManager : MonoBehaviour
 
     /// <summary>
     /// 팩맨은 아직 전용 카메라가 없어, 테트리스의 1인칭 카메라/플레이어 조작을 그대로 들고 간다.
-    /// 낙하 로직(GlobalPaused 등)만 멈추고, 카메라/조작/관전 전환 여부는 그대로 유지한다.
+    /// 낙하 로직(IsGlobalPaused 등)만 멈추고, 카메라/조작/관전 전환 여부는 그대로 유지한다.
     /// </summary>
-    public void SetTetrisGameplayPaused(bool paused)
+    public void SetTetrisGameplayPaused(bool isPaused)
     {
-        FallingBlock.GlobalPaused = paused;
-        fallSequencer.SetPaused(paused);
+        FallingBlock.IsGlobalPaused = isPaused;
+        fallSequencer.SetPaused(isPaused);
     }
 
     /// <summary>
     /// 에임 포인터(크로스헤어)는 팩맨 상태에서만 보여야 한다 (테트리스에는 조준 요소가 없음).
     /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출한다.
     /// </summary>
-    public void SetCrosshairAllowed(bool allowed)
+    public void SetCrosshairAllowed(bool isAllowed)
     {
-        cameraRig.SetCrosshairAllowed(allowed);
+        cameraRig.SetCrosshairAllowed(isAllowed);
     }
 
     /// <summary>
@@ -74,9 +74,9 @@ public class TetrisGameManager : MonoBehaviour
     /// ClimbController도 같은 Jump 액션을 구독하므로 별도 처리 없이 함께 막힌다.
     /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출한다.
     /// </summary>
-    public void SetJumpAllowed(bool allowed)
+    public void SetJumpAllowed(bool isAllowed)
     {
-        playerController.SetJumpEnabled(allowed);
+        playerController.SetJumpEnabled(isAllowed);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public class TetrisGameManager : MonoBehaviour
     /// EXIT 트리거(TetrisExitTrigger)가 플레이어 도달을 감지하면 호출한다.
     /// 별도 성공 UI 없이 CLEAR 텍스트만 짧게 보여준 뒤 조작을 해제한다.
     /// </summary>
-    public void OnExitReached()
+    public void HandleExitReached()
     {
         if (isCleared)
         {
@@ -101,7 +101,7 @@ public class TetrisGameManager : MonoBehaviour
 
         isCleared = true;
 
-        FallingBlock.GlobalPaused = true;
+        FallingBlock.IsGlobalPaused = true;
         fallSequencer.SetPaused(true);
         playerController.SetControlsLocked(true);
 
@@ -128,14 +128,14 @@ public class TetrisGameManager : MonoBehaviour
     public void DebugForceClearedState()
     {
         isCleared = true;
-        FallingBlock.GlobalPaused = true;
+        FallingBlock.IsGlobalPaused = true;
         fallSequencer.SetPaused(true);
         playerController.SetControlsLocked(false);
     }
 
-    public void OnPlayerPinned()
+    public void HandlePlayerPinned()
     {
-        FallingBlock.GlobalPaused = true;
+        FallingBlock.IsGlobalPaused = true;
         playerController.SetControlsLocked(true);
         deathPopupRoot.SetActive(true);
     }
@@ -167,7 +167,7 @@ public class TetrisGameManager : MonoBehaviour
         fallSequencer.ResetSequence();
         RespawnPlayer();
 
-        FallingBlock.GlobalPaused = false;
+        FallingBlock.IsGlobalPaused = false;
 
         // 카운트다운(3,2,1)이 보이는 동안에도 플레이어는 바로 움직일 수 있어야 하므로,
         // 조작 잠금은 카운트다운을 재생하기 전에 미리 풀어둔다.

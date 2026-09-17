@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float gravity = -20f;
 
     [Header("Jump")]
-    [SerializeField] private bool jumpEnabled = true;
+    [SerializeField] private bool isJumpEnabled = true;
     [SerializeField] private float jumpHeight = 1.5f;
 
     [Header("Look")]
@@ -32,15 +32,15 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 verticalVelocity;
     private float pitch;
-    private bool controlsLocked;
+    private bool areControlsLocked;
 
-    public bool ControlsLocked => controlsLocked;
+    public bool AreControlsLocked => areControlsLocked;
 
-    public void SetControlsLocked(bool locked)
+    public void SetControlsLocked(bool isLocked)
     {
-        controlsLocked = locked;
+        areControlsLocked = isLocked;
 
-        if (locked)
+        if (isLocked)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -53,7 +53,7 @@ public class PlayerController : MonoBehaviour
 
         // Interact(F)는 RewardBoxTrigger/PacmanEntranceWall 등 여러 컴포넌트가 같은 액션을 구독하므로,
         // 여기서 액션 자체를 잠그면 각 컴포넌트를 따로 고칠 필요 없이 일괄 차단된다.
-        if (locked)
+        if (isLocked)
         {
             interactAction.Disable();
         }
@@ -67,16 +67,16 @@ public class PlayerController : MonoBehaviour
     /// 점프 가능 여부를 런타임에 바꾼다 (예: 팩맨에서는 점프/등반이 없어야 함).
     /// 활성화된 상태에서는 즉시 입력 액션도 함께 Enable/Disable한다.
     /// </summary>
-    public void SetJumpEnabled(bool enabled)
+    public void SetJumpEnabled(bool isEnabled)
     {
-        jumpEnabled = enabled;
+        isJumpEnabled = isEnabled;
 
         if (!isActiveAndEnabled)
         {
             return;
         }
 
-        if (jumpEnabled)
+        if (isJumpEnabled)
         {
             jumpAction.Enable();
         }
@@ -102,14 +102,14 @@ public class PlayerController : MonoBehaviour
         moveAction.Enable();
         lookAction.Enable();
 
-        if (jumpEnabled)
+        if (isJumpEnabled)
         {
             jumpAction.Enable();
         }
 
-        // controlsLocked 상태(예: 사망 팝업)를 그대로 유지한 채 재활성화되어야 하므로,
+        // areControlsLocked 상태(예: 사망 팝업)를 그대로 유지한 채 재활성화되어야 하므로,
         // 여기서 커서를 무조건 잠그지 않고 현재 잠금 상태를 다시 적용한다.
-        SetControlsLocked(controlsLocked);
+        SetControlsLocked(areControlsLocked);
     }
 
     private void OnDisable()
@@ -122,7 +122,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        if (controlsLocked)
+        if (areControlsLocked)
         {
             return;
         }
@@ -150,7 +150,7 @@ public class PlayerController : MonoBehaviour
         {
             verticalVelocity.y = -1f;
 
-            if (jumpEnabled && jumpAction.WasPressedThisFrame())
+            if (isJumpEnabled && jumpAction.WasPressedThisFrame())
             {
                 verticalVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             }

@@ -9092,7 +9092,7 @@ MonoBehaviour:
   inputActions: {fileID: -944628639613478452, guid: 2ad6ac0a73e595a4da9250c3f0eb7460, type: 3}
   moveSpeed: 5
   gravity: -20
-  jumpEnabled: 1
+  isJumpEnabled: 1
   jumpHeight: 1.5
   mouseSensitivity: 0.1
   minPitch: -80
@@ -17680,7 +17680,7 @@ MonoBehaviour:
   heartsUIRoot: {fileID: 1490032029}
   pelletSpawner: {fileID: 1056635151}
   rewardBox: {fileID: 1991334664}
-  debugStartInPacman: 1
+  isDebugStartInPacman: 0
   debugPacmanStartPoint: {fileID: 1831296196}
 --- !u!4 &1614026527
 Transform:

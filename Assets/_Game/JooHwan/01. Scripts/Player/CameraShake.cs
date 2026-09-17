@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class CameraShake : MonoBehaviour
 {
-    private static readonly List<CameraShake> ActiveInstances = new List<CameraShake>();
+    private static readonly List<CameraShake> activeInstances = new List<CameraShake>();
 
     [SerializeField] private float defaultDuration = 0.2f;
     [SerializeField] private float defaultPositionAmplitude = 0.08f;
@@ -24,12 +24,12 @@ public class CameraShake : MonoBehaviour
         basePosition = transform.localPosition;
         baseRotation = transform.localRotation;
 
-        ActiveInstances.Add(this);
+        activeInstances.Add(this);
     }
 
     private void OnDestroy()
     {
-        ActiveInstances.Remove(this);
+        activeInstances.Remove(this);
     }
 
     private void OnEnable()
@@ -43,7 +43,7 @@ public class CameraShake : MonoBehaviour
 
     public static void ShakeAll()
     {
-        foreach (var instance in ActiveInstances)
+        foreach (var instance in activeInstances)
         {
             instance.Shake();
         }
@@ -51,7 +51,7 @@ public class CameraShake : MonoBehaviour
 
     public static void ShakeAll(float duration, float positionStrength, float rotationStrength)
     {
-        foreach (var instance in ActiveInstances)
+        foreach (var instance in activeInstances)
         {
             instance.Shake(duration, positionStrength, rotationStrength);
         }

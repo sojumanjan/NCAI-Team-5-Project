@@ -40,7 +40,7 @@ public class ThrownPellet : MonoBehaviour
         var ghost = hitObject.GetComponentInParent<GhostHittable>();
         if (ghost != null)
         {
-            ghost.OnHitByPellet();
+            ghost.HandlePelletHit();
         }
 
         // 명중/빗나감 상관없이 펠릿은 소멸한다 (회수 불가).

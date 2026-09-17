@@ -6,5 +6,5 @@ using UnityEngine;
 /// </summary>
 public abstract class GhostHittable : MonoBehaviour
 {
-    public abstract void OnHitByPellet();
+    public abstract void HandlePelletHit();
 }

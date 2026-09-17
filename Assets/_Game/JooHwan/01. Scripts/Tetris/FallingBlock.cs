@@ -4,7 +4,7 @@ using UnityEngine;
 public class FallingBlock : MonoBehaviour
 {
     // 사망 팝업 등으로 게임 전체가 일시정지될 때, 모든 FallingBlock 인스턴스가 함께 멈춘다.
-    public static bool GlobalPaused;
+    public static bool IsGlobalPaused;
 
     [SerializeField] private LayerMask landingMask;
     [SerializeField] private float landingCheckThickness = 0.1f;
@@ -97,7 +97,7 @@ public class FallingBlock : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (GlobalPaused)
+        if (IsGlobalPaused)
         {
             return;
         }
@@ -213,7 +213,7 @@ public class FallingBlock : MonoBehaviour
 
         if (playerOverlapTimer >= pinDeathDelay)
         {
-            TetrisGameManager.Instance.OnPlayerPinned();
+            TetrisGameManager.Instance.HandlePlayerPinned();
             playerOverlapTimer = 0f;
             playerIsOverlapping = false;
         }

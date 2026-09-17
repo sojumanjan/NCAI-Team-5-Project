@@ -28,7 +28,7 @@ public class CameraRig : MonoBehaviour
 
     private InputAction cameraSwitchAction;
     private bool isOverviewActive;
-    private bool crosshairAllowed;
+    private bool isCrosshairAllowed;
 
     private void Awake()
     {
@@ -60,35 +60,35 @@ public class CameraRig : MonoBehaviour
         ApplyCameraState(!isOverviewActive);
     }
 
-    private void ApplyCameraState(bool overviewActive)
+    private void ApplyCameraState(bool isOverviewActive)
     {
-        isOverviewActive = overviewActive;
+        this.isOverviewActive = isOverviewActive;
 
-        firstPersonCamera.gameObject.SetActive(!overviewActive);
-        overviewCamera.gameObject.SetActive(overviewActive);
+        firstPersonCamera.gameObject.SetActive(!isOverviewActive);
+        overviewCamera.gameObject.SetActive(isOverviewActive);
 
-        playerController.enabled = !overviewActive;
+        playerController.enabled = !isOverviewActive;
 
         foreach (var occluder in overviewOccluders)
         {
-            occluder.enabled = !overviewActive;
+            occluder.enabled = !isOverviewActive;
         }
 
-        overviewUI.SetActive(overviewActive);
+        overviewUI.SetActive(isOverviewActive);
 
         UpdateCrosshairVisibility();
 
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = overviewActive ? overviewAmbientColor : firstPersonAmbientColor;
+        RenderSettings.ambientLight = isOverviewActive ? overviewAmbientColor : firstPersonAmbientColor;
     }
 
     /// <summary>
     /// 크로스헤어(에임 포인터)는 팩맨 상태에서만 필요하다 (테트리스에는 조준 요소가 없음).
     /// MiniGameFlowManager가 팩맨 진입/이탈 시 이 값을 갱신한다.
     /// </summary>
-    public void SetCrosshairAllowed(bool allowed)
+    public void SetCrosshairAllowed(bool isAllowed)
     {
-        crosshairAllowed = allowed;
+        isCrosshairAllowed = isAllowed;
         UpdateCrosshairVisibility();
     }
 
@@ -96,7 +96,7 @@ public class CameraRig : MonoBehaviour
     {
         if (crosshair != null)
         {
-            crosshair.SetActive(crosshairAllowed && !isOverviewActive);
+            crosshair.SetActive(isCrosshairAllowed && !isOverviewActive);
         }
     }
 }

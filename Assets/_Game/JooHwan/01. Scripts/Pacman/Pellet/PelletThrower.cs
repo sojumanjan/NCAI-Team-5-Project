@@ -52,7 +52,7 @@ public class PelletThrower : MonoBehaviour
 
         // 일시정지/사망 팝업 등으로 조작이 잠긴 동안에는, 패널의 버튼을 클릭하는 좌클릭이
         // 그대로 Throw 액션으로도 들어와 펠릿이 튀어나가므로 잠금 중엔 무시한다.
-        if (playerController != null && playerController.ControlsLocked)
+        if (playerController != null && playerController.AreControlsLocked)
         {
             return;
         }

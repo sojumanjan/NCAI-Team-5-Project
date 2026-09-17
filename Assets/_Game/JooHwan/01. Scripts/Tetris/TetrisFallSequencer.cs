@@ -22,17 +22,17 @@ public class TetrisFallSequencer : MonoBehaviour
 
     private int nextEntryIndex;
     private FallingBlock currentBlock;
-    private bool sequenceStarted;
+    private bool hasSequenceStarted;
     private bool isPaused;
 
     private readonly List<GameObject> spawnedBlocks = new List<GameObject>();
 
-    public FallEntry NextEntry => nextEntryIndex < sequence.entries.Count ? sequence.entries[nextEntryIndex] : null;
+    public FallEntry NextEntry => nextEntryIndex < sequence.Entries.Count ? sequence.Entries[nextEntryIndex] : null;
 
     private void OnEnable()
     {
         // 카운트다운 등 외부 연출이 끝난 뒤 StartSequence()가 호출될 때까지 대기한다.
-        sequenceStarted = false;
+        hasSequenceStarted = false;
         isPaused = false;
         nextEntryIndex = 0;
         currentBlock = null;
@@ -40,18 +40,18 @@ public class TetrisFallSequencer : MonoBehaviour
 
     public void StartSequence()
     {
-        if (sequenceStarted)
+        if (hasSequenceStarted)
         {
             return;
         }
 
-        sequenceStarted = true;
+        hasSequenceStarted = true;
         SpawnNext();
     }
 
-    public void SetPaused(bool paused)
+    public void SetPaused(bool isPaused)
     {
-        isPaused = paused;
+        this.isPaused = isPaused;
     }
 
     public void ResetSequence()
@@ -70,12 +70,12 @@ public class TetrisFallSequencer : MonoBehaviour
         nextEntryIndex = 0;
         currentBlock = null;
         isPaused = false;
-        sequenceStarted = false;
+        hasSequenceStarted = false;
     }
 
     private void Update()
     {
-        if (!sequenceStarted || isPaused)
+        if (!hasSequenceStarted || isPaused)
         {
             return;
         }
@@ -95,22 +95,22 @@ public class TetrisFallSequencer : MonoBehaviour
 
     private void SpawnNext()
     {
-        if (nextEntryIndex >= sequence.entries.Count)
+        if (nextEntryIndex >= sequence.Entries.Count)
         {
             return;
         }
 
-        FallEntry entry = sequence.entries[nextEntryIndex];
+        FallEntry entry = sequence.Entries[nextEntryIndex];
         nextEntryIndex++;
 
-        if (entry.prefab == null)
+        if (entry.Prefab == null)
         {
             Debug.LogWarning($"TetrisFallSequencer: entry index {nextEntryIndex - 1} has no prefab assigned");
             return;
         }
 
-        Vector3 spawnPosition = arenaOrigin.position + new Vector3(laneOriginX + entry.lane * laneWidth, spawnHeight, 0f);
-        GameObject instance = Instantiate(entry.prefab, spawnPosition, entry.prefab.transform.rotation, arenaOrigin);
+        Vector3 spawnPosition = arenaOrigin.position + new Vector3(laneOriginX + entry.Lane * laneWidth, spawnHeight, 0f);
+        GameObject instance = Instantiate(entry.Prefab, spawnPosition, entry.Prefab.transform.rotation, arenaOrigin);
         spawnedBlocks.Add(instance);
 
         FallingBlock fallingBlock = instance.GetComponent<FallingBlock>();

@@ -82,15 +82,15 @@ public class ClimbController : MonoBehaviour
         Vector3 feetPosition = transform.position - new Vector3(0f, controller.height * 0.5f, 0f);
 
         Vector3 lowOrigin = feetPosition + Vector3.up * 0.1f;
-        bool blockedLow = Physics.Raycast(lowOrigin, forward, forwardCheckDistance, climbableMask);
-        if (!blockedLow)
+        bool isBlockedLow = Physics.Raycast(lowOrigin, forward, forwardCheckDistance, climbableMask);
+        if (!isBlockedLow)
         {
             return false;
         }
 
         Vector3 highOrigin = feetPosition + Vector3.up * ledgeCheckHeight;
-        bool blockedHigh = Physics.Raycast(highOrigin, forward, forwardCheckDistance, climbableMask);
-        if (blockedHigh)
+        bool isBlockedHigh = Physics.Raycast(highOrigin, forward, forwardCheckDistance, climbableMask);
+        if (isBlockedHigh)
         {
             return false;
         }

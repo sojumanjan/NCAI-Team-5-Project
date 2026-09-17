@@ -30,7 +30,7 @@ public class MiniGameFlowManager : MonoBehaviour
 
     [Header("Debug (팩맨 로직 작업 중 임시 사용)")]
     [Tooltip("체크하면 시작 시 인트로를 건너뛰고, 테트리스를 이미 클리어한 직후(문 앞 복도, 팩맨은 아직 비활성) 상태로 진입한다. 팩맨 구현이 끝나면 반드시 해제할 것.")]
-    [SerializeField] private bool debugStartInPacman = false;
+    [SerializeField] private bool isDebugStartInPacman = false;
     [SerializeField] private Transform debugPacmanStartPoint;
 
     private MiniGameState currentState = MiniGameState.MainUI;
@@ -47,7 +47,7 @@ public class MiniGameFlowManager : MonoBehaviour
             {
                 if (ghost != null)
                 {
-                    ghost.OnDefeated += OnGhostDefeated;
+                    ghost.Defeated += HandleGhostDefeated;
                 }
             }
         }
@@ -55,11 +55,11 @@ public class MiniGameFlowManager : MonoBehaviour
 
     private void Start()
     {
-        if (debugStartInPacman)
+        if (isDebugStartInPacman)
         {
             // 테트리스는 이미 클리어했고 아직 팩맨에는 진입하지 않은 상태(문 앞 복도)에서 시작한다.
             // 즉 상태 자체는 Tetris로 유지하되(팩맨 로직은 비활성), 낙하만 멈춘 클리어 상태로 만든다.
-            ApplyState(MiniGameState.Tetris, playCountdown: false);
+            ApplyState(MiniGameState.Tetris, shouldPlayCountdown: false);
             tetrisGameManager.DebugForceClearedState();
 
             if (debugPacmanStartPoint != null)
@@ -70,17 +70,17 @@ public class MiniGameFlowManager : MonoBehaviour
             return;
         }
 
-        ApplyState(MiniGameState.MainUI, playCountdown: false);
+        ApplyState(MiniGameState.MainUI, shouldPlayCountdown: false);
     }
 
     public void ShowGameSelect()
     {
-        SwitchTo(MiniGameState.MainUI, playCountdown: false);
+        SwitchTo(MiniGameState.MainUI, shouldPlayCountdown: false);
     }
 
     public void StartTetris()
     {
-        SwitchTo(MiniGameState.Tetris, playCountdown: true);
+        SwitchTo(MiniGameState.Tetris, shouldPlayCountdown: true);
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// </summary>
     public void StartPacman(Transform teleportTarget = null)
     {
-        SwitchTo(MiniGameState.Pacman, playCountdown: true, teleportTarget);
+        SwitchTo(MiniGameState.Pacman, shouldPlayCountdown: true, teleportTarget);
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public class MiniGameFlowManager : MonoBehaviour
 
         ResetAllGhosts();
 
-        SwitchTo(MiniGameState.Pacman, playCountdown: true, teleportTarget);
+        SwitchTo(MiniGameState.Pacman, shouldPlayCountdown: true, teleportTarget);
     }
 
     private void ResetAllGhosts()
@@ -144,7 +144,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// 고스트가 처치될 때마다 호출된다. 5마리(pacmanGhosts 전부)가 모두 처치되면
     /// 클리어 조건 달성으로 보고 보상 상자를 맵 중앙에 등장시킨다.
     /// </summary>
-    private void OnGhostDefeated(Ghost defeated)
+    private void HandleGhostDefeated(Ghost defeatedGhost)
     {
         if (pacmanGhosts == null || rewardBox == null)
         {
@@ -162,7 +162,7 @@ public class MiniGameFlowManager : MonoBehaviour
         rewardBox.SetActive(true);
     }
 
-    private void SwitchTo(MiniGameState target, bool playCountdown, Transform teleportTarget = null)
+    private void SwitchTo(MiniGameState target, bool shouldPlayCountdown, Transform teleportTarget = null)
     {
         fadeCanvas.FadeOut(() =>
         {
@@ -177,7 +177,7 @@ public class MiniGameFlowManager : MonoBehaviour
                 PrepareGhostsForPacman();
             }
 
-            ApplyState(target, playCountdown);
+            ApplyState(target, shouldPlayCountdown);
         });
     }
 
@@ -205,7 +205,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// <summary>
     /// 대상 상태에 맞춰 UI/카메라/각 게임의 진행 여부를 일괄 적용한다.
     /// </summary>
-    private void ApplyState(MiniGameState target, bool playCountdown)
+    private void ApplyState(MiniGameState target, bool shouldPlayCountdown)
     {
         currentState = target;
 
@@ -229,7 +229,7 @@ public class MiniGameFlowManager : MonoBehaviour
         // 여기서는 끄기만 하고, 켜는 시점은 OnGameplayReady로 미룬다.
         if (target != MiniGameState.Pacman)
         {
-            SetGhostsActive(false);
+            SetGhostsActive(isActive: false);
         }
 
         // 에임 포인터(크로스헤어)와 목숨 하트 UI는 팩맨 전용이라 테트리스에서는 보이면 안 된다.
@@ -246,14 +246,14 @@ public class MiniGameFlowManager : MonoBehaviour
 
         fadeCanvas.FadeIn(() =>
         {
-            if (playCountdown)
+            if (shouldPlayCountdown)
             {
-                countdownUI.Play(countdownStartFrom, () => OnGameplayReady(target));
+                countdownUI.Play(countdownStartFrom, () => HandleGameplayReady(target));
             }
         });
     }
 
-    private void OnGameplayReady(MiniGameState target)
+    private void HandleGameplayReady(MiniGameState target)
     {
         if (target == MiniGameState.Tetris)
         {
@@ -261,11 +261,11 @@ public class MiniGameFlowManager : MonoBehaviour
         }
         else if (target == MiniGameState.Pacman)
         {
-            SetGhostsActive(true);
+            SetGhostsActive(isActive: true);
         }
     }
 
-    private void SetGhostsActive(bool active)
+    private void SetGhostsActive(bool isActive)
     {
         if (pacmanGhosts == null)
         {
@@ -276,7 +276,7 @@ public class MiniGameFlowManager : MonoBehaviour
         {
             if (ghost != null)
             {
-                ghost.SetActive(active);
+                ghost.SetActive(isActive);
             }
         }
     }
@@ -286,7 +286,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// 팩맨 상태가 아니거나(고스트가 이미 꺼져있음) 이미 처치된 고스트는 건드리지 않는다.
     /// PauseUI가 호출한다.
     /// </summary>
-    public void SetGhostsPaused(bool paused)
+    public void SetGhostsPaused(bool isPaused)
     {
         if (pacmanGhosts == null || currentState != MiniGameState.Pacman)
         {
@@ -297,7 +297,7 @@ public class MiniGameFlowManager : MonoBehaviour
         {
             if (ghost != null && !ghost.IsDefeated)
             {
-                ghost.SetActive(!paused, enterIdlePose: false);
+                ghost.SetActive(!isPaused, shouldEnterIdlePose: false);
             }
         }
     }

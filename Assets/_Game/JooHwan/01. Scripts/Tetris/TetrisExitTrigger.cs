@@ -16,6 +16,6 @@ public class TetrisExitTrigger : MonoBehaviour
             return;
         }
 
-        TetrisGameManager.Instance.OnExitReached();
+        TetrisGameManager.Instance.HandleExitReached();
     }
 }
