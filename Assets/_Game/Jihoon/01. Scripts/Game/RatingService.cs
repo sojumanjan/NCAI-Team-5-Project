@@ -109,13 +109,35 @@ public class RatingService : MonoBehaviour
             CorrectCount++;
         }
 
-        if (!Mathf.Approximately(delta, 0f))
-        {
-            Rating = Mathf.Clamp(Rating + delta, minRating, maxRating);
-            RatingChanged?.Invoke(Rating, delta);
-        }
+        ApplyDelta(delta);
 
         OrderResolved?.Invoke(spot, result, delta);
+    }
+
+    /// <summary>
+    /// 평점을 직접 움직인다. 정상 흐름에서는 주문 결과로만 바뀌므로, 이건 디버그용 통로다.
+    /// 성공/실패 집계는 건드리지 않는다.
+    /// </summary>
+    public void AddRating(float delta)
+    {
+        ApplyDelta(delta);
+    }
+
+    private void ApplyDelta(float delta)
+    {
+        if (Mathf.Approximately(delta, 0f))
+        {
+            return;
+        }
+
+        float before = Rating;
+        Rating = Mathf.Clamp(Rating + delta, minRating, maxRating);
+
+        // 상한에 걸려 실제로는 안 움직였으면 알리지 않는다. UI가 헛되이 반짝인다.
+        if (!Mathf.Approximately(before, Rating))
+        {
+            RatingChanged?.Invoke(Rating, Rating - before);
+        }
     }
 
     private float DeltaFor(OrderResult result, int orderSize)
