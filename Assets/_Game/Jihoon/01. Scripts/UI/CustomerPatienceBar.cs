@@ -1,3 +1,4 @@
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +14,20 @@ using UnityEngine.UI;
 /// </summary>
 public class CustomerPatienceBar : MonoBehaviour
 {
+    /// <summary>머리 위 메뉴 한 칸. 손님이 1개만 시키면 나머지는 꺼진다.</summary>
+    [Serializable]
+    private class MenuSlot
+    {
+        [Tooltip("이 칸 전체. 쓰지 않을 때 꺼집니다.")]
+        public GameObject root;
+
+        [Tooltip("메뉴 아이콘.")]
+        public Image icon;
+
+        [Tooltip("메뉴 이름. (선택)")]
+        public TMP_Text label;
+    }
+
     [Header("참조")]
     [Tooltip("표시할 손님. 비워두면 부모에서 찾습니다.")]
     [SerializeField] private Customer customer;
@@ -24,14 +39,15 @@ public class CustomerPatienceBar : MonoBehaviour
     [SerializeField] private Image fillImage;
 
     [Header("주문 메뉴")]
-    [Tooltip("게이지 위에 뜰 메뉴 아이콘. ItemData의 Icon을 씁니다.")]
-    [SerializeField] private Image dishIcon;
-
-    [Tooltip("메뉴 이름. 아이콘 스프라이트가 준비되면 꺼도 됩니다. (선택)")]
-    [SerializeField] private TMP_Text dishNameText;
+    [Tooltip("게이지 위에 뜰 메뉴 칸들. 위에서부터 순서대로 채웁니다.")]
+    [SerializeField] private MenuSlot[] menuSlots;
 
     [Tooltip("Icon이 아직 없을 때 아이콘 자리에 칠할 색.")]
     [SerializeField] private Color iconPlaceholderColor = new Color(1f, 1f, 1f, 0.3f);
+
+    [Tooltip("이미 나온 메뉴를 흐리게 만드는 정도. 0이면 그대로, 1이면 거의 안 보입니다.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float servedFade = 0.75f;
 
     [Header("표시")]
     [Tooltip("인내심이 이 비율 아래일 때부터 보입니다. 1이면 도착하자마자 항상 표시.")]
@@ -52,7 +68,6 @@ public class CustomerPatienceBar : MonoBehaviour
     [SerializeField] private bool billboard = true;
 
     private Camera _camera;
-    private ItemData _shownOrder;
 
     private void Awake()
     {
@@ -97,34 +112,65 @@ public class CustomerPatienceBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Draws what this customer asked for. Only rewritten when the order changes, which
-    /// for one customer means exactly once.
+    /// 이 손님이 시킨 것들을 그린다. 이미 나온 메뉴는 지우지 않고 흐리게 남긴다 —
+    /// 몇 개를 시켰고 몇 개가 남았는지가 한눈에 보여야 한다.
     /// </summary>
     private void UpdateOrder()
     {
-        ItemData order = customer.Order;
-        if (order == _shownOrder)
+        if (menuSlots == null)
         {
             return;
         }
 
-        _shownOrder = order;
+        var orders = customer.Orders;
 
-        if (dishNameText != null)
+        for (int i = 0; i < menuSlots.Length; i++)
         {
-            dishNameText.text = order != null ? order.DisplayName : string.Empty;
+            MenuSlot slot = menuSlots[i];
+            if (slot == null)
+            {
+                continue;
+            }
+
+            bool used = orders != null && i < orders.Count;
+
+            if (slot.root != null)
+            {
+                slot.root.SetActive(used);
+            }
+
+            if (!used)
+            {
+                continue;
+            }
+
+            ItemData order = orders[i];
+            float alpha = customer.IsServed(i) ? 1f - servedFade : 1f;
+
+            if (slot.label != null)
+            {
+                slot.label.text = order != null ? order.DisplayName : string.Empty;
+                slot.label.color = WithAlpha(slot.label.color, alpha);
+            }
+
+            if (slot.icon == null)
+            {
+                continue;
+            }
+
+            Sprite icon = order != null ? order.Icon : null;
+            slot.icon.sprite = icon;
+
+            // 그림이 아직 없으면 단색 블록으로 대신해서 자리와 크기를 확인할 수 있게 한다.
+            Color color = icon != null ? Color.white : iconPlaceholderColor;
+            slot.icon.color = WithAlpha(color, color.a * alpha);
         }
+    }
 
-        if (dishIcon == null)
-        {
-            return;
-        }
-
-        Sprite icon = order != null ? order.Icon : null;
-        dishIcon.sprite = icon;
-
-        // Flat block while the art is missing, so the slot is still visible and sized.
-        dishIcon.color = icon != null ? Color.white : iconPlaceholderColor;
+    private static Color WithAlpha(Color color, float alpha)
+    {
+        color.a = alpha;
+        return color;
     }
 
     private void UpdateFill(float remaining)

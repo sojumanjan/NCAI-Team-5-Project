@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// The POS terminal for one lane. Left click it to take the waiting customer's order.
@@ -52,7 +52,7 @@ public class PosTerminal : MonoBehaviour, IClickTarget
         _spot = spot;
         _spot.OrderPlaced += (_, __) => ApplyColor(awaitingColor);
         _spot.OrderAccepted += (_, __) => ApplyColor(acceptedColor);
-        _spot.OrderResolved += (_, __) => ApplyColor(idleColor);
+        _spot.OrderResolved += (_, __, ___) => ApplyColor(idleColor);
     }
 
     public bool CanClick(PlayerHands hands) => _spot != null && _spot.CanAcceptOrder();

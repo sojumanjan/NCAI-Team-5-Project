@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -31,13 +31,6 @@ public class MiniGameSession : MonoBehaviour
     [Header("클리어 조건")]
     [Tooltip("영업이 끝난 시점에 평점이 이 값 이상이면 클리어.")]
     [SerializeField] private float clearRating = 4f;
-
-    [Header("보상")]
-    [Tooltip("주문대로 만든 음식 하나당 비료.")]
-    [SerializeField] private int fertilizerPerCorrect = 5;
-
-    [Tooltip("클리어했을 때 추가로 주는 비료.")]
-    [SerializeField] private int clearBonus = 50;
 
     [Header("종료 처리")]
     [Tooltip("끝나면 Time.timeScale을 0으로. 인내심과 조리가 전부 멈춥니다.")]
@@ -127,14 +120,8 @@ public class MiniGameSession : MonoBehaviour
     {
         bool cleared = rating.Rating >= clearRating;
 
-        int fertilizer = rating.CorrectCount * fertilizerPerCorrect;
-        if (cleared)
-        {
-            fertilizer += clearBonus;
-        }
-
         return new MiniGameResult(cleared, rating.Rating, clearRating,
-                                  rating.CorrectCount, rating.ResolvedCount, fertilizer);
+                                  rating.CorrectCount, rating.ResolvedCount);
     }
 
     /// <summary>움직임과 시점을 멈추고 커서를 돌려준다.</summary>
@@ -185,13 +172,11 @@ public class MiniGameSession : MonoBehaviour
     /// </summary>
     public void ReturnToHub()
     {
-        Debug.Log($"[미구현] 허브 복귀. 비료 {Result.Fertilizer}, 클리어 {Result.Cleared}", this);
+        Debug.Log($"[미구현] 허브 복귀. 평점 {Result.FinalRating:0.0}, 클리어 {Result.Cleared}", this);
     }
 
     private void OnValidate()
     {
         clearRating = Mathf.Max(0f, clearRating);
-        fertilizerPerCorrect = Mathf.Max(0, fertilizerPerCorrect);
-        clearBonus = Mathf.Max(0, clearBonus);
     }
 }

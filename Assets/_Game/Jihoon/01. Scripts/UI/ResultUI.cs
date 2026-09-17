@@ -44,11 +44,6 @@ public class ResultUI : MonoBehaviour
 
     [SerializeField] private string countFormat = "성공한 주문  {0} / {1}";
 
-    [Tooltip("획득 비료. {0}=비료.")]
-    [SerializeField] private TMP_Text fertilizerText;
-
-    [SerializeField] private string fertilizerFormat = "비료  +{0}";
-
     [Header("버튼")]
     [Tooltip("다시 하기. 씬을 새로 엽니다.")]
     [SerializeField] private Button retryButton;
@@ -114,11 +109,6 @@ public class ResultUI : MonoBehaviour
         if (countText != null)
         {
             countText.text = string.Format(countFormat, result.CorrectCount, result.ResolvedCount);
-        }
-
-        if (fertilizerText != null)
-        {
-            fertilizerText.text = string.Format(fertilizerFormat, result.Fertilizer);
         }
     }
 }

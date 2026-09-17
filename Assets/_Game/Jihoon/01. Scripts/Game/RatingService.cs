@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -28,15 +28,15 @@ public class RatingService : MonoBehaviour
     [Tooltip("평점 상한. 이 값에 도달하면 목표 달성입니다.")]
     [SerializeField] private float maxRating = 5f;
 
-    [Header("증감")]
-    [Tooltip("주문대로 만들어 줬을 때.")]
-    [SerializeField] private float correctDelta = 0.2f;
+    [Header("증감 — 주문 메뉴 개수별")]
+    [Tooltip("주문대로 다 만들어 줬을 때. 첫 칸이 1개짜리 주문, 둘째가 2개, 셋째가 3개입니다.")]
+    [SerializeField] private float[] correctDeltas = { 0.2f, 0.3f, 0.4f };
 
-    [Tooltip("다른 음식을 줬을 때.")]
-    [SerializeField] private float wrongDelta = -0.2f;
+    [Tooltip("주문에 없는 음식을 줬을 때. 개수가 많을수록 크게 깎입니다.")]
+    [SerializeField] private float[] wrongDeltas = { -0.2f, -0.3f, -0.4f };
 
-    [Tooltip("손님이 기다리다 떠났을 때. (5단계부터 발생)")]
-    [SerializeField] private float abandonedDelta = -0.2f;
+    [Tooltip("손님이 기다리다 떠났을 때.")]
+    [SerializeField] private float[] abandonedDeltas = { -0.2f, -0.3f, -0.4f };
 
     /// <summary>Current rating, clamped between the configured bounds.</summary>
     public float Rating { get; private set; }
@@ -99,9 +99,9 @@ public class RatingService : MonoBehaviour
 
     // ---------------------------------------------------------------- scoring
 
-    private void HandleOrderResolved(ServingSpot spot, OrderResult result)
+    private void HandleOrderResolved(ServingSpot spot, OrderResult result, int orderSize)
     {
-        float delta = DeltaFor(result);
+        float delta = DeltaFor(result, orderSize);
 
         ResolvedCount++;
         if (result == OrderResult.Correct)
@@ -118,19 +118,31 @@ public class RatingService : MonoBehaviour
         OrderResolved?.Invoke(spot, result, delta);
     }
 
-    private float DeltaFor(OrderResult result)
+    private float DeltaFor(OrderResult result, int orderSize)
     {
         switch (result)
         {
             case OrderResult.Correct:
-                return correctDelta;
+                return Pick(correctDeltas, orderSize);
             case OrderResult.Wrong:
-                return wrongDelta;
+                return Pick(wrongDeltas, orderSize);
             case OrderResult.Abandoned:
-                return abandonedDelta;
+                return Pick(abandonedDeltas, orderSize);
             default:
                 return 0f;
         }
+    }
+
+    /// <summary>개수에 해당하는 값. 표가 짧으면 마지막 칸으로 버틴다.</summary>
+    private static float Pick(float[] table, int orderSize)
+    {
+        if (table == null || table.Length == 0)
+        {
+            return 0f;
+        }
+
+        int index = Mathf.Clamp(orderSize - 1, 0, table.Length - 1);
+        return table[index];
     }
 
     private ServingSpot[] Spots()

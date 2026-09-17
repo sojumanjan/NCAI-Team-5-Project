@@ -266,9 +266,18 @@ MonoBehaviour:
   customer: {fileID: 0}
   canvas: {fileID: 0}
   fillImage: {fileID: 4083610221067865072}
-  dishIcon: {fileID: 8406965825922737678}
-  dishNameText: {fileID: 147927217703458294}
+  menuSlots:
+  - root: {fileID: 232719990534386853}
+    icon: {fileID: 8406965825922737678}
+    label: {fileID: 147927217703458294}
+  - root: {fileID: 2049267228278113725}
+    icon: {fileID: 3662538170791360468}
+    label: {fileID: 5663419853010990285}
+  - root: {fileID: 1431508310716959338}
+    icon: {fileID: 5126063298509627952}
+    label: {fileID: 4716414006183896304}
   iconPlaceholderColor: {r: 1, g: 1, b: 1, a: 0.3}
+  servedFade: 0.75
   showBelow: 1
   heightOffset: 1.55
   calmColor: {r: 0.35, g: 0.9, b: 0.4, a: 1}

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>카운터 한 레인이 어느 단계에 있는지.</summary>
@@ -64,11 +65,20 @@ public class ServingSpot : MonoBehaviour
 
     private Customer _customer;
 
+    // 주문한 메뉴 전체와, 각각이 이미 나왔는지. UI가 낸 것을 흐리게 그리려면 둘 다 필요해서
+    // 남은 것만 들고 있지 않는다.
+    private readonly List<ItemData> _orders = new();
+    private readonly List<bool> _served = new();
+    private readonly List<ItemData> _picked = new();
+
     /// <summary>이 레인의 현재 단계.</summary>
     public ServingSpotState State { get; private set; } = ServingSpotState.Free;
 
-    /// <summary>지금 손님이 시킨 것. 없으면 null.</summary>
-    public ItemData CurrentOrder { get; private set; }
+    /// <summary>지금 손님이 시킨 메뉴들. 손님이 없으면 비어 있다.</summary>
+    public IReadOnlyList<ItemData> CurrentOrders => _orders;
+
+    /// <summary>주문 중 <paramref name="index"/>번째가 이미 나왔는지.</summary>
+    public bool IsServed(int index) => index >= 0 && index < _served.Count && _served[index];
 
     /// <summary>손님이 서는 자리.</summary>
     public Transform CustomerStand => customerStand;
@@ -97,17 +107,23 @@ public class ServingSpot : MonoBehaviour
     /// <summary>손님이 실제로 서서 기다리는 동안에만 참.</summary>
     public bool IsCustomerWaiting => _customer != null && _customer.IsWaiting;
 
-    /// <summary>손님이 주문을 말했을 때.</summary>
-    public event Action<ServingSpot, ItemData> OrderPlaced;
+    /// <summary>손님이 주문을 말했을 때. 메뉴는 1~3개다.</summary>
+    public event Action<ServingSpot, IReadOnlyList<ItemData>> OrderPlaced;
 
     /// <summary>플레이어가 포스기에서 주문을 수락했을 때.</summary>
-    public event Action<ServingSpot, ItemData> OrderAccepted;
+    public event Action<ServingSpot, IReadOnlyList<ItemData>> OrderAccepted;
+
+    /// <summary>주문 중 하나가 나왔을 때. UI가 그 칸을 흐리게 만드는 신호다.</summary>
+    public event Action<ServingSpot> OrderProgress;
 
     /// <summary>
     /// 주문 하나가 어떻게 끝났든 한 번 발생한다. 평점 시스템과 하루 집계가 듣는 유일한
     /// 창구 — 실패 유형마다 이벤트를 두지 않고 하나로 합쳤다.
+    ///
+    /// 세 번째 인자는 그 주문의 메뉴 개수다. 큰 주문일수록 평점이 크게 움직여야 해서
+    /// 결과와 함께 넘긴다.
     /// </summary>
-    public event Action<ServingSpot, OrderResult> OrderResolved;
+    public event Action<ServingSpot, OrderResult, int> OrderResolved;
 
     // ---------------------------------------------------------------- 수명주기
 
@@ -135,7 +151,7 @@ public class ServingSpot : MonoBehaviour
     /// 이 레인으로 손님을 보낸다. 프리팹과 타이밍을 쥔 <see cref="CustomerSpawner"/>가 호출한다.
     /// 레인은 자기가 비었는지만 안다. 이미 차 있거나 설정이 덜 됐으면 false.
     /// </summary>
-    public bool TrySeatCustomer(GameObject customerPrefab, float patienceSeconds)
+    public bool TrySeatCustomer(GameObject customerPrefab, float patienceSeconds, int orderCount = 1)
     {
         if (!IsFree || customerPrefab == null || customerStand == null)
         {
@@ -161,26 +177,44 @@ public class ServingSpot : MonoBehaviour
         }
 
         _customer = customer;
-        customer.Arrive(this, PickOrder(), patienceSeconds);
+        customer.Arrive(this, PickOrders(orderCount), patienceSeconds);
         return true;
     }
 
-    private ItemData PickOrder()
+    private IReadOnlyList<ItemData> PickOrders(int count)
     {
-        return recipeBook != null ? recipeBook.GetRandomOutput() : null;
+        _picked.Clear();
+
+        if (recipeBook != null)
+        {
+            recipeBook.GetRandomOutputs(Mathf.Max(1, count), _picked);
+        }
+
+        return _picked;
     }
 
     /// <summary>손님이 카운터에 도착하면 손님 쪽에서 부른다.</summary>
-    public void OnCustomerReady(Customer customer, ItemData wanted)
+    public void OnCustomerReady(Customer customer, IReadOnlyList<ItemData> wanted)
     {
         if (customer != _customer)
         {
             return;
         }
 
-        CurrentOrder = wanted;
+        _orders.Clear();
+        _served.Clear();
+
+        if (wanted != null)
+        {
+            foreach (ItemData item in wanted)
+            {
+                _orders.Add(item);
+                _served.Add(false);
+            }
+        }
+
         State = ServingSpotState.AwaitingAccept;
-        OrderPlaced?.Invoke(this, wanted);
+        OrderPlaced?.Invoke(this, _orders);
     }
 
     /// <summary>손님이 기다리다 포기했다. 인내심 타이머가 0이 되면 손님 쪽에서 부른다.</summary>
@@ -208,7 +242,7 @@ public class ServingSpot : MonoBehaviour
         }
 
         State = ServingSpotState.Accepted;
-        OrderAccepted?.Invoke(this, CurrentOrder);
+        OrderAccepted?.Invoke(this, _orders);
     }
 
     // ---------------------------------------------------------------- 트레이
@@ -235,7 +269,7 @@ public class ServingSpot : MonoBehaviour
             return;
         }
 
-        bool correct = dish.Item == CurrentOrder;
+        int slot = FindUnservedSlot(dish.Item);
 
         // 판정 전에 먼저 얹어야 화면과 점수가 같은 타이밍에 움직인다.
         if (tray != null)
@@ -247,23 +281,67 @@ public class ServingSpot : MonoBehaviour
             Destroy(dish.gameObject);
         }
 
-        Resolve(correct ? OrderResult.Correct : OrderResult.Wrong);
+        // 주문에 없는 음식은 그 자리에서 주문 전체가 실패한다. 이미 낸 것을 또 내도 마찬가지다.
+        if (slot < 0)
+        {
+            Resolve(OrderResult.Wrong);
+            return;
+        }
+
+        _served[slot] = true;
+        OrderProgress?.Invoke(this);
+
+        if (AllServed())
+        {
+            Resolve(OrderResult.Correct);
+        }
+    }
+
+    /// <summary>아직 안 나온 같은 메뉴의 칸. 없으면 -1.</summary>
+    private int FindUnservedSlot(ItemData dish)
+    {
+        for (int i = 0; i < _orders.Count; i++)
+        {
+            if (!_served[i] && _orders[i] == dish)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private bool AllServed()
+    {
+        foreach (bool served in _served)
+        {
+            if (!served)
+            {
+                return false;
+            }
+        }
+
+        return _served.Count > 0;
     }
 
     // ---------------------------------------------------------------- 내부
 
     private void Resolve(OrderResult result)
     {
+        // 개수를 먼저 챙긴다. 목록을 비운 뒤에 알리면 평점이 0개짜리 주문으로 계산된다.
+        int size = _orders.Count;
+
         if (_customer != null)
         {
             _customer.Leave();
             _customer = null;
         }
 
-        CurrentOrder = null;
+        _orders.Clear();
+        _served.Clear();
         State = ServingSpotState.Free;
 
-        OrderResolved?.Invoke(this, result);
+        OrderResolved?.Invoke(this, result, size);
     }
 
     // ---------------------------------------------------------------- 기즈모

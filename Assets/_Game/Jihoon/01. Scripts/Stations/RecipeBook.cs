@@ -131,6 +131,50 @@ public class RecipeBook : ScriptableObject
         return null;
     }
 
+    /// <summary>
+    /// 서로 다른 메뉴 <paramref name="count"/>개. 같은 메뉴를 두 번 시키지 않는다.
+    /// 만들 수 있는 메뉴가 모자라면 있는 만큼만 담는다 — 메뉴가 두 종류뿐인데 세 개를
+    /// 시키면 주문이 영영 완성되지 않기 때문이다.
+    /// </summary>
+    public void GetRandomOutputs(int count, List<ItemData> into)
+    {
+        if (into == null)
+        {
+            return;
+        }
+
+        into.Clear();
+
+        if (recipes == null || count <= 0)
+        {
+            return;
+        }
+
+        // 중복 레시피가 같은 메뉴를 내놓을 수 있으므로 메뉴 기준으로 한 번 걸러낸다.
+        List<ItemData> pool = new List<ItemData>();
+        foreach (RecipeData recipe in recipes)
+        {
+            if (IsOrderable(recipe) && !pool.Contains(recipe.Output))
+            {
+                pool.Add(recipe.Output);
+            }
+        }
+
+        if (pool.Count == 0)
+        {
+            Debug.LogError($"{name}: 완성 요리(Dish)를 만드는 레시피가 하나도 없어 손님이 주문할 수 없습니다.", this);
+            return;
+        }
+
+        int take = Mathf.Min(count, pool.Count);
+        for (int i = 0; i < take; i++)
+        {
+            int pick = Random.Range(i, pool.Count);
+            (pool[i], pool[pick]) = (pool[pick], pool[i]);
+            into.Add(pool[i]);
+        }
+    }
+
     /// <summary>손님이 시킬 수 있는 레시피인지. 중간 산출물은 메뉴가 아니다.</summary>
     private static bool IsOrderable(RecipeData recipe)
     {

@@ -54,8 +54,13 @@ public class Customer : MonoBehaviour
     private float _patienceLeft;
     private bool _gaveUp;
 
-    /// <summary>What this customer wants.</summary>
-    public ItemData Order { get; private set; }
+    private readonly List<ItemData> _orders = new();
+
+    /// <summary>What this customer wants. 1~3개.</summary>
+    public IReadOnlyList<ItemData> Orders => _orders;
+
+    /// <summary>주문 중 <paramref name="index"/>번째가 이미 나왔는지. 레인이 답한다.</summary>
+    public bool IsServed(int index) => _spot != null && _spot.IsServed(index);
 
     /// <summary>Patience remaining, 1 when fresh and 0 when they walk out.</summary>
     public float Patience01 => _patienceMax > 0f ? Mathf.Clamp01(_patienceLeft / _patienceMax) : 1f;
@@ -69,10 +74,18 @@ public class Customer : MonoBehaviour
     /// Sends the customer to the counter. A patience of zero or less falls back to the
     /// prefab's own default, so a customer dropped into the scene by hand still behaves.
     /// </summary>
-    public void Arrive(ServingSpot spot, ItemData order, float patienceSeconds = 0f)
+    public void Arrive(ServingSpot spot, IReadOnlyList<ItemData> orders, float patienceSeconds = 0f)
     {
         _spot = spot;
-        Order = order;
+
+        _orders.Clear();
+        if (orders != null)
+        {
+            foreach (ItemData order in orders)
+            {
+                _orders.Add(order);
+            }
+        }
 
         _patienceMax = patienceSeconds > 0f ? patienceSeconds : defaultPatience;
         _patienceLeft = _patienceMax;
@@ -147,7 +160,7 @@ public class Customer : MonoBehaviour
                 {
                     _phase = Phase.Ordering;
                     FaceCounter();
-                    _spot.OnCustomerReady(this, Order);
+                    _spot.OnCustomerReady(this, _orders);
                 }
                 break;
 
