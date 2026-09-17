@@ -9,6 +9,8 @@ public class CountdownUI : MonoBehaviour
     [SerializeField] private Text countdownText;
     [SerializeField] private float secondsPerCount = 1f;
 
+    public bool IsPlaying => root.activeSelf;
+
     public void Play(int startFrom, Action onComplete)
     {
         StartCoroutine(CountdownRoutine(startFrom, onComplete));

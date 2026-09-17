@@ -28,10 +28,13 @@ public class PlayerController : MonoBehaviour
     private InputAction moveAction;
     private InputAction lookAction;
     private InputAction jumpAction;
+    private InputAction interactAction;
 
     private Vector3 verticalVelocity;
     private float pitch;
     private bool controlsLocked;
+
+    public bool ControlsLocked => controlsLocked;
 
     public void SetControlsLocked(bool locked)
     {
@@ -47,6 +50,40 @@ public class PlayerController : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
+
+        // Interact(F)는 RewardBoxTrigger/PacmanEntranceWall 등 여러 컴포넌트가 같은 액션을 구독하므로,
+        // 여기서 액션 자체를 잠그면 각 컴포넌트를 따로 고칠 필요 없이 일괄 차단된다.
+        if (locked)
+        {
+            interactAction.Disable();
+        }
+        else
+        {
+            interactAction.Enable();
+        }
+    }
+
+    /// <summary>
+    /// 점프 가능 여부를 런타임에 바꾼다 (예: 팩맨에서는 점프/등반이 없어야 함).
+    /// 활성화된 상태에서는 즉시 입력 액션도 함께 Enable/Disable한다.
+    /// </summary>
+    public void SetJumpEnabled(bool enabled)
+    {
+        jumpEnabled = enabled;
+
+        if (!isActiveAndEnabled)
+        {
+            return;
+        }
+
+        if (jumpEnabled)
+        {
+            jumpAction.Enable();
+        }
+        else
+        {
+            jumpAction.Disable();
+        }
     }
 
     private void Awake()
@@ -57,6 +94,7 @@ public class PlayerController : MonoBehaviour
         moveAction = playerMap.FindAction("Move");
         lookAction = playerMap.FindAction("Look");
         jumpAction = playerMap.FindAction("Jump");
+        interactAction = playerMap.FindAction("Interact");
     }
 
     private void OnEnable()
@@ -79,6 +117,7 @@ public class PlayerController : MonoBehaviour
         moveAction.Disable();
         lookAction.Disable();
         jumpAction.Disable();
+        interactAction.Disable();
     }
 
     private void Update()

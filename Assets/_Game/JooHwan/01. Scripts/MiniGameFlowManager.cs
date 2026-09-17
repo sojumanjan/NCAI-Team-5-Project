@@ -26,6 +26,8 @@ public class MiniGameFlowManager : MonoBehaviour
     [SerializeField] private Ghost[] pacmanGhosts;
     [SerializeField] private GameObject heartsUIRoot;
     [SerializeField] private PelletSpawner pelletSpawner;
+    [Tooltip("고스트 5마리 전멸 시 맵 중앙에 등장시킬 보상 상자")]
+    [SerializeField] private GameObject rewardBox;
 
     [Header("Debug (팩맨 로직 작업 중 임시 사용)")]
     [Tooltip("체크하면 시작 시 인트로를 건너뛰고, 테트리스를 이미 클리어한 직후(문 앞 복도, 팩맨은 아직 비활성) 상태로 진입한다. 팩맨 구현이 끝나면 반드시 해제할 것.")]
@@ -39,6 +41,17 @@ public class MiniGameFlowManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+
+        if (pacmanGhosts != null)
+        {
+            foreach (var ghost in pacmanGhosts)
+            {
+                if (ghost != null)
+                {
+                    ghost.OnDefeated += OnGhostDefeated;
+                }
+            }
+        }
     }
 
     private void Start()
@@ -109,6 +122,11 @@ public class MiniGameFlowManager : MonoBehaviour
 
     private void ResetAllGhosts()
     {
+        if (rewardBox != null)
+        {
+            rewardBox.SetActive(false);
+        }
+
         if (pacmanGhosts == null)
         {
             return;
@@ -121,6 +139,28 @@ public class MiniGameFlowManager : MonoBehaviour
                 ghost.ResetForRestart();
             }
         }
+    }
+
+    /// <summary>
+    /// 고스트가 처치될 때마다 호출된다. 5마리(pacmanGhosts 전부)가 모두 처치되면
+    /// 클리어 조건 달성으로 보고 보상 상자를 맵 중앙에 등장시킨다.
+    /// </summary>
+    private void OnGhostDefeated(Ghost defeated)
+    {
+        if (pacmanGhosts == null || rewardBox == null)
+        {
+            return;
+        }
+
+        foreach (var ghost in pacmanGhosts)
+        {
+            if (ghost != null && !ghost.IsDefeated)
+            {
+                return;
+            }
+        }
+
+        rewardBox.SetActive(true);
     }
 
     private void SwitchTo(MiniGameState target, bool playCountdown, Transform teleportTarget = null)
@@ -197,6 +237,10 @@ public class MiniGameFlowManager : MonoBehaviour
         // 에임 포인터(크로스헤어)와 목숨 하트 UI는 팩맨 전용이라 테트리스에서는 보이면 안 된다.
         tetrisGameManager.SetCrosshairAllowed(target == MiniGameState.Pacman);
 
+        // 팩맨에는 점프 지형이 없으므로 비활성화한다.
+        // (같은 Jump 액션을 공유하는 ClimbController도 jumpAction이 Disable되면 자동으로 트리거되지 않는다)
+        tetrisGameManager.SetJumpAllowed(target != MiniGameState.Pacman);
+
         if (heartsUIRoot != null)
         {
             heartsUIRoot.SetActive(target == MiniGameState.Pacman);
@@ -235,6 +279,27 @@ public class MiniGameFlowManager : MonoBehaviour
             if (ghost != null)
             {
                 ghost.SetActive(active);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 일시정지 패널이 열려있는 동안 고스트의 이동/추격/발광만 멈춘다 (위치는 그대로 유지).
+    /// 팩맨 상태가 아니거나(고스트가 이미 꺼져있음) 이미 처치된 고스트는 건드리지 않는다.
+    /// PauseUI가 호출한다.
+    /// </summary>
+    public void SetGhostsPaused(bool paused)
+    {
+        if (pacmanGhosts == null || currentState != MiniGameState.Pacman)
+        {
+            return;
+        }
+
+        foreach (var ghost in pacmanGhosts)
+        {
+            if (ghost != null && !ghost.IsDefeated)
+            {
+                ghost.SetActive(!paused, enterIdlePose: false);
             }
         }
     }

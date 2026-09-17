@@ -69,6 +69,16 @@ public class TetrisGameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 팩맨에는 점프 지형이 없으므로, 팩맨 상태에서는 비활성화한다.
+    /// ClimbController도 같은 Jump 액션을 구독하므로 별도 처리 없이 함께 막힌다.
+    /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출한다.
+    /// </summary>
+    public void SetJumpAllowed(bool allowed)
+    {
+        playerController.SetJumpEnabled(allowed);
+    }
+
+    /// <summary>
     /// MiniGameFlowManager가 페이드/카운트다운을 모두 마친 뒤 호출한다.
     /// (재시작은 OnClickRestart, 최초 시작은 이 메서드로 나뉜다)
     /// </summary>

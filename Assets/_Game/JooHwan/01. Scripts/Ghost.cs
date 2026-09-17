@@ -41,6 +41,7 @@ public class Ghost : GhostHittable
     private NavMeshAgent agent;
     private Transform player;
     private IGhostMovementSource movementSource;
+    private Collider ghostCollider;
 
     private bool isChasing;
     private bool isGlowing;
@@ -51,10 +52,16 @@ public class Ghost : GhostHittable
     private Coroutine glowCycleCoroutine;
     private Color originalBodyColor;
 
+    /// <summary>처치된 순간(디졸브 연출 시작 시점)에 호출된다. 전멸 판정에 사용한다.</summary>
+    public System.Action<Ghost> OnDefeated;
+
+    public bool IsDefeated => isDefeated;
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         movementSource = GetComponent<IGhostMovementSource>();
+        ghostCollider = GetComponent<Collider>();
 
         if (bodyRenderer != null)
         {
@@ -283,6 +290,14 @@ public class Ghost : GhostHittable
         }
 
         isDefeated = true;
+        OnDefeated?.Invoke(this);
+
+        // 디졸브 연출(수 초)이 끝날 때까지 GameObject는 활성 상태로 남아있어야 하지만,
+        // 그동안 콜라이더까지 살아있으면 연출 중에 플레이어가 지나가다 피격당하므로 즉시 꺼준다.
+        if (ghostCollider != null)
+        {
+            ghostCollider.enabled = false;
+        }
 
         // 맞은 즉시 움직임/추격/충돌은 멈추되, 화면에서는 디졸브 연출이 끝난 뒤에 사라진다.
         // 죽은 그 자리에서 연출이 재생되어야 하므로, 대기 지점으로 워프하는 EnterIdleState는 건너뛴다.
@@ -306,6 +321,11 @@ public class Ghost : GhostHittable
     {
         isDefeated = false;
         gameObject.SetActive(true);
+
+        if (ghostCollider != null)
+        {
+            ghostCollider.enabled = true;
+        }
 
         if (defeatEffect != null)
         {

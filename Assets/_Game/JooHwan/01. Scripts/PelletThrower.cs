@@ -20,6 +20,7 @@ public class PelletThrower : MonoBehaviour
     [SerializeField] private float spawnForwardOffset = 0.8f;
 
     private InputAction throwAction;
+    private PlayerController playerController;
     private int carriedCount;
     private readonly System.Collections.Generic.List<GameObject> heldVisuals = new System.Collections.Generic.List<GameObject>();
 
@@ -29,6 +30,7 @@ public class PelletThrower : MonoBehaviour
     {
         var playerMap = inputActions.FindActionMap("Player");
         throwAction = playerMap.FindAction("Throw");
+        playerController = GetComponent<PlayerController>();
     }
 
     private void OnEnable()
@@ -44,6 +46,13 @@ public class PelletThrower : MonoBehaviour
     private void Update()
     {
         if (carriedCount <= 0)
+        {
+            return;
+        }
+
+        // 일시정지/사망 팝업 등으로 조작이 잠긴 동안에는, 패널의 버튼을 클릭하는 좌클릭이
+        // 그대로 Throw 액션으로도 들어와 펠릿이 튀어나가므로 잠금 중엔 무시한다.
+        if (playerController != null && playerController.ControlsLocked)
         {
             return;
         }
