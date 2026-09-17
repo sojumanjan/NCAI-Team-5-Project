@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro;
 
+namespace Yusong
+{
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
@@ -98,4 +100,5 @@ public class ScoreManager : MonoBehaviour
             scoreText.text = "SCORE : " + totalScore;
         }
     }
+}
 }

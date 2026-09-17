@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class EnemyHealth : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private int hitsToDestroy = 1;
@@ -304,4 +306,5 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
             if (ringImage != null) ringImage.color = theme.explosionRingColor;
         }
     }
+}
 }

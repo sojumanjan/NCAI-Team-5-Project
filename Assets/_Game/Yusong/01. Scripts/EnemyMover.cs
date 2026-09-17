@@ -1,5 +1,7 @@
 using UnityEngine;
 
+namespace Yusong
+{
 public class EnemyMover : MonoBehaviour
 {
     [SerializeField] private float speed = 120f;
@@ -43,4 +45,5 @@ public class EnemyMover : MonoBehaviour
 
         Destroy(gameObject);
     }
+}
 }

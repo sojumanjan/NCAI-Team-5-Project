@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro;
 
+namespace Yusong
+{
 public enum EnemyShape
 {
     Circle,
@@ -51,4 +53,5 @@ public class UITheme : ScriptableObject
     [Header("Game Over")]
     public Color gameOverTextColor = new Color(1f, 0.15f, 0.15f, 1f);
     public Color gameOverBackgroundColor = new Color(0f, 0f, 0f, 0.75f);
+}
 }

@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+namespace Yusong
+{
 public class ComboManager : MonoBehaviour
 {
     public static ComboManager Instance { get; private set; }
@@ -163,4 +165,5 @@ public class ComboManager : MonoBehaviour
     {
         root.SetActive(visible);
     }
+}
 }

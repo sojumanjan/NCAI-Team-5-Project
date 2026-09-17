@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class BossIndicator : MonoBehaviour
 {
     [SerializeField] private Transform fieldParent;
@@ -70,4 +72,5 @@ public class BossIndicator : MonoBehaviour
     {
         if (image != null) image.enabled = visible;
     }
+}
 }

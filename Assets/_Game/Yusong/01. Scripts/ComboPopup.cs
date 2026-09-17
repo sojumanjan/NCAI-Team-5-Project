@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro;
 
+namespace Yusong
+{
 public class ComboPopup : MonoBehaviour
 {
     [SerializeField] private float duration = 0.6f;
@@ -68,4 +70,5 @@ public class ComboPopup : MonoBehaviour
             Destroy(gameObject);
         }
     }
+}
 }
