@@ -354,6 +354,59 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &933184418552671885
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 426624900206969423}
+  - component: {fileID: 863308717222475712}
+  m_Layer: 0
+  m_Name: PLAY Button Hitbox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &426624900206969423
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933184418552671885}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 5.5, z: -0.93}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1460190834698724534}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &863308717222475712
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933184418552671885}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.12, y: 1.12, z: 0.12}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1020475954445058967
 GameObject:
   m_ObjectHideFlags: 0
@@ -2140,6 +2193,7 @@ Transform:
   - {fileID: 9041485526883898460}
   - {fileID: 3052863921281531519}
   - {fileID: 3509360922087532063}
+  - {fileID: 426624900206969423}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4682023307691450394
@@ -2875,6 +2929,7 @@ MonoBehaviour:
   - {fileID: 304814845484832419}
   - {fileID: 3112752877861770246}
   inputCamera: {fileID: 0}
+  playButton: {fileID: 863308717222475712}
   stateText: {fileID: 4089398325815327214}
   colors:
   - {r: 0.9, g: 0.12, b: 0.16, a: 1}
@@ -4935,7 +4990,7 @@ MonoBehaviour:
     m_LineSpacing: 1
   m_Text: 'Stage 1 / 5
 
-    Ready'
+    Press PLAY to start'
 --- !u!1 &8501834269619998413
 GameObject:
   m_ObjectHideFlags: 0

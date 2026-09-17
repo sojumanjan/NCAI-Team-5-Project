@@ -118,7 +118,7 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
         if (index == 0 && positions[0] >= 6)
         {
             HasKey = true; selected = -1; dragging = false;
-            SetStatus("열쇠 블록 획득!  (열쇠 사용 기능은 아직 없습니다)");
+            SetStatus("퍼즐 해결!  이동 시점에서 생성된 열쇠를 획득하세요.");
             onKeyRecovered.Invoke();
         }
         else SetStatus("이동 " + MoveCount + "회  |  블록을 길이 방향으로 드래그하세요.");

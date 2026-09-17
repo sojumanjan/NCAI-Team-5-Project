@@ -14,6 +14,7 @@ public sealed class ColorMemoryGame : MonoBehaviour
     [Header("Drag the five existing scene cubes here, in order")]
     [SerializeField] private MemoryCube[] cubes = new MemoryCube[CubeCount];
     [SerializeField] private Camera inputCamera;
+    [SerializeField] private Collider playButton;
     [Tooltip("Optional. If empty, one Canvas and Text are created automatically.")]
     [SerializeField] private Text stateText;
 
@@ -39,6 +40,7 @@ public sealed class ColorMemoryGame : MonoBehaviour
 
     private enum GameState { Idle, Showing, Input, Success, Failure, Complete }
     private GameState state;
+    public bool IsSolved => state == GameState.Complete;
     private readonly List<int> pattern = new List<int>();
     private int stage;
     private int inputIndex;
@@ -73,6 +75,14 @@ public sealed class ColorMemoryGame : MonoBehaviour
         }
         ResetCubes();
         stage = 1;
+        pattern.Clear();
+        inputIndex = 0;
+        SetStatus("Press PLAY to start");
+    }
+
+    public void PlayGame()
+    {
+        if (!isActiveAndEnabled || !initialized || state != GameState.Idle) return;
         StartCoroutine(RunGame());
     }
 
@@ -114,9 +124,11 @@ public sealed class ColorMemoryGame : MonoBehaviour
             SetStatus("Watch");
             yield return new WaitForSecondsRealtime(0.8f);
 
-            pattern.Clear();
-            int length = Mathf.Max(1, initialPatternLength) + (stage - 1) * Mathf.Max(1, addedNotesPerStage);
-            for (int i = 0; i < length; i++) pattern.Add(Random.Range(0, CubeCount));
+            if (pattern.Count == 0)
+            {
+                int length = Mathf.Max(1, initialPatternLength) + (stage - 1) * Mathf.Max(1, addedNotesPerStage);
+                for (int i = 0; i < length; i++) pattern.Add(Random.Range(0, CubeCount));
+            }
 
             float difficulty = (stage - 1f) / (TotalStages - 1f);
             float noteDuration = Mathf.Max(0.1f, Mathf.Lerp(firstNoteSeconds, lastNoteSeconds, difficulty));
@@ -137,11 +149,11 @@ public sealed class ColorMemoryGame : MonoBehaviour
             while (state == GameState.Input) yield return null;
 
             bool success = state == GameState.Success;
-            SetStatus(success ? "Success" : "Failed - retry");
+            SetStatus(success ? "Success" : "Failed - replay same pattern");
             yield return new WaitForSecondsRealtime(Mathf.Max(pressFeedbackSeconds, resultSeconds));
             ResetCubes();
-            if (success) stage++;
-            // A wrong answer generates a new pattern at the same difficulty.
+            if (success) { stage++; pattern.Clear(); }
+            // A failed round replays the same pattern.
         }
         stage = TotalStages;
         state = GameState.Complete;
@@ -150,11 +162,19 @@ public sealed class ColorMemoryGame : MonoBehaviour
 
     private void Update()
     {
-        if (state != GameState.Input || inputCamera == null || !inputCamera.isActiveAndEnabled) return;
-        if (!TryGetPress(out Vector2 screenPosition)) return;
+        if (inputCamera == null || !inputCamera.isActiveAndEnabled) return;
+        if (TryGetPress(out Vector2 screenPosition)) HandlePointerPress(screenPosition);
+    }
+
+    public void HandlePointerPress(Vector2 screenPosition)
+    {
+        if (inputCamera == null || !inputCamera.isActiveAndEnabled) return;
+        if (state != GameState.Idle && state != GameState.Input) return;
         Ray ray = inputCamera.ScreenPointToRay(screenPosition);
         if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity,
             Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
+        if (hit.collider == playButton) { PlayGame(); return; }
+        if (state != GameState.Input) return;
         MemoryCube clicked = hit.collider.GetComponentInParent<MemoryCube>();
         for (int i = 0; i < CubeCount; i++)
         {
@@ -265,3 +285,4 @@ public sealed class ColorMemoryGame : MonoBehaviour
         if (generatedCanvas != null) Destroy(generatedCanvas);
     }
 }
+
