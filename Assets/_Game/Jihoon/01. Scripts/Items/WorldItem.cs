@@ -23,6 +23,11 @@ public class WorldItem : MonoBehaviour
     [Tooltip("손 기준 회전 보정.")]
     [SerializeField] private Vector3 heldRotationOffset;
 
+    [Header("내려놓을 때")]
+    [Tooltip("월드에 놓일 때의 회전 보정. 모델의 '똑바로 선' 자세가 X 0이 아닐 때 씁니다. " +
+             "냉장고 안 재료통처럼 부모에게서 회전을 물려받아 서 있던 물건이 여기 해당합니다.")]
+    [SerializeField] private Vector3 placedRotationOffset;
+
     private Collider[] _colliders;
     private Rigidbody _rigidbody;
 
@@ -39,6 +44,12 @@ public class WorldItem : MonoBehaviour
     public Vector3 HeldPositionOffset => heldPositionOffset;
 
     public Quaternion HeldRotationOffset => Quaternion.Euler(heldRotationOffset);
+
+    /// <summary>
+    /// 내려놓을 때 바라보는 방향 위에 덧씌울 회전. 놓는 자세는 yaw만 플레이어를 따라가는데,
+    /// 모델에 따라 그것만으로는 눕거나 뒤집힌다.
+    /// </summary>
+    public Quaternion PlacedRotationOffset => Quaternion.Euler(placedRotationOffset);
 
     // ---------------------------------------------------------------- 놓을 자리
 

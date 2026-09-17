@@ -81,7 +81,11 @@ public class PlayerHands : MonoBehaviour
     /// <summary>How the held item would be oriented if dropped right now.</summary>
     public Quaternion GetDropRotation()
     {
-        return Quaternion.Euler(0f, transform.eulerAngles.y + DropYaw, 0f);
+        Quaternion facing = Quaternion.Euler(0f, transform.eulerAngles.y + DropYaw, 0f);
+
+        // 모델마다 '똑바로 선' 자세가 다르다. 보정을 여기서 한 번에 얹어야 고스트·실제 배치·
+        // 바닥 높이 계산이 전부 같은 회전을 보게 된다.
+        return _held != null ? facing * _held.PlacedRotationOffset : facing;
     }
 
     // ---------------------------------------------------------------- lifecycle
@@ -312,7 +316,11 @@ public class PlayerHands : MonoBehaviour
         DropYaw = 0f;
 
         worldItem.SetCarried(true);
-        worldItem.transform.SetParent(holdAnchor, false);
+
+        // worldPositionStays를 켜서 붙인다. 끄면 localScale이 그대로 남는데, 재료통처럼
+        // 스케일이 큰 부모(냉장고 모델) 밑에 있던 물건은 물려받던 배율을 잃고 수백 배
+        // 작아진다 — 손에 든 순간 사라진 것처럼 보인다.
+        worldItem.transform.SetParent(holdAnchor, true);
         worldItem.transform.SetLocalPositionAndRotation(worldItem.HeldPositionOffset,
                                                         worldItem.HeldRotationOffset);
 
