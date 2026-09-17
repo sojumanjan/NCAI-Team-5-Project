@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "FrequencyWaveGraphic")]
 [RequireComponent(typeof(CanvasRenderer))]
 public sealed class FrequencyWaveGraphic : MaskableGraphic
 {
@@ -44,4 +47,5 @@ public sealed class FrequencyWaveGraphic : MaskableGraphic
         vh.AddVert(b + n, tint, Vector2.zero); vh.AddVert(b - n, tint, Vector2.zero);
         vh.AddTriangle(start, start + 1, start + 2); vh.AddTriangle(start, start + 2, start + 3);
     }
+}
 }

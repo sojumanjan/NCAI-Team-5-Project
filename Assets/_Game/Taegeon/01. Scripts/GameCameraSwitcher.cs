@@ -4,6 +4,9 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 #endif
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "GameCameraSwitcher")]
 [DefaultExecutionOrder(-1000)]
 public sealed class GameCameraSwitcher : MonoBehaviour
 {
@@ -12,6 +15,7 @@ public sealed class GameCameraSwitcher : MonoBehaviour
     [SerializeField] private Transform jukebox;
     [SerializeField] private Text cameraLabel;
     [SerializeField] private FirstPersonExplorer explorer;
+    [SerializeField] private EscapeRoomProgress progression;
     [SerializeField] private MinigameEntryZone[] entryZones;
     private int nearbyMask = -1;
     private readonly string[] names = { "주크박스", "룬 원판", "슬라이딩 퍼즐", "라디오" };
@@ -19,6 +23,7 @@ public sealed class GameCameraSwitcher : MonoBehaviour
 
     private void Awake()
     {
+        if (progression == null) progression = FindFirstObjectByType<EscapeRoomProgress>();
         if (explorer != null) ReturnToPlayer();
         else SwitchTo(0);
     }
@@ -37,6 +42,12 @@ public sealed class GameCameraSwitcher : MonoBehaviour
 
     public bool CanEnterGame(int index)
     {
+        if (progression != null && !progression.IsGameUnlocked(index)) return false;
+        return IsInEntryZone(index);
+    }
+
+    private bool IsInEntryZone(int index)
+    {
         if (explorer == null) return true;
         if (entryZones == null) return false;
         foreach (var zone in entryZones)
@@ -47,18 +58,15 @@ public sealed class GameCameraSwitcher : MonoBehaviour
     private void UpdateNearbyHint()
     {
         if (explorer == null || CurrentIndex != -1 || cameraLabel == null) return;
-        int mask = 0;
-        for (int i = 0; i < 4; i++) if (CanEnterGame(i)) mask |= 1 << i;
-        if (mask == nearbyMask) return;
-        nearbyMask = mask;
-        string hint = "게임 앞 원 안으로 이동하세요";
-        if (mask != 0)
+        string hint = "";
+        for (int i=0;i<4;i++)
         {
-            hint = "";
-            for (int i = 0; i < 4; i++)
-                if ((mask & (1 << i)) != 0) hint += "[" + (i + 1) + "] " + names[i] + " 시작   ";
+            if (!IsInEntryZone(i)) continue;
+            hint += CanEnterGame(i) ? "["+(i+1)+"] "+names[i]+" 시작   "
+                : names[i]+" 잠김 · "+i+"번 열쇠로 옆 서랍을 여세요   ";
         }
-        cameraLabel.text = hint + "\nWASD 이동 · 마우스 시점 · Shift 달리기 · Esc 커서 해제";
+        if (hint.Length == 0) hint = "게임 앞 원 안으로 이동하세요";
+        cameraLabel.text = hint+"\nWASD 이동 · 마우스 시점 · E 상호작용 · 0 이동 시점";
     }
 
     private void SetView(int index)
@@ -111,4 +119,5 @@ public sealed class GameCameraSwitcher : MonoBehaviour
         foreach (var source in jukebox.GetComponentsInChildren<AudioSource>())
             source.mute = CurrentIndex != 0;
     }
+}
 }

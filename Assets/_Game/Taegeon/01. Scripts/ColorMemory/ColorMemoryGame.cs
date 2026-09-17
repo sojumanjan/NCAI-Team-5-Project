@@ -6,6 +6,9 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 #endif
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "ColorMemoryGame")]
 public sealed class ColorMemoryGame : MonoBehaviour
 {
     private const int TotalStages = 5;
@@ -285,4 +288,4 @@ public sealed class ColorMemoryGame : MonoBehaviour
         if (generatedCanvas != null) Destroy(generatedCanvas);
     }
 }
-
+}

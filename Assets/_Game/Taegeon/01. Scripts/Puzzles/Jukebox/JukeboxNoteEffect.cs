@@ -1,6 +1,9 @@
 using System.Collections;
 using UnityEngine;
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "JukeboxNoteEffect")]
 public sealed class JukeboxNoteEffect : MonoBehaviour
 {
     [SerializeField] private Transform noteVisual;
@@ -52,4 +55,5 @@ public sealed class JukeboxNoteEffect : MonoBehaviour
         noteVisual.localScale = originalScale;
     }
     private void OnDisable() => Hide();
+}
 }

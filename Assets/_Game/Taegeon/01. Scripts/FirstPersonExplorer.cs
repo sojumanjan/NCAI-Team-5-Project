@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 #endif
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "FirstPersonExplorer")]
 [RequireComponent(typeof(CharacterController))]
 public sealed class FirstPersonExplorer : MonoBehaviour
 {
@@ -100,4 +103,5 @@ public sealed class FirstPersonExplorer : MonoBehaviour
 
     private void OnApplicationFocus(bool focus) { if (!focus) SetCursor(false); }
     private void OnDisable() { if (ViewActive) SetCursor(false); }
+}
 }

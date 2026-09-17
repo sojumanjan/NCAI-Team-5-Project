@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "RadioFrequencyPuzzle")]
 public sealed class RadioFrequencyPuzzle : MonoBehaviour
 {
     [SerializeField] private Slider frequencySlider;
@@ -73,4 +76,5 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
         if (amplitudeSlider != null) amplitudeSlider.onValueChanged.RemoveListener(OnSliderChanged);
         if (resetButton != null) resetButton.onClick.RemoveListener(ResetPuzzle);
     }
+}
 }

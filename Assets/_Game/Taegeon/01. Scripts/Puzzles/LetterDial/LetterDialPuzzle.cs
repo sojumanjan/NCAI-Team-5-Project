@@ -5,6 +5,9 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 #endif
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "LetterDialPuzzle")]
 public sealed class LetterDialPuzzle : MonoBehaviour
 {
     [SerializeField] private Transform[] rings = new Transform[3];
@@ -125,4 +128,5 @@ public sealed class LetterDialPuzzle : MonoBehaviour
 #endif
         return false;
     }
+}
 }

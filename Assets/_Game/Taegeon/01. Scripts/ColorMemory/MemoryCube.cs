@@ -1,6 +1,9 @@
 using System.Collections;
 using UnityEngine;
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "MemoryCube")]
 [RequireComponent(typeof(Renderer), typeof(BoxCollider))]
 public sealed class MemoryCube : MonoBehaviour
 {
@@ -79,4 +82,5 @@ public void ResetFeedback()
         if (cubeRenderer != null) cubeRenderer.sharedMaterial = originalMaterial;
         Destroy(runtimeMaterial);
     }
+}
 }

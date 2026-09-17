@@ -1,5 +1,8 @@
 using UnityEngine;
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "MinigameEntryZone")]
 [RequireComponent(typeof(SphereCollider))]
 public sealed class MinigameEntryZone : MonoBehaviour
 {
@@ -34,4 +37,5 @@ public sealed class MinigameEntryZone : MonoBehaviour
         Gizmos.matrix = transform.localToWorldMatrix;
         Gizmos.DrawWireSphere(sphere.center, sphere.radius);
     }
+}
 }
