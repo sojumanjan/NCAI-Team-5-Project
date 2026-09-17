@@ -96,7 +96,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// 팩맨에서 사망(목숨 소진) 시 호출. 테트리스로 돌아가지 않고 팩맨만 같은 방식(페이드+카운트다운)으로 재시작한다.
     /// 몇 마리가 죽었든, 파워펠릿을 얼마나 먹었든 전부 처음 상태로 되돌린다.
     /// </summary>
-    public void RestartPacman(Transform teleportTarget, PlayerHealth playerHealth)
+    public void RestartPacman(Transform teleportTarget, PacmanPlayerHealth playerHealth)
     {
         if (playerHealth != null)
         {
