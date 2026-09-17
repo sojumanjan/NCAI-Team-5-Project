@@ -2,6 +2,8 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
@@ -114,4 +116,5 @@ public class PlayerHealth : MonoBehaviour
 
         flashRoutine = null;
     }
+}
 }

@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+namespace Yusong
+{
 public class GameGuide : MonoBehaviour
 {
     [SerializeField] private GameObject[] pages;
@@ -69,4 +71,5 @@ public class GameGuide : MonoBehaviour
         Time.timeScale = 1f;
         gameObject.SetActive(false);
     }
+}
 }

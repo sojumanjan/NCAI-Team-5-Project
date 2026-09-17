@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro;
 
+namespace Yusong
+{
 public class CountdownTimer : MonoBehaviour
 {
     private enum State
@@ -360,4 +362,5 @@ public class CountdownTimer : MonoBehaviour
     {
         return wave >= totalWaves ? "Final Wave" : wave + " WAVE";
     }
+}
 }

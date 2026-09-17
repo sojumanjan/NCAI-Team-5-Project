@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+namespace Yusong
+{
 public class GameOverScreen : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI gameOverText;
@@ -111,4 +113,5 @@ public class GameOverScreen : MonoBehaviour
         text.text = value;
         text.gameObject.SetActive(true);
     }
+}
 }

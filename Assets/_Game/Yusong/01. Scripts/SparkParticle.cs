@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace Yusong
+{
 public class SparkParticle : MonoBehaviour
 {
     private RectTransform rt;
@@ -37,4 +39,5 @@ public class SparkParticle : MonoBehaviour
             Destroy(gameObject);
         }
     }
+}
 }

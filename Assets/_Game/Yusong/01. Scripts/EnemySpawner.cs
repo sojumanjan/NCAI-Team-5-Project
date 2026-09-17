@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+namespace Yusong
+{
 public class EnemySpawner : MonoBehaviour
 {
     [Serializable]
@@ -309,4 +311,5 @@ public class EnemySpawner : MonoBehaviour
 
         return new Vector2(cos * t, sin * t);
     }
+}
 }

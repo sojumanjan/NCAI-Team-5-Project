@@ -2,6 +2,8 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 
+namespace Yusong
+{
 public class FeverAnnouncement : MonoBehaviour
 {
     [SerializeField] private float punchScale = 1.3f;
@@ -89,4 +91,5 @@ public class FeverAnnouncement : MonoBehaviour
         const float c3 = c1 + 1f;
         return 1f + c3 * Mathf.Pow(x - 1f, 3f) + c1 * Mathf.Pow(x - 1f, 2f);
     }
+}
 }
