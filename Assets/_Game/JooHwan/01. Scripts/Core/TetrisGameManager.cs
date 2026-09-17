@@ -141,7 +141,7 @@ public class TetrisGameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 팩맨에서 목숨이 0이 되었을 때 PlayerHealth가 호출한다.
+    /// 팩맨에서 목숨이 0이 되었을 때 PacmanPlayerHealth가 호출한다.
     /// 테트리스 사망 팝업과 동일한 UI를 재사용하되, 재시작은 OnClickRestart가 상태를 보고 팩맨 쪽으로 분기한다.
     /// </summary>
     public void ShowDeathPopupForPacman()
@@ -182,7 +182,7 @@ public class TetrisGameManager : MonoBehaviour
     private void RestartPacmanFromDeath()
     {
         playerController.SetControlsLocked(false);
-        var playerHealth = playerController.GetComponent<PlayerHealth>();
+        var playerHealth = playerController.GetComponent<PacmanPlayerHealth>();
         MiniGameFlowManager.Instance.RestartPacman(playerHealth.PacmanRestartPoint, playerHealth);
     }
 

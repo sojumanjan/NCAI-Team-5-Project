@@ -4,7 +4,7 @@ using UnityEngine;
 /// 팩맨 전용 목숨 시스템. 고스트에 접촉하면 목숨을 잃고, 0이 되면 팩맨만 재시작한다.
 /// (테트리스는 별도의 끼임 즉사/재시작 로직을 그대로 사용하며, 이 컴포넌트와 무관하다)
 /// </summary>
-public class PlayerHealth : MonoBehaviour
+public class PacmanPlayerHealth : MonoBehaviour
 {
     [SerializeField] private int maxLives = 3;
     [SerializeField] private HeartUI heartUI;

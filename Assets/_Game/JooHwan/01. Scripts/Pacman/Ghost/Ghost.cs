@@ -343,7 +343,7 @@ public class Ghost : GhostHittable
         }
 
         // 발광 상태와 무관하게 접촉하면 플레이어가 피격당한다.
-        var playerHealth = other.GetComponentInParent<PlayerHealth>();
+        var playerHealth = other.GetComponentInParent<PacmanPlayerHealth>();
         if (playerHealth != null)
         {
             playerHealth.TakeHit();
