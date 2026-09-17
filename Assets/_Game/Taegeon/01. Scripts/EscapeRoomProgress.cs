@@ -44,6 +44,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private float opening;
     private string notice;
     private float noticeUntil;
+    private bool ending;
+    [SerializeField, Min(0f)] private float returnToHubDelay = 2f;
     public int PieceCount { get { int n=0; foreach(bool b in collected) if(b)n++; return n; } }
     public bool DoorOpen => opening >= 1f;
     public bool Escaped { get; private set; }
@@ -74,7 +76,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
 
     private void Update()
     {
-        if (Escaped) return;
+        if (ending) return;
         PollRewards();
         UpdateDoor(Time.deltaTime);
         for (int i=0;i<4;i++)
@@ -84,15 +86,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         }
         if (DoorOpen && player.ViewActive && escapeArea.bounds.Contains(player.transform.position))
         {
-            Escaped=true;
-            prompt.text="";
-            victoryText.gameObject.SetActive(true);
-            victoryText.text="탈출 성공!\nLeap 액자를 완성하고 출구를 찾았습니다.";
-            player.enabled=false;
-            switcher.enabled=false;
-            foreach(var canvas in switcher.GetComponentsInChildren<Canvas>())canvas.enabled=false;
-            Cursor.lockState=CursorLockMode.None;
-            Cursor.visible=true;
+            FinishGame(true, 1f);
             return;
         }
         RefreshPrompt();
@@ -101,6 +95,42 @@ public sealed class EscapeRoomProgress : MonoBehaviour
 #else
         if (Input.GetKeyDown(KeyCode.E)) TryInteract();
 #endif
+    }
+
+
+    /// <summary>Report exactly once before leaving the current minigame scene.</summary>
+    public void FinishGame(bool cleared, float score01)
+    {
+        if (ending) return;
+        var flow = global::GameFlow.Instance;
+        if (flow == null || flow.CurrentDefinition == null)
+        {
+            Debug.LogError("방탈출 결과를 등록할 GameFlow 또는 현재 씬의 Definition이 없습니다.", this);
+            return;
+        }
+
+        ending = true;
+        Escaped = cleared;
+        prompt.text = "";
+        victoryText.gameObject.SetActive(true);
+        victoryText.text = cleared
+            ? "탈출 성공!\n잠시 후 메인 허브로 돌아갑니다."
+            : "게임 종료\n잠시 후 메인 허브로 돌아갑니다.";
+        player.enabled = false;
+        switcher.enabled = false;
+        foreach (var canvas in switcher.GetComponentsInChildren<Canvas>()) canvas.enabled = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        flow.ReportCurrent(new global::MiniGameResult(cleared, Mathf.Clamp01(score01)));
+        StartCoroutine(ReturnToHub());
+    }
+
+    private System.Collections.IEnumerator ReturnToHub()
+    {
+        yield return new WaitForSecondsRealtime(returnToHubDelay);
+        var flow = global::GameFlow.Instance;
+        if (flow != null) flow.ReturnToMain();
     }
 
     private void PollRewards()
@@ -130,7 +160,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
 
     private bool CanSee(Vector3 point,Transform target)
     {
-        if(!player.ViewActive||!player.enabled||Escaped)return false;
+        if(!player.ViewActive||!player.enabled||ending)return false;
         var camera=player.ViewCamera;
         Vector3 delta=point-camera.transform.position;
         if(delta.magnitude>interactDistance||Vector3.Angle(camera.transform.forward,delta)>aimHalfAngle)return false;
@@ -226,3 +256,4 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     }
 }
 }
+
