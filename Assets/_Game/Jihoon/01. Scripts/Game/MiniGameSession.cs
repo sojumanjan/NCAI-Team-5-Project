@@ -2,8 +2,14 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>한 판이 어디쯤 와 있는지.</summary>
-public enum MiniGameState
+/// <summary>
+/// 요리 미니게임 한 판이 어디쯤 와 있는지.
+///
+/// 이름에 Cooking을 붙인 이유는 이 프로젝트가 네임스페이스 없이 전역 하나를 쓰기 때문이다.
+/// 처음엔 SessionState였다가 에디터 타입과 부딪혔고, 그 다음 이름은 다른 팀원의 미니게임
+/// 흐름 관리자와 부딪혔다. 공용이 될 법한 이름은 피한다.
+/// </summary>
+public enum CookingSessionState
 {
     Ready,
     Running,
@@ -48,7 +54,7 @@ public class MiniGameSession : MonoBehaviour
     [SerializeField] private bool startOnPlay = true;
 
     /// <summary>지금 판의 상태.</summary>
-    public MiniGameState State { get; private set; } = MiniGameState.Ready;
+    public CookingSessionState State { get; private set; } = CookingSessionState.Ready;
 
     /// <summary>끝난 뒤의 결과. 끝나기 전에는 기본값.</summary>
     public MiniGameResult Result { get; private set; }
@@ -88,12 +94,12 @@ public class MiniGameSession : MonoBehaviour
     /// <summary>영업을 시작한다. 튜토리얼이 끝난 뒤 불러도 된다.</summary>
     public void StartDay()
     {
-        if (State == MiniGameState.Running)
+        if (State == CookingSessionState.Running)
         {
             return;
         }
 
-        State = MiniGameState.Running;
+        State = CookingSessionState.Running;
         Time.timeScale = 1f;
 
         clock.Begin();
@@ -102,12 +108,12 @@ public class MiniGameSession : MonoBehaviour
 
     private void HandleDayEnded()
     {
-        if (State == MiniGameState.Ended)
+        if (State == CookingSessionState.Ended)
         {
             return;
         }
 
-        State = MiniGameState.Ended;
+        State = CookingSessionState.Ended;
 
         spawner.Pause();
         Result = BuildResult();
