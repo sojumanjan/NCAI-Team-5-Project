@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MiniGameDefinition
   displayName: "\uBC29\uD0C8\uCD9C"
   icon: {fileID: 0}
-  scene: {fileID: 0}
-  sceneName: 
+  scene: {fileID: 102900000, guid: 78f03e03cb2f32941bc4dabfeade2746, type: 3}
+  sceneName: Game

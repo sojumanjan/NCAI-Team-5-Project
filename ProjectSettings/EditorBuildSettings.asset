@@ -6,10 +6,22 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/_Game/Jihoon/03. Scenes/Main_Logo.unity
+    guid: 3b4f6c3fa38214647a3425810ecc5ee0
+  - enabled: 1
+    path: Assets/_Game/Hub/03. Scenes/Main.unity
+    guid: 51910e552a21e5846b5809b0ca3ab200
   - enabled: 1
     path: Assets/_Game/Jihoon/03. Scenes/Jihoon_Cooking.unity
     guid: f840cba665dfdd145a56e5eb7adb3379
+  - enabled: 1
+    path: Assets/_Game/JooHwan/03. Scenes/JooHwan_MiniGame_Tetris.unity
+    guid: 42637b09bb8646546827cf090fc7cced
+  - enabled: 1
+    path: Assets/_Game/Yusong/yusonggame.unity
+    guid: 0064a9666fbae5843afd85f5f004b99f
+  - enabled: 1
+    path: Assets/_Game/Taegeon/03. Scenes/Game.unity
+    guid: 78f03e03cb2f32941bc4dabfeade2746
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

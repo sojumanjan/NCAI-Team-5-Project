@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 public class MiniGameExit : MonoBehaviour
 {
     [Header("참조")]
-    [Tooltip("프로젝트에 하나뿐인 GameFlow 에셋.")]
+    [Tooltip("비워두면 Resources의 GameFlow를 자동으로 씁니다.")]
     [SerializeField] private GameFlow flow;
 
     [Header("단축키")]
@@ -22,15 +22,6 @@ public class MiniGameExit : MonoBehaviour
 
     [Tooltip("끄면 단축키 없이 Exit() 호출로만 나갑니다.")]
     [SerializeField] private bool useShortcut = true;
-
-    private void Awake()
-    {
-        if (flow == null)
-        {
-            Debug.LogError($"{nameof(MiniGameExit)} on '{name}': GameFlow를 연결하세요.", this);
-            enabled = false;
-        }
-    }
 
     private void Update()
     {
@@ -54,9 +45,11 @@ public class MiniGameExit : MonoBehaviour
     /// <summary>메인 화면으로. Button OnClick에 그대로 연결할 수 있다.</summary>
     public void Exit()
     {
-        if (flow != null)
+        GameFlow current = flow != null ? flow : GameFlow.Instance;
+
+        if (current != null)
         {
-            flow.ReturnToMain();
+            current.ReturnToMain();
         }
     }
 }

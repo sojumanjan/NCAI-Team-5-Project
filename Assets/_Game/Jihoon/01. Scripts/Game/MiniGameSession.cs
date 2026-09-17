@@ -49,13 +49,6 @@ public class MiniGameSession : MonoBehaviour
     [Tooltip("커서를 풀기 위해 필요합니다.")]
     [SerializeField] private PlayerControllerJihoon player;
 
-    [Header("허브 연동")]
-    [Tooltip("프로젝트에 하나뿐인 GameFlow 에셋. 비워두면 결과를 보고하지 않고 로그만 남깁니다.")]
-    [SerializeField] private GameFlow flow;
-
-    [Tooltip("이 미니게임의 Definition 에셋.")]
-    [SerializeField] private MiniGameDefinition definition;
-
     [Header("시작")]
     [Tooltip("켜면 플레이와 동시에 영업을 시작합니다. 튜토리얼이 붙으면 끄고 StartDay()를 부르세요.")]
     [SerializeField] private bool startOnPlay = true;
@@ -144,13 +137,15 @@ public class MiniGameSession : MonoBehaviour
     /// </summary>
     private void ReportToHub()
     {
-        if (flow == null || definition == null)
+        GameFlow flow = GameFlow.Instance;
+        if (flow == null)
         {
             return;
         }
 
         // 평점을 0~1로 환산해 넘긴다. 허브는 평점이 몇 점 만점인지 알 필요가 없다.
-        flow.Report(definition, new MiniGameResult(Result.Cleared, rating.Normalized));
+        // 어느 미니게임인지는 씬 이름으로 알아내므로 인스펙터에 꽂을 것이 없다.
+        flow.ReportCurrent(new MiniGameResult(Result.Cleared, rating.Normalized));
     }
 
     /// <summary>움직임과 시점을 멈추고 커서를 돌려준다.</summary>
@@ -199,9 +194,9 @@ public class MiniGameSession : MonoBehaviour
     /// <summary>메인 화면으로 돌아간다. 결과는 영업이 끝날 때 이미 보고했다.</summary>
     public void ReturnToHub()
     {
+        GameFlow flow = GameFlow.Instance;
         if (flow == null)
         {
-            Debug.LogWarning($"{name}: GameFlow가 연결되지 않아 돌아갈 수 없습니다.", this);
             return;
         }
 
