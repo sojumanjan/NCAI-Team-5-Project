@@ -68,6 +68,9 @@ public class Customer : MonoBehaviour
     /// <summary>True only while standing at the counter waiting. Patience runs in this phase alone.</summary>
     public bool IsWaiting => _phase == Phase.Ordering;
 
+    /// <summary>걷는 중인지. 걸을 때만 뒤뚱거리면 되므로 연출 쪽에서 본다.</summary>
+    public bool IsWalking => _phase == Phase.WalkingIn || _phase == Phase.Leaving;
+
     // ---------------------------------------------------------------- flow
 
     /// <summary>

@@ -33,8 +33,18 @@ public class CustomerSpawner : MonoBehaviour
     [Tooltip("시작 후 첫 손님까지 걸리는 시간 (초).")]
     [SerializeField] private float firstSpawnDelay = 2f;
 
-    [Tooltip("손님 사이 간격 (초). 이 범위에서 매번 랜덤으로 뽑습니다. x = 최소, y = 최대.")]
-    [SerializeField] private Vector2 spawnIntervalRange = new Vector2(6f, 10f);
+    [Tooltip("손님 사이 간격 (초). 방금 온 손님이 시킨 메뉴 개수로 고릅니다. " +
+             "첫 칸이 1개, 둘째가 2개, 셋째가 3개. x = 최소, y = 최대.")]
+    [SerializeField] private Vector2[] spawnIntervalByOrderCount =
+    {
+        new Vector2(7f, 9f),
+        new Vector2(14f, 18f),
+        new Vector2(21f, 27f),
+    };
+
+    [Tooltip("손님이 카운터에 도착해야 다음 간격이 흐르기 시작합니다. 도착 신호를 " +
+             "이 시간(초) 안에 못 받으면 그냥 진행합니다 — 안전장치입니다.")]
+    [SerializeField] private float arrivalTimeout = 30f;
 
     [Tooltip("자리가 다 찼을 때 다시 시도하기까지의 간격 (초).")]
     [SerializeField] private float retryInterval = 1f;
@@ -86,6 +96,12 @@ public class CustomerSpawner : MonoBehaviour
     private readonly List<ServingSpot> _free = new();
     private float _timer;
 
+    // 간격은 손님이 '도착한 뒤'부터 흐른다. 걸어오는 동안은 세지 않는다.
+    private bool _awaitingArrival;
+    private ServingSpot _pendingSpot;
+    private int _pendingCount = 1;
+    private float _arrivalWait;
+
     /// <summary>How many customers have been sent so far.</summary>
     public int SpawnedCount { get; private set; }
 
@@ -122,12 +138,57 @@ public class CustomerSpawner : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        foreach (ServingSpot spot in spots)
+        {
+            if (spot != null)
+            {
+                spot.OrderPlaced += HandleOrderPlaced;
+            }
+        }
+    }
+
+    private void OnDisable()
+    {
+        foreach (ServingSpot spot in spots)
+        {
+            if (spot != null)
+            {
+                spot.OrderPlaced -= HandleOrderPlaced;
+            }
+        }
+    }
+
     private void Start()
     {
         if (spawnOnStart)
         {
             Begin();
         }
+    }
+
+    /// <summary>
+    /// 방금 보낸 손님이 카운터에 도착했다. 이제부터 다음 손님까지의 시간을 센다.
+    /// 요청한 개수가 아니라 실제로 말한 개수를 쓴다 — 만들 수 있는 메뉴가 모자라면
+    /// 주문이 줄어들 수 있기 때문이다.
+    /// </summary>
+    private void HandleOrderPlaced(ServingSpot spot, IReadOnlyList<ItemData> orders)
+    {
+        if (!_awaitingArrival || spot != _pendingSpot)
+        {
+            return;
+        }
+
+        BeginInterval(orders != null && orders.Count > 0 ? orders.Count : 1);
+    }
+
+    private void BeginInterval(int orderCount)
+    {
+        _awaitingArrival = false;
+        _pendingSpot = null;
+        _arrivalWait = 0f;
+        _timer = NextInterval(orderCount);
     }
 
     private void Update()
@@ -145,6 +206,20 @@ public class CustomerSpawner : MonoBehaviour
             return;
         }
 
+        // 손님이 걸어오는 중에는 시간이 흐르지 않는다.
+        if (_awaitingArrival)
+        {
+            _arrivalWait += Time.deltaTime;
+            if (_arrivalWait < arrivalTimeout)
+            {
+                return;
+            }
+
+            Debug.LogWarning($"{name}: 손님 도착 신호를 {arrivalTimeout}초 동안 못 받아 그냥 진행합니다. " +
+                             "경로가 끊겼거나 대기 위치에 닿지 못했을 수 있습니다.", this);
+            BeginInterval(_pendingCount);
+        }
+
         _timer -= Time.deltaTime;
         if (_timer > 0f)
         {
@@ -159,15 +234,13 @@ public class CustomerSpawner : MonoBehaviour
             return;
         }
 
-        if (TrySpawnOne())
-        {
-            _timer = NextInterval();
-        }
-        else
+        if (!TrySpawnOne())
         {
             // Counter is full. Check back shortly rather than burning the whole interval.
             _timer = Mathf.Max(0.1f, retryInterval);
         }
+
+        // 보냈다면 타이머를 걸지 않는다. 그 손님이 도착할 때 HandleOrderPlaced가 건다.
     }
 
     // ---------------------------------------------------------------- control
@@ -226,6 +299,11 @@ public class CustomerSpawner : MonoBehaviour
             return false;
         }
 
+        _awaitingArrival = true;
+        _pendingSpot = spot;
+        _pendingCount = orderCount;
+        _arrivalWait = 0f;
+
         SpawnedCount++;
         CustomerSpawned?.Invoke(SpawnedCount);
         return true;
@@ -275,12 +353,29 @@ public class CustomerSpawner : MonoBehaviour
         return Mathf.Clamp(maxConcurrent, 1, spots.Length);
     }
 
-    /// <summary>Interval for the next customer, shortened by however far the ramp has gone.</summary>
-    private float NextInterval()
+    /// <summary>
+    /// 다음 손님까지의 시간. 방금 온 손님이 많이 시켰을수록 길게 준다 — 주방이 그만큼
+    /// 오래 묶이기 때문이다. 난이도 램프는 그 위에 곱한다.
+    /// </summary>
+    private float NextInterval(int orderCount)
     {
+        Vector2 range = IntervalRange(orderCount);
+
         float ramp = Mathf.Pow(intervalDecay, SpawnedCount);
-        float raw = UnityEngine.Random.Range(spawnIntervalRange.x, spawnIntervalRange.y);
+        float raw = UnityEngine.Random.Range(range.x, range.y);
         return Mathf.Max(minInterval, raw * ramp);
+    }
+
+    /// <summary>개수에 해당하는 간격 범위. 표가 짧으면 마지막 칸으로 버틴다.</summary>
+    private Vector2 IntervalRange(int orderCount)
+    {
+        if (spawnIntervalByOrderCount == null || spawnIntervalByOrderCount.Length == 0)
+        {
+            return new Vector2(7f, 9f);
+        }
+
+        int index = Mathf.Clamp(orderCount - 1, 0, spawnIntervalByOrderCount.Length - 1);
+        return spawnIntervalByOrderCount[index];
     }
 
     /// <summary>
@@ -372,7 +467,15 @@ public class CustomerSpawner : MonoBehaviour
             }
         }
 
-        spawnIntervalRange = SortedRange(spawnIntervalRange, 0.5f);
+        if (spawnIntervalByOrderCount != null)
+        {
+            for (int i = 0; i < spawnIntervalByOrderCount.Length; i++)
+            {
+                spawnIntervalByOrderCount[i] = SortedRange(spawnIntervalByOrderCount[i], 0.5f);
+            }
+        }
+
+        arrivalTimeout = Mathf.Max(1f, arrivalTimeout);
         patienceRange = SortedRange(patienceRange, 1f);
     }
 

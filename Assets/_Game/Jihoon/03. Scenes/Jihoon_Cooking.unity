@@ -9917,7 +9917,11 @@ MonoBehaviour:
   customerPrefabs:
   - {fileID: 7317612053161148059, guid: 3b6d08ec3394a194e952d782646eb4bf, type: 3}
   firstSpawnDelay: 2
-  spawnIntervalRange: {x: 25, y: 30}
+  spawnIntervalByOrderCount:
+  - {x: 7, y: 9}
+  - {x: 14, y: 18}
+  - {x: 21, y: 27}
+  arrivalTimeout: 30
   retryInterval: 1
   spawnOnStart: 0
   maxConcurrent: 3
@@ -17037,7 +17041,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6506958536452790695, guid: a9b89447708d3fc4b8598040bdf7c4e1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.125
+      value: 1.957
       objectReference: {fileID: 0}
     - target: {fileID: 6506958536452790695, guid: a9b89447708d3fc4b8598040bdf7c4e1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -17045,7 +17049,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6506958536452790695, guid: a9b89447708d3fc4b8598040bdf7c4e1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -14.302
+      value: -14.413
       objectReference: {fileID: 0}
     - target: {fileID: 6506958536452790695, guid: a9b89447708d3fc4b8598040bdf7c4e1, type: 3}
       propertyPath: m_LocalRotation.w

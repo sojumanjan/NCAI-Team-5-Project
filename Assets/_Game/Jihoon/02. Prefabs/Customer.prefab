@@ -796,6 +796,7 @@ GameObject:
   - component: {fileID: 7805000781857910687}
   - component: {fileID: 2613067047780593464}
   - component: {fileID: 5688234838827204772}
+  - component: {fileID: 3032814839564509240}
   m_Layer: 0
   m_Name: Customer
   m_TagString: Untagged
@@ -919,6 +920,25 @@ MonoBehaviour:
   cornerLookAhead: 1.5
   groundOffset: 1
   defaultPatience: 30
+--- !u!114 &3032814839564509240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7317612053161148059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c11ec5e75b201b54dac1f1df54740fe3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CustomerWaddle
+  customer: {fileID: 5688234838827204772}
+  model: {fileID: 243383483341333454}
+  tiltAngle: 8
+  tiltAxis: {x: 0, y: 0, z: 1}
+  stepDuration: 0.28
+  bobHeight: 0.04
+  settleDuration: 0.18
 --- !u!1 &7751984210007020126
 GameObject:
   m_ObjectHideFlags: 0
