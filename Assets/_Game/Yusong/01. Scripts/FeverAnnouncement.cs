@@ -38,6 +38,17 @@ public class FeverAnnouncement : MonoBehaviour
         routine = StartCoroutine(PlayAnimation());
     }
 
+    public void HideImmediate()
+    {
+        if (routine != null)
+        {
+            StopCoroutine(routine);
+            routine = null;
+        }
+
+        gameObject.SetActive(false);
+    }
+
     private IEnumerator PlayAnimation()
     {
         Color c = baseColor;
@@ -47,7 +58,7 @@ public class FeverAnnouncement : MonoBehaviour
         float t = 0f;
         while (t < punchInDuration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             float p = t / punchInDuration;
             float scale = Mathf.Lerp(0.2f, punchScale, EaseOutBack(p));
             rt.localScale = Vector3.one * scale;
@@ -55,12 +66,12 @@ public class FeverAnnouncement : MonoBehaviour
         }
         rt.localScale = Vector3.one * punchScale;
 
-        yield return new WaitForSeconds(holdDuration);
+        yield return new WaitForSecondsRealtime(holdDuration);
 
         t = 0f;
         while (t < fadeOutDuration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             float p = t / fadeOutDuration;
             c.a = Mathf.Lerp(1f, 0f, p);
             text.color = c;

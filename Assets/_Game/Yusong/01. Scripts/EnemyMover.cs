@@ -15,6 +15,11 @@ public class EnemyMover : MonoBehaviour
         rt = GetComponent<RectTransform>();
     }
 
+    public void AdjustSpeed(float delta)
+    {
+        speed = Mathf.Max(0f, speed + delta);
+    }
+
     private void Update()
     {
         if (hasHit) return;

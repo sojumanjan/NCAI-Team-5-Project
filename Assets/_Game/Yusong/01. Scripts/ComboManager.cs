@@ -131,6 +131,18 @@ public class ComboManager : MonoBehaviour
         ResetCombo();
     }
 
+    public void ResetState()
+    {
+        aoeActive = false;
+        aoeTimer = 0f;
+        gaugeFill.color = normalGaugeColor;
+
+        if (fireOverlay != null) fireOverlay.SetActive(false);
+        if (feverAnnouncement != null) feverAnnouncement.HideImmediate();
+
+        ResetCombo();
+    }
+
     private void SpawnPopup(Vector2 position, Transform parent)
     {
         if (comboPopupPrefab == null || parent == null) return;

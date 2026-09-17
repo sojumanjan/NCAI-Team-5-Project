@@ -34,6 +34,9 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
     [Header("Health Bar (optional, e.g. boss)")]
     [SerializeField] private Image healthBarFill;
 
+    [Header("Tutorial")]
+    [SerializeField] private bool isTutorialDemo = false;
+
     private Image image;
     private RectTransform rt;
     private Color originalColor;
@@ -169,6 +172,9 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         SpawnHitMark();
         UpdateHealthBar();
 
+        var clickInvite = GetComponent<ClickInviteEffect>();
+        if (clickInvite != null) clickInvite.enabled = false;
+
         if (hitsTaken >= hitsToDestroy)
         {
             isDestroyed = true;
@@ -180,7 +186,7 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
                 ComboManager.Instance.RegisterKill(rt.anchoredPosition, transform.parent, comboStacksOnKill);
             }
 
-            if (ScoreManager.Instance != null)
+            if (!isTutorialDemo && ScoreManager.Instance != null)
             {
                 int feverBonus = bonusActive ? scoreValue : 0;
                 Vector2 scorePopupPos = rt.anchoredPosition + new Vector2(-40f, -15f);
@@ -211,7 +217,7 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
 
         while (t < half)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             rt.localScale = Vector3.LerpUnclamped(originalScale, targetScale, t / half);
 
             if (!colorReverted && t >= flashDuration)
@@ -226,7 +232,7 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         t = 0f;
         while (t < half)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             rt.localScale = Vector3.LerpUnclamped(targetScale, originalScale, t / half);
             yield return null;
         }

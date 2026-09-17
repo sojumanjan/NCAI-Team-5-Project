@@ -43,6 +43,7 @@ public class CountdownTimer : MonoBehaviour
     [SerializeField] private GameObject gameOverScreen;
 
     public event System.Action<int> WaveStarted;
+    public event System.Action WaveEnding;
 
     public static bool IsWaveActive { get; private set; }
 
@@ -183,6 +184,7 @@ public class CountdownTimer : MonoBehaviour
             state = State.ShowingWaveEnd;
             stateTimer = waveEndMessageDuration;
             timerText.text = GetWaveLabel(currentWave) + " 종료!";
+            WaveEnding?.Invoke();
         }
     }
 
@@ -327,6 +329,8 @@ public class CountdownTimer : MonoBehaviour
 
     private void StartWave()
     {
+        if (ComboManager.Instance != null) ComboManager.Instance.ResetState();
+
         remaining = startSeconds;
         state = State.Counting;
         secondaryWarningStarted = false;

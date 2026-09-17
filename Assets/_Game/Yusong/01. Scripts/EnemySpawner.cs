@@ -17,6 +17,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private EnemyEntry[] extraEnemyTypesFromWave2;
     [SerializeField] private float spawnOffset = 60f;
     [SerializeField] private float spawnDuration = 60f;
+    [SerializeField] private float wave1SpeedReduction = 20f;
 
     [Header("Yellow Pacing")]
     [SerializeField] private int yellowPairSize = 2;
@@ -39,6 +40,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.WaveStarted += HandleWaveStarted;
+            countdownTimer.WaveEnding += HandleWaveEnding;
         }
     }
 
@@ -47,12 +49,31 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.WaveStarted -= HandleWaveStarted;
+            countdownTimer.WaveEnding -= HandleWaveEnding;
         }
 
         if (spawnRoutine != null)
         {
             StopCoroutine(spawnRoutine);
             spawnRoutine = null;
+        }
+    }
+
+    private void HandleWaveEnding()
+    {
+        if (spawnRoutine != null)
+        {
+            StopCoroutine(spawnRoutine);
+            spawnRoutine = null;
+        }
+
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+            if (child.GetComponent<EnemyHealth>() != null)
+            {
+                Destroy(child.gameObject);
+            }
         }
     }
 
@@ -166,7 +187,7 @@ public class EnemySpawner : MonoBehaviour
                         var prefab = evt.prefabs[k];
                         if (prefab == null) continue;
                         Vector2 offset = dir * (yellowPairSeparation * 0.5f) * (k == 0 ? 1f : -1f);
-                        var enemy = Instantiate(prefab, parent);
+                        var enemy = SpawnEnemy(prefab, parent, wave);
                         enemy.anchoredPosition = anchor + offset;
                     }
                 }
@@ -175,7 +196,7 @@ public class EnemySpawner : MonoBehaviour
                     foreach (var prefab in evt.prefabs)
                     {
                         if (prefab == null) continue;
-                        var enemy = Instantiate(prefab, parent);
+                        var enemy = SpawnEnemy(prefab, parent, wave);
                         enemy.anchoredPosition = anchor + UnityEngine.Random.insideUnitCircle * (yellowPairSeparation * 0.25f);
                     }
                 }
@@ -185,7 +206,7 @@ public class EnemySpawner : MonoBehaviour
                 foreach (var prefab in evt.prefabs)
                 {
                     if (prefab == null) continue;
-                    var enemy = Instantiate(prefab, parent);
+                    var enemy = SpawnEnemy(prefab, parent, wave);
                     Vector2 spawnPos = RandomPerimeterPoint(rect);
                     enemy.anchoredPosition = spawnPos;
                     lastNormalSpawnPosition = spawnPos;
@@ -195,6 +216,19 @@ public class EnemySpawner : MonoBehaviour
         }
 
         spawnRoutine = null;
+    }
+
+    private RectTransform SpawnEnemy(RectTransform prefab, RectTransform parent, int wave)
+    {
+        var enemy = Instantiate(prefab, parent);
+
+        if (wave == 1 && wave1SpeedReduction > 0f)
+        {
+            var mover = enemy.GetComponent<EnemyMover>();
+            if (mover != null) mover.AdjustSpeed(-wave1SpeedReduction);
+        }
+
+        return enemy;
     }
 
     private bool TryFindDensestDirection(RectTransform parent, out float angle)

@@ -22,7 +22,7 @@ public class HitMarkEffect : MonoBehaviour
 
     private void Update()
     {
-        age += Time.deltaTime;
+        age += Time.unscaledDeltaTime;
         float t = Mathf.Clamp01(age / duration);
 
         float scale = Mathf.Lerp(startScale, endScale, t);

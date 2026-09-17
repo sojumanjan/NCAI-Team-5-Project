@@ -64,6 +64,8 @@ public class GameGuide : MonoBehaviour
 
     private void Dismiss()
     {
+        if (ComboManager.Instance != null) ComboManager.Instance.ResetState();
+
         Time.timeScale = 1f;
         gameObject.SetActive(false);
     }

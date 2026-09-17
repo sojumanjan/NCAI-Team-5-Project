@@ -24,8 +24,8 @@ public class SparkParticle : MonoBehaviour
 
     private void Update()
     {
-        age += Time.deltaTime;
-        rt.anchoredPosition += velocity * Time.deltaTime;
+        age += Time.unscaledDeltaTime;
+        rt.anchoredPosition += velocity * Time.unscaledDeltaTime;
 
         float t = age / lifetime;
         Color c = startColor;
