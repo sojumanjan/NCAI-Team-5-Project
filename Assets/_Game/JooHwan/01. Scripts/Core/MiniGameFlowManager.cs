@@ -22,7 +22,6 @@ public class MiniGameFlowManager : MonoBehaviour
     [SerializeField] private FadeCanvas fadeCanvas;
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
-    [SerializeField] private GameObject selectSceneCamera;
     [SerializeField] private Ghost[] pacmanGhosts;
     [SerializeField] private GameObject heartsUIRoot;
     [SerializeField] private PelletSpawner pelletSpawner;
@@ -211,7 +210,6 @@ public class MiniGameFlowManager : MonoBehaviour
         currentState = target;
 
         gameSelectUIRoot.SetActive(target == MiniGameState.MainUI);
-        selectSceneCamera.SetActive(target == MiniGameState.MainUI);
 
         if (target == MiniGameState.MainUI)
         {

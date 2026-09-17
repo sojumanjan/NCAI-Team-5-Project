@@ -8,7 +8,6 @@ public class TetrisGameManager : MonoBehaviour
     [SerializeField] private PlayerController playerController;
     [SerializeField] private TetrisFallSequencer fallSequencer;
     [SerializeField] private CameraRig cameraRig;
-    [SerializeField] private Camera firstPersonCamera;
     [SerializeField] private Camera overviewCamera;
     [SerializeField] private Vector3 playerStartPosition;
     [SerializeField] private CountdownUI countdownUI;
@@ -34,7 +33,9 @@ public class TetrisGameManager : MonoBehaviour
     /// </summary>
     public void SetGameActive(bool active)
     {
-        firstPersonCamera.gameObject.SetActive(active);
+        // 1인칭 카메라는 MainUI 상태에서도 켜둔다. 꺼버리면 씬에 활성 카메라가 하나도
+        // 남지 않아 화면이 렌더링되지 않으므로(과거 SelectSceneCamera로 임시 땜빵했던 문제),
+        // 대신 playerController.enabled=false로 조작만 막아 화면은 정지된 채로 유지한다.
         overviewCamera.gameObject.SetActive(false);
 
         playerController.enabled = active;
