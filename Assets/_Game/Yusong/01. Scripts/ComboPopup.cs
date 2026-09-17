@@ -56,7 +56,7 @@ public class ComboPopup : MonoBehaviour
     {
         if (!initialized) return;
 
-        age += Time.deltaTime;
+        age += Time.unscaledDeltaTime;
         float t = Mathf.Clamp01(age / duration);
 
         rt.anchoredPosition = startPos + Vector2.up * (riseDistance * t);

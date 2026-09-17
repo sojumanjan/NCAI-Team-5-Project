@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -25,6 +26,12 @@ public class ComboManager : MonoBehaviour
     [SerializeField] private FeverAnnouncement feverAnnouncement;
     [SerializeField] private UITheme theme;
 
+    [Header("Big Stack Emphasis (e.g. boss kill)")]
+    [SerializeField] private float comboEmphasisScale = 1.8f;
+    [SerializeField] private Color comboEmphasisColor = new Color(1f, 0.55f, 0f, 1f);
+    [SerializeField] private float gaugePunchScale = 1.3f;
+    [SerializeField] private float gaugePunchDuration = 0.25f;
+
     private int comboCount;
     private float timer;
     private bool active;
@@ -32,6 +39,7 @@ public class ComboManager : MonoBehaviour
     private bool aoeActive;
     private float aoeTimer;
     private Color normalGaugeColor;
+    private Coroutine gaugePunchRoutine;
 
     private void Awake()
     {
@@ -92,7 +100,12 @@ public class ComboManager : MonoBehaviour
         comboText.text = comboCount + " Combo!";
         SetVisible(true);
 
-        SpawnPopup(popupPosition, popupParent);
+        SpawnPopup(popupPosition, popupParent, stacks);
+
+        if (stacks > 1)
+        {
+            PlayGaugePunch();
+        }
 
         if (!aoeActive)
         {
@@ -145,13 +158,59 @@ public class ComboManager : MonoBehaviour
         ResetCombo();
     }
 
-    private void SpawnPopup(Vector2 position, Transform parent)
+    private void SpawnPopup(Vector2 position, Transform parent, int stacks)
     {
         if (comboPopupPrefab == null || parent == null) return;
 
         var popup = Instantiate(comboPopupPrefab, parent);
         popup.anchoredPosition = position;
-        popup.GetComponent<ComboPopup>().SetText(comboCount + "!");
+
+        var comboPopup = popup.GetComponent<ComboPopup>();
+        if (stacks > 1)
+        {
+            comboPopup.SetTextAndColor("+" + stacks + " COMBO!", comboEmphasisColor, comboEmphasisScale);
+        }
+        else
+        {
+            comboPopup.SetText("+" + stacks);
+        }
+    }
+
+    private void PlayGaugePunch()
+    {
+        if (root == null) return;
+
+        if (gaugePunchRoutine != null) StopCoroutine(gaugePunchRoutine);
+        gaugePunchRoutine = StartCoroutine(GaugePunchRoutine());
+    }
+
+    private IEnumerator GaugePunchRoutine()
+    {
+        var rootRt = root.GetComponent<RectTransform>();
+        if (rootRt == null) yield break;
+
+        Vector3 baseScale = Vector3.one;
+        Vector3 targetScale = baseScale * gaugePunchScale;
+        float half = gaugePunchDuration * 0.5f;
+
+        float t = 0f;
+        while (t < half)
+        {
+            t += Time.unscaledDeltaTime;
+            rootRt.localScale = Vector3.LerpUnclamped(baseScale, targetScale, t / half);
+            yield return null;
+        }
+
+        t = 0f;
+        while (t < half)
+        {
+            t += Time.unscaledDeltaTime;
+            rootRt.localScale = Vector3.LerpUnclamped(targetScale, baseScale, t / half);
+            yield return null;
+        }
+
+        rootRt.localScale = baseScale;
+        gaugePunchRoutine = null;
     }
 
     private void ResetCombo()
