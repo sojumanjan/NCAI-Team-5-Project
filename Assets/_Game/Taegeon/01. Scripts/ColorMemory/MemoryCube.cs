@@ -7,6 +7,8 @@ namespace Taegeon
 [RequireComponent(typeof(Renderer), typeof(BoxCollider))]
 public sealed class MemoryCube : MonoBehaviour
 {
+    #region 참조 및 설정
+
     [Tooltip("Optional: add this cube's note later.")]
     [SerializeField] private AudioClip note;
 
@@ -19,6 +21,13 @@ public sealed class MemoryCube : MonoBehaviour
     private Coroutine flash;
     private AudioSource audioSource;
 
+    #endregion
+
+    #region 버튼 초기화
+
+    /// <summary>
+    /// 버튼의 음 재생과 색상 효과를 준비합니다.
+    /// </summary>
     public void Initialize(Color color)
     {
         if (runtimeMaterial == null)
@@ -39,11 +48,18 @@ public sealed class MemoryCube : MonoBehaviour
         ResetFeedback();
     }
 
+    #endregion
+
+    #region 음과 색상 효과
+
+    /// <summary>
+    /// 버튼의 소리와 색상 및 음표 효과를 재생합니다.
+    /// </summary>
     public void PlayFeedback(float duration)
     {
         if (runtimeMaterial == null) return;
         if (flash != null) StopCoroutine(flash);
-        // Stop the previous note so rapidly repeated presses remain distinct.
+        // 연속 입력의 음이 겹치지 않도록 이전 소리를 끊습니다.
         audioSource.Stop();
         if (note != null)
         {
@@ -55,6 +71,9 @@ public sealed class MemoryCube : MonoBehaviour
         if (noteEffect != null) noteEffect.Show(baseColor, duration);
     }
 
+    /// <summary>
+    /// 일정 시간 버튼을 밝힌 뒤 기본 색상으로 되돌립니다.
+    /// </summary>
 private IEnumerator Flash(float duration)
     {
         runtimeMaterial.SetColor(colorProperty, baseColor);
@@ -64,6 +83,9 @@ private IEnumerator Flash(float duration)
         flash = null;
     }
 
+    /// <summary>
+    /// 재생 중인 효과를 중지하고 버튼을 초기 상태로 되돌립니다.
+    /// </summary>
 public void ResetFeedback()
     {
         if (flash != null) StopCoroutine(flash);
@@ -74,13 +96,25 @@ public void ResetFeedback()
         if (noteEffect != null) noteEffect.Hide();
     }
 
+    #endregion
+
+    #region 효과 및 리소스 정리
+
+    /// <summary>
+    /// 버튼 비활성화 시 재생 중인 효과를 종료합니다.
+    /// </summary>
     private void OnDisable() => ResetFeedback();
 
+    /// <summary>
+    /// 생성한 머티리얼을 해제하고 원본을 복원합니다.
+    /// </summary>
     private void OnDestroy()
     {
         if (runtimeMaterial == null) return;
         if (cubeRenderer != null) cubeRenderer.sharedMaterial = originalMaterial;
         Destroy(runtimeMaterial);
     }
+    #endregion
+
 }
 }

@@ -7,12 +7,28 @@ namespace Taegeon
 [RequireComponent(typeof(CanvasRenderer))]
 public sealed class FrequencyWaveGraphic : MaskableGraphic
 {
+    #region 참조 및 설정
+
     [SerializeField] private float frequency = 6;
     [SerializeField] private float amplitude = .7f;
+    #endregion
+
+    #region 신호 설정
+
+    /// <summary>
+    /// 표시할 주파수와 진폭을 설정합니다.
+    /// </summary>
     public void SetSignal(float hz, float level)
     {
         frequency = hz; amplitude = level; SetVerticesDirty();
     }
+    #endregion
+
+    #region 파형 메시 생성
+
+    /// <summary>
+    /// 눈금과 사인 파형을 UI 메시로 그립니다.
+    /// </summary>
     protected override void OnPopulateMesh(VertexHelper vh)
     {
         vh.Clear();
@@ -38,6 +54,9 @@ public sealed class FrequencyWaveGraphic : MaskableGraphic
             last = next;
         }
     }
+    /// <summary>
+    /// 두 지점 사이에 두께가 있는 선을 추가합니다.
+    /// </summary>
     private static void Line(VertexHelper vh, Vector2 a, Vector2 b, float width, Color tint)
     {
         Vector2 d = (b - a).normalized;
@@ -47,5 +66,7 @@ public sealed class FrequencyWaveGraphic : MaskableGraphic
         vh.AddVert(b + n, tint, Vector2.zero); vh.AddVert(b - n, tint, Vector2.zero);
         vh.AddTriangle(start, start + 1, start + 2); vh.AddTriangle(start, start + 2, start + 3);
     }
+    #endregion
+
 }
 }

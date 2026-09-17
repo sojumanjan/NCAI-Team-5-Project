@@ -9,6 +9,8 @@ namespace Taegeon
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "EscapeRoomProgress")]
 public sealed class EscapeRoomProgress : MonoBehaviour
 {
+    #region 참조 및 설정
+
     [SerializeField] private ColorMemoryGame memory;
     [SerializeField] private LetterDialPuzzle dial;
     [SerializeField] private SlidingKeyPuzzle sliding;
@@ -49,8 +51,22 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     public int PieceCount { get { int n=0; foreach(bool b in collected) if(b)n++; return n; } }
     public bool DoorOpen => opening >= 1f;
     public bool Escaped { get; private set; }
+    #endregion
+
+    #region 게임 잠금 확인
+
+    /// <summary>
+    /// 이전 열쇠 사용 여부로 해당 미니게임의 잠금 상태를 확인합니다.
+    /// </summary>
     public bool IsGameUnlocked(int index) => index >= 0 && index < 4 && (index == 0 || used[index-1]);
 
+    #endregion
+
+    #region 초기화 및 진행 갱신
+
+    /// <summary>
+    /// 보상과 액자의 초기 상태를 준비합니다.
+    /// </summary>
     private void Awake()
     {
         leftClosed = leftDoor.localPosition;
@@ -66,14 +82,20 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         RefreshDisplays();
     }
 
+    /// <summary>
+    /// 진행 단계에 맞춰 미니게임 조작을 허용합니다.
+    /// </summary>
     private void ApplyGameLocks()
     {
-        // Controllers stay disabled until their preceding key opens the lock.
+        // 이전 게임의 열쇠로 잠금을 해제하기 전까지 조작을 막습니다.
         dial.enabled = IsGameUnlocked(1);
         sliding.enabled = IsGameUnlocked(2);
         radio.enabled = IsGameUnlocked(3);
     }
 
+    /// <summary>
+    /// 보상과 상호작용을 갱신하고 탈출 완료를 확인합니다.
+    /// </summary>
     private void Update()
     {
         if (ending) return;
@@ -98,7 +120,13 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     }
 
 
-    /// <summary>Report exactly once before leaving the current minigame scene.</summary>
+    #endregion
+
+    #region 결과 전송 및 허브 복귀
+
+    /// <summary>
+    /// 게임 결과를 한 번 전송하고 허브 복귀를 예약합니다.
+    /// </summary>
     public void FinishGame(bool cleared, float score01)
     {
         if (ending) return;
@@ -126,6 +154,9 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         StartCoroutine(ReturnToHub());
     }
 
+    /// <summary>
+    /// 결과 안내 후 메인 허브로 돌아갑니다.
+    /// </summary>
     private System.Collections.IEnumerator ReturnToHub()
     {
         yield return new WaitForSecondsRealtime(returnToHubDelay);
@@ -133,6 +164,13 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         if (flow != null) flow.ReturnToMain();
     }
 
+    #endregion
+
+    #region 열쇠 보상 생성
+
+    /// <summary>
+    /// 클리어한 미니게임의 열쇠를 한 번만 생성합니다.
+    /// </summary>
     private void PollRewards()
     {
         for(int i=0;i<4;i++)
@@ -147,6 +185,9 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 열쇠 보석에 게임별 식별 색상을 적용합니다.
+    /// </summary>
     private void ColorKey(GameObject key,int index)
     {
         foreach(var r in key.GetComponentsInChildren<Renderer>())
@@ -158,6 +199,13 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region 대상 탐색 및 상호작용
+
+    /// <summary>
+    /// 시야와 거리 및 장애물을 기준으로 상호작용 가능 여부를 확인합니다.
+    /// </summary>
     private bool CanSee(Vector3 point,Transform target)
     {
         if(!player.ViewActive||!player.enabled||ending)return false;
@@ -174,7 +222,10 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         return true;
     }
 
-    // One focused object gives one action; a revealed piece takes precedence over its open lock.
+    // 화면 중앙에 가장 가까운 대상 하나만 선택합니다.
+    /// <summary>
+    /// 화면 중앙에 가까운 상호작용 대상을 선택합니다.
+    /// </summary>
     private int FindInteraction(out int kind)
     {
         kind=-1;int selected=-1;float best=float.MaxValue;
@@ -192,6 +243,9 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         return selected;
     }
 
+    /// <summary>
+    /// 바라보는 열쇠나 액자 조각 또는 잠금장치와 상호작용합니다.
+    /// </summary>
     public bool TryInteract()
     {
         int kind;int index=FindInteraction(out kind);
@@ -225,6 +279,13 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         return true;
     }
 
+    #endregion
+
+    #region 안내 표시 및 탈출문
+
+    /// <summary>
+    /// 액자 복원 수와 서랍 안내를 갱신합니다.
+    /// </summary>
     private void RefreshDisplays()
     {
         frameCounter.text="LEAP · 액자 복원 "+PieceCount+" / 4";
@@ -233,6 +294,9 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             (i<3?names[i+1]+" 잠금장치":"마지막 액자 서랍")+"\n"+(i+1)+"번 열쇠 필요";
     }
 
+    /// <summary>
+    /// 현재 대상에 맞는 상호작용 안내를 표시합니다.
+    /// </summary>
     private void RefreshPrompt()
     {
         int kind;int index=FindInteraction(out kind);
@@ -245,7 +309,13 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         }
         else prompt.text=Time.unscaledTime<noticeUntil?notice:"";
     }
+    /// <summary>
+    /// 일정 시간 표시할 알림을 등록합니다.
+    /// </summary>
     private void ShowNotice(string text){notice=text;noticeUntil=Time.unscaledTime+7f;}
+    /// <summary>
+    /// 액자 완성 후 탈출문을 부드럽게 엽니다.
+    /// </summary>
     private void UpdateDoor(float dt)
     {
         if(PieceCount!=4||opening>=1)return;
@@ -254,6 +324,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         leftDoor.localPosition=leftClosed+Vector3.left*3.1f*t;
         rightDoor.localPosition=rightClosed+Vector3.right*3.1f*t;
     }
+    #endregion
+
 }
 }
 

@@ -11,6 +11,8 @@ namespace Taegeon
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "ColorMemoryGame")]
 public sealed class ColorMemoryGame : MonoBehaviour
 {
+    #region 참조 및 설정
+
     private const int TotalStages = 5;
     private const int CubeCount = 5;
 
@@ -51,18 +53,31 @@ public sealed class ColorMemoryGame : MonoBehaviour
     private bool started;
     private GameObject generatedCanvas;
 
+    #endregion
+
+    #region 게임 준비 및 시작
+
+    /// <summary>
+    /// 게임을 PLAY 버튼 입력 대기 상태로 준비합니다.
+    /// </summary>
     private void Start()
     {
         started = true;
         RestartGame();
     }
 
+    /// <summary>
+    /// 재활성화된 게임을 시작 대기 상태로 초기화합니다.
+    /// </summary>
     private void OnEnable()
     {
         if (started) RestartGame();
     }
 
-    // Can also be wired to a UI Button or invoked by another script.
+    // UI 버튼이나 외부 스크립트에서도 초기화를 요청할 수 있습니다.
+    /// <summary>
+    /// 라운드와 패턴을 초기화하고 PLAY 입력을 기다립니다.
+    /// </summary>
     public void RestartGame()
     {
         if (!isActiveAndEnabled) return;
@@ -83,12 +98,22 @@ public sealed class ColorMemoryGame : MonoBehaviour
         SetStatus("Press PLAY to start");
     }
 
+    /// <summary>
+    /// 대기 상태에서 첫 라운드를 시작합니다.
+    /// </summary>
     public void PlayGame()
     {
         if (!isActiveAndEnabled || !initialized || state != GameState.Idle) return;
         StartCoroutine(RunGame());
     }
 
+    #endregion
+
+    #region 필수 참조 확인
+
+    /// <summary>
+    /// 음 버튼과 카메라의 필수 연결을 확인합니다.
+    /// </summary>
     private bool ValidateSetup()
     {
         if (inputCamera == null) inputCamera = Camera.main;
@@ -112,6 +137,9 @@ public sealed class ColorMemoryGame : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 게임 설정 오류를 콘솔과 상태 문구에 알립니다.
+    /// </summary>
     private bool SetupError(string message)
     {
         Debug.LogError("ColorMemoryGame: " + message, this);
@@ -119,6 +147,13 @@ public sealed class ColorMemoryGame : MonoBehaviour
         return false;
     }
 
+    #endregion
+
+    #region 라운드 진행
+
+    /// <summary>
+    /// 라운드를 진행하며 실패한 패턴은 그대로 재생합니다.
+    /// </summary>
     private IEnumerator RunGame()
     {
         while (stage <= TotalStages)
@@ -145,7 +180,7 @@ public sealed class ColorMemoryGame : MonoBehaviour
             }
 
             inputIndex = 0;
-            // Clear any click from the demonstration's final frame before accepting input.
+            // 시범 재생의 마지막 클릭이 정답 입력으로 처리되지 않도록 한 프레임 기다립니다.
             yield return null;
             state = GameState.Input;
             SetStatus("Your turn");
@@ -156,19 +191,29 @@ public sealed class ColorMemoryGame : MonoBehaviour
             yield return new WaitForSecondsRealtime(Mathf.Max(pressFeedbackSeconds, resultSeconds));
             ResetCubes();
             if (success) { stage++; pattern.Clear(); }
-            // A failed round replays the same pattern.
+            // 틀린 라운드는 기존 패턴을 그대로 재생합니다.
         }
         stage = TotalStages;
         state = GameState.Complete;
         SetStatus("Success - All clear!");
     }
 
+    #endregion
+
+    #region 버튼 입력 및 정답 판정
+
+    /// <summary>
+    /// 주크박스 화면의 클릭 입력을 전달합니다.
+    /// </summary>
     private void Update()
     {
         if (inputCamera == null || !inputCamera.isActiveAndEnabled) return;
         if (TryGetPress(out Vector2 screenPosition)) HandlePointerPress(screenPosition);
     }
 
+    /// <summary>
+    /// 클릭한 PLAY 버튼이나 음 버튼을 처리합니다.
+    /// </summary>
     public void HandlePointerPress(Vector2 screenPosition)
     {
         if (inputCamera == null || !inputCamera.isActiveAndEnabled) return;
@@ -187,6 +232,9 @@ public sealed class ColorMemoryGame : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 선택한 음이 현재 패턴과 일치하는지 판정합니다.
+    /// </summary>
     public void PressCube(int cubeIndex)
     {
         if (state != GameState.Input || cubeIndex < 0 || cubeIndex >= CubeCount) return;
@@ -200,6 +248,9 @@ public sealed class ColorMemoryGame : MonoBehaviour
         if (inputIndex == pattern.Count) state = GameState.Success;
     }
 
+    /// <summary>
+    /// 마우스나 터치의 누름 위치를 읽습니다.
+    /// </summary>
     private static bool TryGetPress(out Vector2 position)
     {
         position = default;
@@ -234,11 +285,21 @@ public sealed class ColorMemoryGame : MonoBehaviour
         return false;
     }
 
+    #endregion
+
+    #region 상태 표시 및 정리
+
+    /// <summary>
+    /// 현재 라운드와 진행 상태를 표시합니다.
+    /// </summary>
     private void SetStatus(string status)
     {
         stateText.text = $"Stage {stage} / {TotalStages}\n{status}";
     }
 
+    /// <summary>
+    /// 상태 표시가 없을 때 안내 UI를 생성합니다.
+    /// </summary>
     private void CreateStateText()
     {
         generatedCanvas = new GameObject("Memory Game UI", typeof(Canvas), typeof(CanvasScaler));
@@ -270,12 +331,18 @@ public sealed class ColorMemoryGame : MonoBehaviour
         textObject.GetComponent<Outline>().effectColor = Color.black;
     }
 
+    /// <summary>
+    /// 모든 음 버튼을 기본 표시 상태로 되돌립니다.
+    /// </summary>
     private void ResetCubes()
     {
         if (cubes == null) return;
         foreach (MemoryCube cube in cubes) if (cube != null) cube.ResetFeedback();
     }
 
+    /// <summary>
+    /// 게임 진행과 버튼 효과를 중지합니다.
+    /// </summary>
     private void OnDisable()
     {
         StopAllCoroutines();
@@ -283,9 +350,14 @@ public sealed class ColorMemoryGame : MonoBehaviour
         ResetCubes();
     }
 
+    /// <summary>
+    /// 실행 중 생성한 상태 UI를 정리합니다.
+    /// </summary>
     private void OnDestroy()
     {
         if (generatedCanvas != null) Destroy(generatedCanvas);
     }
+    #endregion
+
 }
 }

@@ -12,6 +12,8 @@ namespace Taegeon
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "SlidingKeyPuzzle")]
 public sealed class SlidingKeyPuzzle : MonoBehaviour
 {
+    #region 참조 및 설정
+
     [Serializable] public sealed class Block
     {
         public Transform visual;
@@ -35,6 +37,13 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
     private Vector3 dragStart;
     private bool dragging;
 
+    #endregion
+
+    #region 퍼즐 초기화
+
+    /// <summary>
+    /// 블록 위치 데이터를 준비하고 퍼즐을 초기화합니다.
+    /// </summary>
     private void Awake()
     {
         if (inputCamera == null) inputCamera = Camera.main;
@@ -42,6 +51,9 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
         ResetPuzzle();
     }
 
+    /// <summary>
+    /// 블록 배치와 이동 기록을 최초 상태로 되돌립니다.
+    /// </summary>
     public void ResetPuzzle()
     {
         if (positions == null) return;
@@ -55,6 +67,13 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
         SetStatus("금색 열쇠 블록을 오른쪽 출구로 꺼내세요.");
     }
 
+    #endregion
+
+    #region 격자 계산 및 블록 이동
+
+    /// <summary>
+    /// 격자 좌표를 블록의 로컬 위치로 변환합니다.
+    /// </summary>
     private Vector3 BlockPosition(int i)
     {
         var b = blocks[i];
@@ -64,6 +83,9 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
             (2.5f - row - (b.horizontal ? 0 : b.length - 1) * .5f) * cellSize, -.24f);
     }
 
+    /// <summary>
+    /// 지정한 칸을 차지하는 다른 블록을 찾습니다.
+    /// </summary>
     private int Occupant(int column, int row, int exclude)
     {
         for (int i = 0; i < blocks.Length; i++)
@@ -78,6 +100,9 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
         return -1;
     }
 
+    /// <summary>
+    /// 충돌과 출구 조건을 확인해 가능한 만큼 블록을 이동시킵니다.
+    /// </summary>
     public bool TryMove(int index, int requestedSteps)
     {
         if (!isActiveAndEnabled || positions == null || HasKey || IsMoving ||
@@ -102,6 +127,9 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 블록 이동을 연출하고 열쇠 블록의 탈출을 판정합니다.
+    /// </summary>
     private IEnumerator Slide(int index, int delta)
     {
         IsMoving = true;
@@ -127,6 +155,13 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
         else SetStatus("이동 " + MoveCount + "회  |  블록을 길이 방향으로 드래그하세요.");
     }
 
+    #endregion
+
+    #region 입력 및 좌표 변환
+
+    /// <summary>
+    /// 초기화와 블록 드래그 입력을 처리합니다.
+    /// </summary>
 private void Update()
     {
         if (inputCamera == null || !inputCamera.isActiveAndEnabled) { dragging = false; return; }
@@ -140,6 +175,9 @@ private void Update()
         if (up) EndDragAt(pointer);
     }
 
+    /// <summary>
+    /// 화면 위치를 퍼즐판의 로컬 좌표로 변환합니다.
+    /// </summary>
     private bool PointerOnBoard(Vector2 screen, out Vector3 local)
     {
         var plane = new Plane(transform.forward, transform.TransformPoint(new Vector3(0, 0, -.24f)));
@@ -148,6 +186,9 @@ private void Update()
         local = default; return false;
     }
 
+    /// <summary>
+    /// 마우스나 터치의 위치와 누름 상태를 읽습니다.
+    /// </summary>
     private static void ReadPointer(out Vector2 point, out bool down, out bool up)
     {
         point = default; down = up = false;
@@ -167,10 +208,27 @@ private void Update()
         point = Input.mousePosition; down = Input.GetMouseButtonDown(0); up = Input.GetMouseButtonUp(0);
 #endif
     }
+    #endregion
+
+    #region 안내 및 상태 정리
+
+    /// <summary>
+    /// 퍼즐 진행 안내를 표시합니다.
+    /// </summary>
     private void SetStatus(string text) { if (statusText != null) statusText.text = text; }
+    /// <summary>
+    /// 비활성화된 퍼즐을 최초 상태로 되돌립니다.
+    /// </summary>
     private void OnDisable() { if (positions != null) ResetPuzzle(); }
 
 
+    #endregion
+
+    #region 블록 드래그
+
+    /// <summary>
+    /// 드래그한 거리를 계산해 블록 이동을 요청합니다.
+    /// </summary>
 public void EndDragAt(Vector2 pointer)
     {
         if (!dragging) return;
@@ -183,6 +241,9 @@ public void EndDragAt(Vector2 pointer)
     }
 
 
+    /// <summary>
+    /// 클릭한 블록을 선택하거나 초기화 버튼을 처리합니다.
+    /// </summary>
 public void BeginDragAt(Vector2 pointer)
     {
         if (inputCamera == null || !inputCamera.isActiveAndEnabled || IsMoving) return;
@@ -201,5 +262,7 @@ public void BeginDragAt(Vector2 pointer)
                 return;
             }
     }
+    #endregion
+
 }
 }
