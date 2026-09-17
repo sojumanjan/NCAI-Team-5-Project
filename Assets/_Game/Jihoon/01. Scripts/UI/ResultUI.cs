@@ -88,7 +88,7 @@ public class ResultUI : MonoBehaviour
         }
     }
 
-    private void Show(MiniGameResult result)
+    private void Show(CookingResult result)
     {
         if (panel != null)
         {
