@@ -1,10 +1,12 @@
-﻿/// <summary>
-/// 미니게임 한 판의 결과.
+/// <summary>
+/// 요리 미니게임 결과 화면에 필요한 숫자들. 허브로 넘어가는 <see cref="MiniGameResult"/>와
+/// 일부러 분리했다.
 ///
-/// 허브와 주고받을 유일한 창구다. 9단계에서 허브 연동을 붙일 때 이 구조체만 넘기면 되도록,
-/// 다른 시스템이 결과를 직접 캐묻지 않게 여기로 모아둔다.
+/// 평점이니 요구 평점이니 하는 건 이 장르에서만 뜻이 있는 말이다. 공유 구조체에 넣으면
+/// 리듬게임이나 탈출 게임 담당자가 쓰지도 않을 필드를 0으로 채우게 된다. 공유되는 건
+/// "깼는가"뿐이고, 나머지는 여기 남는다.
 /// </summary>
-public readonly struct MiniGameResult
+public readonly struct CookingResult
 {
     /// <summary>목표 평점을 넘겼는지.</summary>
     public readonly bool Cleared;
@@ -21,8 +23,8 @@ public readonly struct MiniGameResult
     /// <summary>끝난 주문 전체. 오답과 이탈을 포함한다.</summary>
     public readonly int ResolvedCount;
 
-    public MiniGameResult(bool cleared, float finalRating, float requiredRating,
-                          int correctCount, int resolvedCount)
+    public CookingResult(bool cleared, float finalRating, float requiredRating,
+                         int correctCount, int resolvedCount)
     {
         Cleared = cleared;
         FinalRating = finalRating;
