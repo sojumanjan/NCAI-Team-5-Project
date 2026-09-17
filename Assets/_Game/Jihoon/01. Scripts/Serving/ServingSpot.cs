@@ -217,6 +217,15 @@ public class ServingSpot : MonoBehaviour
         OrderPlaced?.Invoke(this, _orders);
     }
 
+    /// <summary>손님이 등을 돌려 걸어 나가기 시작했다. 이제부터 자리가 빈다.</summary>
+    public void OnCustomerDeparted(Customer customer)
+    {
+        if (customer == _customer)
+        {
+            _customer = null;
+        }
+    }
+
     /// <summary>손님이 기다리다 포기했다. 인내심 타이머가 0이 되면 손님 쪽에서 부른다.</summary>
     public void AbandonOrder()
     {
@@ -331,10 +340,12 @@ public class ServingSpot : MonoBehaviour
         // 개수를 먼저 챙긴다. 목록을 비운 뒤에 알리면 평점이 0개짜리 주문으로 계산된다.
         int size = _orders.Count;
 
+        // _customer를 여기서 비우지 않는다. 화난 손님은 잠깐 제자리에 서 있다가 나가는데,
+        // 그 사이 자리를 내주면 새 손님이 같은 지점으로 걸어와 겹친다. 실제로 걸어 나갈 때
+        // 손님 쪽에서 OnCustomerDeparted로 알려준다.
         if (_customer != null)
         {
-            _customer.Leave();
-            _customer = null;
+            _customer.Leave(result != OrderResult.Correct);
         }
 
         _orders.Clear();

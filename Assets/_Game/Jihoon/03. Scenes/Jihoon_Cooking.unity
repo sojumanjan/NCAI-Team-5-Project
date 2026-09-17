@@ -4378,8 +4378,8 @@ Transform:
   m_GameObject: {fileID: 447907793}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -7.9, y: -0.4528, z: -6.4}
-  m_LocalScale: {x: 38.462646, y: 0.90558726, z: 40.371906}
+  m_LocalPosition: {x: 4.5, y: -0.4528, z: -6.4}
+  m_LocalScale: {x: 16.704712, y: 0.3933056, z: 17.533922}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 330144309}
@@ -9877,12 +9877,12 @@ MonoBehaviour:
   - 0.4
   wrongDeltas:
   - -0.2
-  - -0.3
-  - -0.4
+  - -0.2
+  - -0.2
   abandonedDeltas:
   - -0.2
-  - -0.3
-  - -0.4
+  - -0.2
+  - -0.2
 --- !u!4 &1003455712
 Transform:
   m_ObjectHideFlags: 0

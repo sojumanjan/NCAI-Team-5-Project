@@ -1,4 +1,4 @@
-using DG.Tweening;
+﻿using DG.Tweening;
 using UnityEngine;
 
 /// <summary>
@@ -56,10 +56,47 @@ public class CustomerWaddle : MonoBehaviour
             model = FindModel();
         }
 
-        if (customer == null || model == null)
+        if (customer == null)
         {
-            Debug.LogError($"{nameof(CustomerWaddle)} on '{name}': {nameof(Customer)}와 흔들 모델이 필요합니다.", this);
+            Debug.LogError($"{nameof(CustomerWaddle)} on '{name}': {nameof(Customer)}를 찾지 못했습니다.", this);
             enabled = false;
+            return;
+        }
+
+        CaptureRest();
+    }
+
+    /// <summary>
+    /// 흔들 모델을 바꾼다. 손님 외형이 여러 벌이라 어느 몸이 켜져 있는지는
+    /// <see cref="CustomerAppearance"/>가 정하고, 여기는 그걸 따라간다.
+    /// </summary>
+    public void SetModel(Transform next)
+    {
+        if (next == model)
+        {
+            return;
+        }
+
+        KillTweens();
+
+        // 쓰던 몸은 원래 자세로 돌려놓는다. 기울어진 채로 꺼지면 다시 켤 때 그대로다.
+        if (model != null)
+        {
+            model.localRotation = _restRotation;
+            model.localPosition = _restPosition;
+        }
+
+        model = next;
+        CaptureRest();
+
+        // 다음 Update에서 걷는지 다시 판단하게 만든다.
+        _walking = false;
+    }
+
+    private void CaptureRest()
+    {
+        if (model == null)
+        {
             return;
         }
 
@@ -81,6 +118,11 @@ public class CustomerWaddle : MonoBehaviour
 
     private void Update()
     {
+        if (model == null)
+        {
+            return;
+        }
+
         SetWalking(customer.IsWalking);
     }
 

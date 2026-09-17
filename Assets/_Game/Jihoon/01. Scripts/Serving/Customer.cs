@@ -16,6 +16,10 @@ public class Customer : MonoBehaviour
         Idle,
         WalkingIn,
         Ordering,
+
+        /// <summary>화가 나서 그 자리에 서 있는 동안. 씩씩대는 연출을 보여주고 나서 떠난다.</summary>
+        Fuming,
+
         Leaving,
     }
 
@@ -44,6 +48,10 @@ public class Customer : MonoBehaviour
     [Tooltip("스포너가 값을 주지 않았을 때 쓸 기본 인내심 (초).")]
     [SerializeField] private float defaultPatience = 30f;
 
+    [Header("화났을 때")]
+    [Tooltip("돌아서기 전에 제자리에서 화를 내는 시간 (초). 0이면 바로 떠납니다.")]
+    [SerializeField] private float angryPauseSeconds = 2f;
+
     private ServingSpot _spot;
     private Phase _phase = Phase.Idle;
 
@@ -53,6 +61,7 @@ public class Customer : MonoBehaviour
     private float _patienceMax;
     private float _patienceLeft;
     private bool _gaveUp;
+    private float _fumeTimer;
 
     private readonly List<ItemData> _orders = new();
 
@@ -70,6 +79,15 @@ public class Customer : MonoBehaviour
 
     /// <summary>걷는 중인지. 걸을 때만 뒤뚱거리면 되므로 연출 쪽에서 본다.</summary>
     public bool IsWalking => _phase == Phase.WalkingIn || _phase == Phase.Leaving;
+
+    /// <summary>
+    /// 기분이 상한 채로 떠나는지. 주문을 망쳤거나 기다리다 지친 경우다.
+    /// 한 번 참이 되면 다시 거짓이 되지 않는다 — 돌이킬 방법이 없는 결말이라서.
+    /// </summary>
+    public bool IsAngry { get; private set; }
+
+    /// <summary>화를 내며 제자리에 서 있는 동안. 연출 쪽이 이때 튕기는 트윈을 돌린다.</summary>
+    public bool IsFuming => _phase == Phase.Fuming;
 
     // ---------------------------------------------------------------- flow
 
@@ -107,13 +125,39 @@ public class Customer : MonoBehaviour
         SnapToGroundHeight();
     }
 
-    /// <summary>Sends the customer away. The object destroys itself on arrival.</summary>
-    public void Leave()
+    /// <summary>
+    /// 손님을 내보낸다. 목적지에 닿으면 스스로 사라진다.
+    /// <paramref name="angry"/>는 연출용이다 — 판정은 이미 레인이 끝냈다.
+    /// </summary>
+    public void Leave(bool angry = false)
     {
+        IsAngry = IsAngry || angry;
+
         if (_spot == null)
         {
             Destroy(gameObject);
             return;
+        }
+
+        // 화가 났으면 바로 등을 돌리지 않는다. 제자리에서 한마디 하고 나간다.
+        if (IsAngry && angryPauseSeconds > 0f)
+        {
+            _fumeTimer = angryPauseSeconds;
+            _phase = Phase.Fuming;
+            return;
+        }
+
+        BeginExit();
+    }
+
+    /// <summary>실제로 등을 돌려 걸어 나가기 시작한다.</summary>
+    private void BeginExit()
+    {
+        // 이 순간까지 레인이 이 손님을 붙잡고 있었다. 이제야 자리가 빈다 — 화내는 2초 동안
+        // 자리를 내주면 새 손님이 같은 지점으로 걸어와 겹친다.
+        if (_spot != null)
+        {
+            _spot.OnCustomerDeparted(this);
         }
 
         _route.Clear();
@@ -171,6 +215,14 @@ public class Customer : MonoBehaviour
                 TickPatience();
                 break;
 
+            case Phase.Fuming:
+                _fumeTimer -= Time.deltaTime;
+                if (_fumeTimer <= 0f)
+                {
+                    BeginExit();
+                }
+                break;
+
             case Phase.Leaving:
                 if (!FollowRoute())
                 {
@@ -207,7 +259,7 @@ public class Customer : MonoBehaviour
         }
         else
         {
-            Leave();
+            Leave(angry: true);
         }
     }
 
@@ -296,6 +348,7 @@ public class Customer : MonoBehaviour
 
     private void OnValidate()
     {
+        angryPauseSeconds = Mathf.Max(0f, angryPauseSeconds);
         arriveDistance = Mathf.Max(0.01f, arriveDistance);
         waypointDistance = Mathf.Max(arriveDistance, waypointDistance);
         cornerLookAhead = Mathf.Max(0f, cornerLookAhead);
