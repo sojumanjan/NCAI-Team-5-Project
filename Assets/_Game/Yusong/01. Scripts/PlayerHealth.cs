@@ -9,6 +9,7 @@ public class PlayerHealth : MonoBehaviour
     public static PlayerHealth Instance { get; private set; }
     public static bool IsGameOver { get; private set; }
     public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
 
     [SerializeField] private int maxHealth = 5;
     [SerializeField] private Color hitColor = new Color(0.6f, 0.1f, 0.9f, 1f);
@@ -100,6 +101,8 @@ public class PlayerHealth : MonoBehaviour
         {
             raycaster.enabled = false;
         }
+
+        GameFlow.Instance?.ReportCurrent(new MiniGameResult(false, 0f));
 
         Time.timeScale = 0f;
     }

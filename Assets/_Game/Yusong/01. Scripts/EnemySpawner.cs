@@ -20,6 +20,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float spawnOffset = 60f;
     [SerializeField] private float spawnDuration = 60f;
     [SerializeField] private float wave1SpeedReduction = 20f;
+    [SerializeField] private float wave2PlusSpeedReduction = 10f;
 
     [Header("Yellow Pacing")]
     [SerializeField] private int yellowPairSize = 2;
@@ -224,10 +225,11 @@ public class EnemySpawner : MonoBehaviour
     {
         var enemy = Instantiate(prefab, parent);
 
-        if (wave == 1 && wave1SpeedReduction > 0f)
+        float reduction = wave == 1 ? wave1SpeedReduction : wave2PlusSpeedReduction;
+        if (reduction > 0f)
         {
             var mover = enemy.GetComponent<EnemyMover>();
-            if (mover != null) mover.AdjustSpeed(-wave1SpeedReduction);
+            if (mover != null) mover.AdjustSpeed(-reduction);
         }
 
         return enemy;

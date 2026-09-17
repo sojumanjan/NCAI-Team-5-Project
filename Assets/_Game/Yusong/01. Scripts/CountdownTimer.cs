@@ -255,6 +255,16 @@ public class CountdownTimer : MonoBehaviour
             raycaster.enabled = false;
         }
 
+        if (PlayerHealth.Instance != null)
+        {
+            float score01 = (float)PlayerHealth.Instance.CurrentHealth / PlayerHealth.Instance.MaxHealth;
+            GameFlow.Instance?.ReportCurrent(new MiniGameResult(true, score01));
+        }
+        else
+        {
+            GameFlow.Instance?.ReportCurrent(new MiniGameResult(true, 1f));
+        }
+
         Time.timeScale = 0f;
     }
 

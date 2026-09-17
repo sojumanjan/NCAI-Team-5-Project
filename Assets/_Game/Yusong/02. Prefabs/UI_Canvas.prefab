@@ -334,7 +334,7 @@ MonoBehaviour:
   root: {fileID: 8297060793472107824}
   gaugeFill: {fileID: 7093464371777815017}
   comboText: {fileID: 959037898220715215}
-  graceDuration: 3
+  graceDuration: 4
   comboPopupPrefab: {fileID: 4280093146653880719, guid: fda5cabff7a580546bf8b479cbedbde5, type: 3}
   aoeComboThreshold: 15
   aoeDuration: 10
@@ -3854,8 +3854,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC774\uB984\uBBF8\uC815"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 0}
-  m_sharedMaterial: {fileID: 0}
+  m_fontAsset: {fileID: 11400000, guid: ea13afd5bacb77b4aa22b49aa2e6e26b, type: 2}
+  m_sharedMaterial: {fileID: -2159721795122299504, guid: ea13afd5bacb77b4aa22b49aa2e6e26b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5127,6 +5127,7 @@ MonoBehaviour:
   spawnOffset: 60
   spawnDuration: 60
   wave1SpeedReduction: 15
+  wave2PlusSpeedReduction: 10
   yellowPairSize: 2
   yellowSlotJitterFraction: 0.25
   yellowPairSeparation: 220
@@ -5214,8 +5215,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uBCF4\uC2A4"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 0}
-  m_sharedMaterial: {fileID: 0}
+  m_fontAsset: {fileID: 11400000, guid: ea13afd5bacb77b4aa22b49aa2e6e26b, type: 2}
+  m_sharedMaterial: {fileID: -2159721795122299504, guid: ea13afd5bacb77b4aa22b49aa2e6e26b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
