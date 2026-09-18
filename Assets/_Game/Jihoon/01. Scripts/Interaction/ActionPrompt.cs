@@ -8,6 +8,9 @@ public enum InputVerb
 
     /// <summary>Operating a station.</summary>
     Interact,
+
+    /// <summary>놓기 직전에 물건을 돌리는 것. 손에 들고 바닥을 조준하고 있을 때만 쓸 수 있다.</summary>
+    Rotate,
 }
 
 /// <summary>

@@ -24,8 +24,8 @@ public class PlacementPreview : MonoBehaviour
     [SerializeField] private PlayerInteractor interactor;
 
     [Header("회전")]
-    [Tooltip("반시계 회전 키.")]
-    [SerializeField] private Key rotateLeftKey = Key.Q;
+    [Tooltip("반시계 회전 키. None이면 그 방향으로는 돌지 않습니다.")]
+    [SerializeField] private Key rotateLeftKey = Key.None;
 
     [Tooltip("시계 회전 키. E는 상호작용 키라 겹치므로 피하세요.")]
     [SerializeField] private Key rotateRightKey = Key.R;
@@ -56,6 +56,14 @@ public class PlacementPreview : MonoBehaviour
     private static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
     private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
 
+    /// <summary>
+    /// 지금 회전 키가 먹히는지. 프롬프트가 이걸 보고 안내 줄을 띄운다.
+    ///
+    /// 실제로 입력을 읽는 조건을 그대로 내보낸다. 조건을 두 군데에 따로 적으면 "뜨는데
+    /// 안 돌아가는" 프롬프트가 생기는데, 그건 없는 것보다 나쁘다.
+    /// </summary>
+    public bool CanRotate { get; private set; }
+
     private GameObject _ghost;
     private WorldItem _ghostFor;
     private Material _runtimeMaterial;
@@ -83,6 +91,7 @@ public class PlacementPreview : MonoBehaviour
 
     private void OnDisable()
     {
+        CanRotate = false;
         DestroyGhost();
     }
 
@@ -104,6 +113,7 @@ public class PlacementPreview : MonoBehaviour
 
         if (_ghost == null)
         {
+            CanRotate = false;
             return;
         }
 
@@ -122,9 +132,12 @@ public class PlacementPreview : MonoBehaviour
 
         if (!show)
         {
+            CanRotate = false;
             _holdTime = 0f;
             return;
         }
+
+        CanRotate = freeRotation;
 
         // Snapped placements decide their own angle, so the rotate keys are only live
         // while the item would land freely on the world.
@@ -166,9 +179,9 @@ public class PlacementPreview : MonoBehaviour
             return false;
         }
 
-        // 조준한 표면이 없으면 물건은 허공에 떨어진다. 그 자리를 고스트로 그려봐야
-        // 놓일 곳을 알려주는 게 아니라 허공에 떠 있는 물체만 하나 더 보일 뿐이다.
-        if (!interactor.HasHit)
+        // 얹을 수 있는 면이 아니면 물건은 그 자리에 머무르지 않고 떨어진다. 허공이 그렇고,
+        // 벽도 마찬가지다. 그 자리를 고스트로 그리면 붙어 있을 것처럼 보여 거짓말이 된다.
+        if (!hands.HasPlaceableSurface)
         {
             return false;
         }
@@ -189,7 +202,8 @@ public class PlacementPreview : MonoBehaviour
             return;
         }
 
-        float direction = Direction(keyboard[rotateLeftKey], -1f) + Direction(keyboard[rotateRightKey], 1f);
+        float direction = Direction(Resolve(keyboard, rotateLeftKey), -1f)
+                          + Direction(Resolve(keyboard, rotateRightKey), 1f);
 
         if (Mathf.Approximately(direction, 0f))
         {
@@ -204,6 +218,15 @@ public class PlacementPreview : MonoBehaviour
         {
             hands.AddDropYaw(direction * rotationSpeed * Time.deltaTime);
         }
+    }
+
+    /// <summary>
+    /// None으로 비워둔 방향은 조회 자체를 건너뛴다. Keyboard의 인덱서에 Key.None을 넣으면
+    /// 범위를 벗어난 접근이 되어 터진다.
+    /// </summary>
+    private static KeyControl Resolve(Keyboard keyboard, Key key)
+    {
+        return key == Key.None ? null : keyboard[key];
     }
 
     /// <summary>Returns the sign while the key is down, and applies the tap step on press.</summary>

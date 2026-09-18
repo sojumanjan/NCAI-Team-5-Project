@@ -20,6 +20,9 @@ public class Customer : MonoBehaviour
         /// <summary>화가 나서 그 자리에 서 있는 동안. 씩씩대는 연출을 보여주고 나서 떠난다.</summary>
         Fuming,
 
+        /// <summary>주문을 제대로 받아 기뻐하는 동안. 하트를 띄우고 나서 떠난다.</summary>
+        Happy,
+
         Leaving,
     }
 
@@ -52,6 +55,11 @@ public class Customer : MonoBehaviour
     [Tooltip("돌아서기 전에 제자리에서 화를 내는 시간 (초). 0이면 바로 떠납니다.")]
     [SerializeField] private float angryPauseSeconds = 2f;
 
+    [Header("주문에 만족했을 때")]
+    [Tooltip("돌아서기 전에 제자리에서 기뻐하는 시간 (초). 0이면 바로 떠납니다. " +
+             "하트 연출이 이 시간 안에 끝나도록 맞추세요.")]
+    [SerializeField] private float happyPauseSeconds = 2f;
+
     private ServingSpot _spot;
     private Phase _phase = Phase.Idle;
 
@@ -61,7 +69,9 @@ public class Customer : MonoBehaviour
     private float _patienceMax;
     private float _patienceLeft;
     private bool _gaveUp;
-    private float _fumeTimer;
+
+    // 화내는 시간과 기뻐하는 시간은 같은 "제자리에 머무는 동안"이라 타이머를 나눌 이유가 없다.
+    private float _pauseTimer;
 
     private readonly List<ItemData> _orders = new();
 
@@ -88,6 +98,9 @@ public class Customer : MonoBehaviour
 
     /// <summary>화를 내며 제자리에 서 있는 동안. 연출 쪽이 이때 튕기는 트윈을 돌린다.</summary>
     public bool IsFuming => _phase == Phase.Fuming;
+
+    /// <summary>주문을 제대로 받고 제자리에서 기뻐하는 동안. 하트 연출이 이걸 보고 터진다.</summary>
+    public bool IsHappy => _phase == Phase.Happy;
 
     // ---------------------------------------------------------------- flow
 
@@ -139,11 +152,18 @@ public class Customer : MonoBehaviour
             return;
         }
 
-        // 화가 났으면 바로 등을 돌리지 않는다. 제자리에서 한마디 하고 나간다.
+        // 어느 쪽이든 바로 등을 돌리지 않는다. 제자리에서 한마디 하고 나간다.
         if (IsAngry && angryPauseSeconds > 0f)
         {
-            _fumeTimer = angryPauseSeconds;
+            _pauseTimer = angryPauseSeconds;
             _phase = Phase.Fuming;
+            return;
+        }
+
+        if (!IsAngry && happyPauseSeconds > 0f)
+        {
+            _pauseTimer = happyPauseSeconds;
+            _phase = Phase.Happy;
             return;
         }
 
@@ -216,8 +236,9 @@ public class Customer : MonoBehaviour
                 break;
 
             case Phase.Fuming:
-                _fumeTimer -= Time.deltaTime;
-                if (_fumeTimer <= 0f)
+            case Phase.Happy:
+                _pauseTimer -= Time.deltaTime;
+                if (_pauseTimer <= 0f)
                 {
                     BeginExit();
                 }
@@ -349,6 +370,7 @@ public class Customer : MonoBehaviour
     private void OnValidate()
     {
         angryPauseSeconds = Mathf.Max(0f, angryPauseSeconds);
+        happyPauseSeconds = Mathf.Max(0f, happyPauseSeconds);
         arriveDistance = Mathf.Max(0.01f, arriveDistance);
         waypointDistance = Mathf.Max(arriveDistance, waypointDistance);
         cornerLookAhead = Mathf.Max(0f, cornerLookAhead);

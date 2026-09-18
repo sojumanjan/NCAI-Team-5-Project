@@ -104,6 +104,23 @@ public class WorldItem : MonoBehaviour
         return Mathf.Max(0f, -lowest);
     }
 
+    /// <summary>
+    /// 벽처럼 세로로 선 면에 대고 놓을 때, 면에서 이만큼 떼어놓아야 물체가 박히지 않는다.
+    /// 수평 반경만 본다 — 벽을 밀어내는 방향은 항상 수평이기 때문이다.
+    /// </summary>
+    public float GetPlacementRadius()
+    {
+        if (!TryGetLocalBounds(out Bounds local))
+        {
+            return 0f;
+        }
+
+        Vector3 scale = transform.lossyScale;
+        Vector3 extents = local.extents;
+
+        return Mathf.Max(Mathf.Abs(extents.x * scale.x), Mathf.Abs(extents.z * scale.z));
+    }
+
     /// <summary>렌더러 전부를 감싸는, 이 오브젝트 로컬 공간의 박스. 한 번만 계산한다.</summary>
     private bool TryGetLocalBounds(out Bounds bounds)
     {

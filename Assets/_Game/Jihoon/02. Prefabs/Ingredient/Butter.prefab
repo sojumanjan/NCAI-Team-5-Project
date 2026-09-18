@@ -80,7 +80,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldItem
   item: {fileID: 11400000, guid: 80a0cb64d7fc3a545ab3363397638a8c, type: 2}
   heldPositionOffset: {x: 0, y: 0, z: 0}
-  heldRotationOffset: {x: 0, y: 0, z: 0}
+  heldRotationOffset: {x: -10, y: 0, z: 0}
   placedRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!54 &-3503329519619623664
 Rigidbody:

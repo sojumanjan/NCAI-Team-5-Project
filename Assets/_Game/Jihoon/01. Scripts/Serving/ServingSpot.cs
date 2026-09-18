@@ -8,11 +8,8 @@ public enum ServingSpotState
     /// <summary>손님이 없다. 할 일도 없다.</summary>
     Free,
 
-    /// <summary>손님이 도착해 주문을 말했지만 아직 수락 전.</summary>
-    AwaitingAccept,
-
-    /// <summary>주문 수락됨. 주방이 음식을 빚졌다.</summary>
-    Accepted,
+    /// <summary>손님이 도착해 주문을 말했다. 주방이 음식을 빚졌다.</summary>
+    Ordered,
 }
 
 /// <summary>주문이 어떻게 끝났는지. 평점을 움직이는 모든 경우가 여기 들어 있다.</summary>
@@ -29,18 +26,18 @@ public enum OrderResult
 }
 
 /// <summary>
-/// 카운터의 한 레인: 포스기, 트레이, 손님이 설 자리. 셋이 있어서 동시에 세 명을 받는다.
+/// 카운터의 한 레인: 트레이와 손님이 설 자리. 레인이 셋이라 동시에 세 명을 받는다.
 ///
-/// 이 클래스가 조정자다. 포스기와 트레이는 얇게 두고 전부 여기로 넘기므로, 주문 규칙이
-/// 한 파일에만 있다. 레인 밖에서 듣는 창구도 여기 하나다 — 손님은 런타임에 생성돼서
-/// 인스펙터로 연결할 수 없기 때문에, 레인이 <see cref="OrderResolved"/>로 대신 알린다.
+/// 이 클래스가 조정자다. 트레이는 얇게 두고 전부 여기로 넘기므로, 주문 규칙이 한 파일에만
+/// 있다. 레인 밖에서 듣는 창구도 여기 하나다 — 손님은 런타임에 생성돼서 인스펙터로 연결할
+/// 수 없기 때문에, 레인이 <see cref="OrderResolved"/>로 대신 알린다.
+///
+/// 주문을 따로 수락하는 단계는 없다. 인내심은 손님이 도착한 순간부터 흐르는데 거기서
+/// 버튼을 한 번 더 누르게 하면 순수한 손해이기만 했다.
 /// </summary>
 public class ServingSpot : MonoBehaviour
 {
     [Header("구성 요소")]
-    [Tooltip("이 자리의 포스기.")]
-    [SerializeField] private PosTerminal terminal;
-
     [Tooltip("이 자리의 트레이.")]
     [SerializeField] private ServingTray tray;
 
@@ -107,11 +104,8 @@ public class ServingSpot : MonoBehaviour
     /// <summary>손님이 실제로 서서 기다리는 동안에만 참.</summary>
     public bool IsCustomerWaiting => _customer != null && _customer.IsWaiting;
 
-    /// <summary>손님이 주문을 말했을 때. 메뉴는 1~3개다.</summary>
+    /// <summary>손님이 주문을 말했을 때. 메뉴는 1~3개다. 이때부터 바로 음식을 받는다.</summary>
     public event Action<ServingSpot, IReadOnlyList<ItemData>> OrderPlaced;
-
-    /// <summary>플레이어가 포스기에서 주문을 수락했을 때.</summary>
-    public event Action<ServingSpot, IReadOnlyList<ItemData>> OrderAccepted;
 
     /// <summary>주문 중 하나가 나왔을 때. UI가 그 칸을 흐리게 만드는 신호다.</summary>
     public event Action<ServingSpot> OrderProgress;
@@ -129,11 +123,6 @@ public class ServingSpot : MonoBehaviour
 
     private void Awake()
     {
-        if (terminal != null)
-        {
-            terminal.Bind(this);
-        }
-
         if (tray != null)
         {
             tray.Bind(this);
@@ -213,7 +202,7 @@ public class ServingSpot : MonoBehaviour
             }
         }
 
-        State = ServingSpotState.AwaitingAccept;
+        State = ServingSpotState.Ordered;
         OrderPlaced?.Invoke(this, _orders);
     }
 
@@ -237,32 +226,15 @@ public class ServingSpot : MonoBehaviour
         Resolve(OrderResult.Abandoned);
     }
 
-    // ---------------------------------------------------------------- 포스기
-
-    /// <summary>포스기를 눌렀을 때 할 일이 있는지.</summary>
-    public bool CanAcceptOrder() => State == ServingSpotState.AwaitingAccept;
-
-    /// <summary>플레이어가 포스기를 눌렀다. 주문을 받아야 트레이가 음식을 받기 시작한다.</summary>
-    public void AcceptOrder()
-    {
-        if (!CanAcceptOrder())
-        {
-            return;
-        }
-
-        State = ServingSpotState.Accepted;
-        OrderAccepted?.Invoke(this, _orders);
-    }
-
     // ---------------------------------------------------------------- 트레이
 
     /// <summary>
-    /// 이 음식을 트레이에 올릴 수 있는지. 재료는 아예 거부하고, 포스기에서 주문을 받기
-    /// 전에는 무엇도 받지 않는다.
+    /// 이 음식을 트레이에 올릴 수 있는지. 손님이 주문을 말한 뒤에만, 그리고 재료가 아니라
+    /// 완성된 음식만 받는다.
     /// </summary>
     public bool CanReceiveDish(ItemData dish)
     {
-        return State == ServingSpotState.Accepted
+        return State == ServingSpotState.Ordered
                && dish != null
                && dish.Category == ItemCategory.Dish;
     }

@@ -21,6 +21,9 @@ public class InteractionPromptSource : MonoBehaviour
     [Tooltip("손 상태. 비워두면 같은 오브젝트에서 찾습니다.")]
     [SerializeField] private PlayerHands hands;
 
+    [Tooltip("놓기 미리보기. 비워두면 같은 오브젝트에서 찾고, 없으면 회전 안내를 띄우지 않습니다.")]
+    [SerializeField] private PlacementPreview preview;
+
     [Header("문구")]
     [Tooltip("아이템을 집을 때 이름 뒤에 붙는 말.")]
     [SerializeField] private string takeSuffix = "집기";
@@ -30,6 +33,9 @@ public class InteractionPromptSource : MonoBehaviour
 
     [Tooltip("놓을 곳이 없을 때 뜨는 문구. 비워두면 표시하지 않습니다.")]
     [SerializeField] private string dropLabel = "내려놓기";
+
+    [Tooltip("놓기 직전에 물건을 돌릴 수 있을 때 뜨는 문구.")]
+    [SerializeField] private string rotateLabel = "돌리기";
 
     private readonly List<ActionPrompt> _prompts = new();
     private readonly List<ActionPrompt> _previous = new();
@@ -50,6 +56,11 @@ public class InteractionPromptSource : MonoBehaviour
         if (hands == null)
         {
             hands = GetComponent<PlayerHands>();
+        }
+
+        if (preview == null)
+        {
+            preview = GetComponent<PlacementPreview>();
         }
 
         if (interactor == null || hands == null)
@@ -85,6 +96,7 @@ public class InteractionPromptSource : MonoBehaviour
 
         AddLeftClickPrompt();
         AddInteractPrompt();
+        AddRotatePrompt();
     }
 
     private void AddLeftClickPrompt()
@@ -139,6 +151,20 @@ public class InteractionPromptSource : MonoBehaviour
                                       label,
                                       interactable.CanInteract(interactor),
                                       interactable.HoldDuration));
+    }
+
+    /// <summary>
+    /// 회전은 물건을 들고 얹을 수 있는 면을 조준했을 때만 먹는다. 그 판단은 미리보기가
+    /// 이미 내리고 있으므로 여기서 다시 계산하지 않고 물어본다.
+    /// </summary>
+    private void AddRotatePrompt()
+    {
+        if (preview == null || !preview.CanRotate || string.IsNullOrEmpty(rotateLabel))
+        {
+            return;
+        }
+
+        _prompts.Add(new ActionPrompt(InputVerb.Rotate, rotateLabel, true));
     }
 
     // ---------------------------------------------------------------- helpers
