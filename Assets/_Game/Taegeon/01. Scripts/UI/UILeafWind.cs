@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-// Bends the displayed leaf mesh; the original texture and attachment edge stay intact.
+// 원본 텍스처와 고정 가장자리를 유지하며 잎 메시를 변형합니다.
 [DisallowMultipleComponent]
 [RequireComponent(typeof(RawImage))]
 public sealed class UILeafWind : BaseMeshEffect
 {
+    #region 참조 및 설정
+
     public enum AttachmentEdge { Bottom, Top, Right }
     [SerializeField] private AttachmentEdge attachment = AttachmentEdge.Bottom;
     [SerializeField, Range(0f, 0.06f)] private float strength = 0.018f;
@@ -14,9 +16,15 @@ public sealed class UILeafWind : BaseMeshEffect
     private const int Columns = 12;
     private const int Rows = 16;
 
+    #endregion
+
+    #region 에디터 갱신 및 잎 메시 효과
 #if UNITY_EDITOR
     private double nextEditorRefresh;
 
+    /// <summary>
+    /// 에디터에서도 잎 효과가 갱신되도록 연결합니다.
+    /// </summary>
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -24,12 +32,18 @@ public sealed class UILeafWind : BaseMeshEffect
         UnityEditor.EditorApplication.update += RefreshEditorPlayback;
     }
 
+    /// <summary>
+    /// 에디터의 잎 효과 갱신 연결을 해제합니다.
+    /// </summary>
     protected override void OnDisable()
     {
         UnityEditor.EditorApplication.update -= RefreshEditorPlayback;
         base.OnDisable();
     }
 
+    /// <summary>
+    /// 에디터 재생 중 잎 효과의 갱신 주기를 유지합니다.
+    /// </summary>
     private void RefreshEditorPlayback()
     {
         if (!Application.isPlaying || UnityEditor.EditorApplication.isPaused || !IsActive()) return;
@@ -41,11 +55,17 @@ public sealed class UILeafWind : BaseMeshEffect
     }
 #endif
 
+    /// <summary>
+    /// 활성화된 잎 메시를 다시 그리도록 요청합니다.
+    /// </summary>
     private void Update()
     {
         if (IsActive()) graphic.SetVerticesDirty();
     }
 
+    /// <summary>
+    /// 고정된 가장자리를 유지하며 잎 메시를 바람처럼 변형합니다.
+    /// </summary>
     public override void ModifyMesh(VertexHelper mesh)
     {
         if (!IsActive() || mesh.currentVertCount < 4) return;
@@ -62,7 +82,7 @@ public sealed class UILeafWind : BaseMeshEffect
             uvMin = Vector2.Min(uvMin, vertex.uv0); uvMax = Vector2.Max(uvMax, vertex.uv0);
         }
         float width = right - left, height = top - bottom;
-        // All three waves repeat seamlessly and do not depend on gameplay time scale.
+        // 흔들림은 게임 시간 배율과 무관하게 이어집니다.
         float time = Application.isPlaying
             ? (float)((Time.realtimeSinceStartupAsDouble * speed + phase) % (System.Math.PI * 200.0)) : 0f;
         mesh.Clear();
@@ -96,4 +116,6 @@ public sealed class UILeafWind : BaseMeshEffect
             mesh.AddTriangle(i + 1, i + Columns + 1, i + Columns + 2);
         }
     }
+    #endregion
+
 }

@@ -4,30 +4,50 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 #endif
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "GameCameraSwitcher")]
 [DefaultExecutionOrder(-1000)]
 public sealed class GameCameraSwitcher : MonoBehaviour
 {
+    #region 참조 및 설정
+
     [SerializeField] private Camera[] gameCameras = new Camera[4];
     [SerializeField] private GraphicRaycaster[] radioRaycasters;
     [SerializeField] private Transform jukebox;
     [SerializeField] private Text cameraLabel;
     [SerializeField] private FirstPersonExplorer explorer;
+    [SerializeField] private EscapeRoomProgress progression;
     [SerializeField] private MinigameEntryZone[] entryZones;
     private int nearbyMask = -1;
     private readonly string[] names = { "주크박스", "룬 원판", "슬라이딩 퍼즐", "라디오" };
     public int CurrentIndex { get; private set; } = -1;
 
+    #endregion
+
+    #region 카메라 초기화 및 전환 요청
+
+    /// <summary>
+    /// 진행 관리자를 연결하고 초기 카메라를 선택합니다.
+    /// </summary>
     private void Awake()
     {
+        if (progression == null) progression = FindFirstObjectByType<EscapeRoomProgress>();
         if (explorer != null) ReturnToPlayer();
         else SwitchTo(0);
     }
 
+    /// <summary>
+    /// 미니게임 화면에서 1인칭 시점으로 복귀합니다.
+    /// </summary>
     public void ReturnToPlayer()
     {
         if (explorer != null) SetView(-1);
     }
 
+    /// <summary>
+    /// 입장 조건을 만족한 게임의 카메라로 전환합니다.
+    /// </summary>
     public void SwitchTo(int index)
     {
         if (index < 0 || index >= gameCameras.Length || gameCameras[index] == null) return;
@@ -35,7 +55,23 @@ public sealed class GameCameraSwitcher : MonoBehaviour
         SetView(index);
     }
 
+    #endregion
+
+    #region 게임 접근 조건
+
+    /// <summary>
+    /// 잠금 상태와 접근 영역을 확인해 게임 입장을 판단합니다.
+    /// </summary>
     public bool CanEnterGame(int index)
+    {
+        if (progression != null && !progression.IsGameUnlocked(index)) return false;
+        return IsInEntryZone(index);
+    }
+
+    /// <summary>
+    /// 플레이어가 해당 게임의 접근 영역에 있는지 확인합니다.
+    /// </summary>
+    private bool IsInEntryZone(int index)
     {
         if (explorer == null) return true;
         if (entryZones == null) return false;
@@ -44,23 +80,30 @@ public sealed class GameCameraSwitcher : MonoBehaviour
         return false;
     }
 
+    #endregion
+
+    #region 안내 및 카메라 적용
+
+    /// <summary>
+    /// 주변 게임의 시작 키와 잠금 안내를 표시합니다.
+    /// </summary>
     private void UpdateNearbyHint()
     {
         if (explorer == null || CurrentIndex != -1 || cameraLabel == null) return;
-        int mask = 0;
-        for (int i = 0; i < 4; i++) if (CanEnterGame(i)) mask |= 1 << i;
-        if (mask == nearbyMask) return;
-        nearbyMask = mask;
-        string hint = "게임 앞 원 안으로 이동하세요";
-        if (mask != 0)
+        string hint = "";
+        for (int i=0;i<4;i++)
         {
-            hint = "";
-            for (int i = 0; i < 4; i++)
-                if ((mask & (1 << i)) != 0) hint += "[" + (i + 1) + "] " + names[i] + " 시작   ";
+            if (!IsInEntryZone(i)) continue;
+            hint += CanEnterGame(i) ? "["+(i+1)+"] "+names[i]+" 시작   "
+                : names[i]+" 잠김 · "+i+"번 열쇠로 옆 서랍을 여세요   ";
         }
-        cameraLabel.text = hint + "\nWASD 이동 · 마우스 시점 · Shift 달리기 · Esc 커서 해제";
+        if (hint.Length == 0) hint = "게임 앞 원 안으로 이동하세요";
+        cameraLabel.text = hint+"\nWASD 이동 · 마우스 시점 · E 상호작용 · 0 이동 시점";
     }
 
+    /// <summary>
+    /// 카메라와 오디오 및 입력 대상을 함께 전환합니다.
+    /// </summary>
     private void SetView(int index)
     {
         for (int i = 0; i < gameCameras.Length; i++)
@@ -85,6 +128,13 @@ public sealed class GameCameraSwitcher : MonoBehaviour
                 : "1 주크박스  |  2 룬 원판  |  3 슬라이딩 퍼즐  |  4 라디오\n현재: " + names[index];
     }
 
+    #endregion
+
+    #region 키 입력 및 오디오
+
+    /// <summary>
+    /// 숫자 키로 요청한 카메라 전환을 처리합니다.
+    /// </summary>
     private void Update()
     {
         UpdateNearbyHint();
@@ -105,10 +155,16 @@ public sealed class GameCameraSwitcher : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// 주크박스 화면을 벗어나면 해당 소리를 음소거합니다.
+    /// </summary>
     private void LateUpdate()
     {
         if (jukebox == null) return;
         foreach (var source in jukebox.GetComponentsInChildren<AudioSource>())
             source.mute = CurrentIndex != 0;
     }
+    #endregion
+
+}
 }
