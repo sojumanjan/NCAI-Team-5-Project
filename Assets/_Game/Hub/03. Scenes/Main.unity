@@ -880,7 +880,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99c8e22947d51b04690c95740d528c44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SceneButtonLoader
-  sceneName: EscapeRoom_Design
+  sceneName: EscapeRoom
 --- !u!114 &248282084
 MonoBehaviour:
   m_ObjectHideFlags: 0
