@@ -3525,12 +3525,13 @@ MonoBehaviour:
   - {fileID: 1214486549}
   - {fileID: 447190845}
   - {fileID: 1992103324}
-  sockets:
-  - {fileID: 104076639}
-  - {fileID: 1425655080}
-  - {fileID: 754891305}
-  - {fileID: 449247318}
-  receiverAim: {fileID: 145834865}
+  lockRoots: []
+  lockAimPoints: []
+  drawers: []
+  loosePieces: []
+  framePieces: []
+  lockLabels: []
+  frameCounter: {fileID: 0}
   leftDoor: {fileID: 1706219035}
   rightDoor: {fileID: 468455107}
   escapeArea: {fileID: 2068130407}
@@ -3538,6 +3539,7 @@ MonoBehaviour:
   victoryText: {fileID: 801868176}
   interactDistance: 3.5
   aimHalfAngle: 16
+  returnToHubDelay: 2
 --- !u!4 &19954340
 Transform:
   m_ObjectHideFlags: 0
@@ -56699,6 +56701,7 @@ MonoBehaviour:
   jukebox: {fileID: 1372292767}
   cameraLabel: {fileID: 1855499160}
   explorer: {fileID: 1446635610}
+  progression: {fileID: 0}
   entryZones:
   - {fileID: 445148982}
   - {fileID: 794400362}

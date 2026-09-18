@@ -2,8 +2,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 
+namespace Taegeon
+{
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "RadioFrequencyPuzzle")]
 public sealed class RadioFrequencyPuzzle : MonoBehaviour
 {
+    #region 참조 및 설정
+
     [SerializeField] private Slider frequencySlider;
     [SerializeField] private Slider amplitudeSlider;
     [SerializeField] private FrequencyWaveGraphic targetWave;
@@ -19,6 +24,13 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
     public int TargetAmplitude { get; private set; }
     private float matchingTime;
 
+    #endregion
+
+    #region 이벤트 연결 및 초기화
+
+    /// <summary>
+    /// 슬라이더와 초기화 버튼의 입력을 연결합니다.
+    /// </summary>
     private void Awake()
     {
         frequencySlider.onValueChanged.AddListener(OnSliderChanged);
@@ -26,6 +38,9 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
         resetButton.onClick.AddListener(ResetPuzzle);
         ResetPuzzle();
     }
+    /// <summary>
+    /// 새 목표 신호를 만들고 조작 상태를 초기화합니다.
+    /// </summary>
     public void ResetPuzzle()
     {
         IsSolved = false; matchingTime = 0;
@@ -38,12 +53,25 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
         playerWave.color = new Color(.95f, .68f, .25f);
         RefreshSignals();
     }
+    #endregion
+
+    #region 신호 조절 및 표시
+
+    /// <summary>
+    /// 슬라이더 변경에 맞춰 신호와 일치 시간을 갱신합니다.
+    /// </summary>
     private void OnSliderChanged(float value) { matchingTime = 0; RefreshSignals(); }
+    /// <summary>
+    /// 현재 주파수와 진폭이 목표 신호와 같은지 확인합니다.
+    /// </summary>
     private bool Matches()
     {
         return Mathf.RoundToInt(frequencySlider.value) == TargetFrequency &&
                Mathf.RoundToInt(amplitudeSlider.value) == TargetAmplitude;
     }
+    /// <summary>
+    /// 조절 중인 파형과 수치 안내를 갱신합니다.
+    /// </summary>
     private void RefreshSignals()
     {
         playerWave.SetSignal(frequencySlider.value, amplitudeSlider.value / 10f);
@@ -53,6 +81,13 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
         statusText.text = Matches() ? "신호 확인 중..." : "두 슬라이더로 파형의 간격과 높이를 맞추세요.";
         statusText.color = new Color(.76f, .87f, .83f);
     }
+    #endregion
+
+    #region 클리어 판정 및 정리
+
+    /// <summary>
+    /// 목표 신호가 일정 시간 유지되면 클리어를 처리합니다.
+    /// </summary>
     private void Update()
     {
         if (IsSolved) return;
@@ -67,10 +102,16 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
         statusText.color = new Color(.35f, 1f, .65f);
         onSignalMatched.Invoke();
     }
+    /// <summary>
+    /// 등록했던 UI 이벤트를 해제합니다.
+    /// </summary>
     private void OnDestroy()
     {
         if (frequencySlider != null) frequencySlider.onValueChanged.RemoveListener(OnSliderChanged);
         if (amplitudeSlider != null) amplitudeSlider.onValueChanged.RemoveListener(OnSliderChanged);
         if (resetButton != null) resetButton.onClick.RemoveListener(ResetPuzzle);
     }
+    #endregion
+
+}
 }

@@ -8,7 +8,7 @@ public enum StationKind
     Oven,
     Blender,
     DoughTable,
-    Bowl,
+    Mixer,
 }
 
 /// <summary>
