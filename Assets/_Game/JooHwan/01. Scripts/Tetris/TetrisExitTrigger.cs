@@ -8,6 +8,7 @@ using UnityEngine;
 public class TetrisExitTrigger : MonoBehaviour
 {
     [SerializeField] private string playerTag = "Player";
+    [SerializeField] private TetrisGameManager tetrisGameManager;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -16,6 +17,7 @@ public class TetrisExitTrigger : MonoBehaviour
             return;
         }
 
-        TetrisGameManager.Instance.HandleExitReached();
+        var playerController = other.GetComponent<PlayerController>();
+        tetrisGameManager.HandleExitReached(playerController);
     }
 }

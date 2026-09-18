@@ -170,13 +170,80 @@ md 기획서(`미니게임파티_기획.md`)를 기반으로 3개 미니게임(�
 - 메인 UI 화면에서 마우스 클릭이 안 먹는 문제: 어떤 게임의 `PlayerController`도 활성화되지 않은 상태에서는 커서 상태를 아무도 갱신하지 않아, 이전 세션의 잠긴 커서 상태가 남아있었음 → `MiniGameFlowManager`가 메인 UI 진입 시 커서를 명시적으로 보이게 처리
 - Unity 에디터가 포커스를 잃으면 Play 모드에서도 프레임이 거의 진행되지 않아, `execute_code`로 상태 변화를 확인할 때 혼란이 있었음 — 스크린샷 캡처가 프레임을 강제로 진행시키는 부작용이 있다는 것을 파악
 
-## 8. 세션 3 종료 시점 남은 작업
+## 8. 세션 3 종료 시점 남은 작업 (세션 4에서 1,2,3 완료)
 
-- **팩맨 진입 시 점프 비활성화** — 현재 `PlayerController.jumpEnabled`가 테트리스/팩맨 공용으로 켜진 채라, 팩맨 상태에서도 점프가 가능한 상태. 미니게임 상태 전환 시 이 옵션을 꺼주는 처리가 필요
-- 클리어 조건(고스트 5마리 전멸) 연결 — 아직 처치 카운트만 있고 전멸 시 별도 처리 없음
-- ESC 일시정지 캔버스: 미착수
-- 허브 씬 연결: 아직 허브 씬 자체가 없어 대기 중
+- ~~팩맨 진입 시 점프 비활성화~~ — 세션 4에서 완료
+- ~~클리어 조건(고스트 5마리 전멸) 연결~~ — 세션 4에서 완료
+- ~~ESC 일시정지 캔버스~~ — 세션 4에서 완료
+- 허브 씬 연결: 아직 허브 씬 자체가 없어 대기 중 (범위 밖)
 - `debugStartInPacman` 디버그 옵션: 팩맨 로직이 최종 완성되면 반드시 꺼야 함
-- 하트 UI 스프라이트: 임시 단색 원형 → 실제 아트 에셋으로 교체 필요
-- 고스트 발광 시 색상 표현: 실제 고스트 모델(아트 에셋) 적용 시 재조정 필요할 수 있음
+- 하트 UI 스프라이트: 임시 단색 원형 → 실제 아트 에셋으로 교체 필요 (범위 밖)
+- 고스트 발광 시 색상 표현: 실제 고스트 모델(아트 에셋) 적용 시 재조정 필요할 수 있음 (범위 밖)
 - CLAUDE.md 위반사항(ProjectSettings 변경, 레이어 슬롯 조율) — 팀장 공유는 사용자가 직접 처리 예정, 아직 미해결
+
+---
+
+## 9. 세션 4 — 1차 프로토타입 완성(점프/클리어/일시정지) + 대규모 리팩토링 + 코드 리뷰
+
+### 1차 프로토타입 완성 (남은 작업 1,2,3)
+
+**팩맨 진입 시 점프/등반 비활성화**
+- `PlayerController.SetJumpEnabled(bool)` 추가 — 기존 `jumpEnabled`가 private라 외부에서 런타임 제어가 불가능했던 문제 해결
+- `ClimbController`는 별도 처리 없이 자동으로 막힘 — `OnJumpPerformed`가 `PlayerController`와 동일한 `InputActionAsset`의 Jump 액션을 구독하므로, 액션 자체를 Disable하면 두 컴포넌트 모두 동시에 막힘 (액션 인스턴스가 공유되는 특성)
+- `TetrisGameManager.SetJumpAllowed()` → `MiniGameFlowManager.ApplyState()`에서 `target != Pacman`일 때만 허용하도록 연결
+
+**클리어 조건(고스트 5마리 전멸) 연결**
+- `Ghost`에 `Defeated`(`System.Action<Ghost>`) 이벤트 추가, 처치 시점에 발행
+- `MiniGameFlowManager`가 5마리 전부 구독해 전멸 여부 판정 → 팩맨 맵 중앙에 보상 상자(큐브, 황금색) 활성화
+- `RewardBoxTrigger`: F키(Interact) 상호작용으로 상자를 엶. `IPlayerItemSave` 인터페이스로 아이템 획득 여부 판단을 위임 — 다른 팀원이 만들 `PlayerData` 스크립트가 이 인터페이스만 구현하면 자동 연동되도록 설계. 아직 구현체가 없는 동안은 `PlayerItemSaveLocator`가 더미로 대체해 에러 없이 테스트 가능
+- `RewardPopupUI`: 처음엔 텍스트만 잠깐 띄우는 방식이었으나, 아래에 메인씬 복귀 버튼이 필요해져 `DeathPopup`과 동일한 패널형(제목+버튼)으로 변경
+- 트러블슈팅: 고스트가 파워펠릿에 맞아 디졸브 연출(파티클+축소) 중에도 콜라이더가 살아있어 플레이어가 지나가면 피격되는 버그 → 처치 즉시 콜라이더만 비활성화(시각 연출은 유지)하는 방식으로 수정
+
+**ESC 일시정지**
+- `PauseUI`: 기존 Input Actions에 이미 정의돼 있던 Pause(ESC) 액션을 처음으로 실사용. 테트리스 낙하/팩맨 고스트 이동을 실제로 멈추는 방식(`Time.timeScale`이 아니라 기존 `SetTetrisGameplayPaused`/고스트 `SetActive` 패턴 재사용 — 코루틴 기반 페이드/카운트다운까지 함께 멈추는 부작용을 피하기 위함)
+- 버튼 3개(계속하기/게임 설명/메인씬으로) 중 계속하기만 실동작, 게임설명은 기존 설명 팝업 재사용, 메인씬은 허브 미구현으로 자리표시자
+- 트러블슈팅: 카운트다운(3,2,1) 진행 중 ESC를 누르면 카운트다운은 코루틴이라 계속 흘러가는데 게임 로직만 멈춰버리는 불일치 → 카운트다운 중에는 ESC 자체를 무시하도록 처리(짧은 연출 구간이라 완벽한 일시정지보다 비용 대비 효율적 판단)
+- 트러블슈팅: 일시정지/보상 팝업이 뜬 상태에서 버튼을 클릭하는 좌클릭이 그대로 Throw 액션으로도 들어와 파워펠릿이 오발사되는 문제 → `PlayerController.SetControlsLocked(true)` 시 Interact/Throw 등 관련 액션도 함께 잠기도록 수정
+
+### 리팩토링 1단계 — 씬 하이어라키/에셋 폴더 정리
+- 팩맨 맵 Walls(116→26개), GlowLines(188→68개)를 이어진 구간 단위로 병합 — 최종 비주얼이 색/텍스처 위주로 예정되어 칸 단위 분리의 이점이 크지 않다고 판단해 진행. 이름 규칙(`Wall_H_r{row}_c{시작}-{끝}` 등)과 하이어라키 순서(H 전체→V 전체)도 함께 정리
+- `PingPongPoints` 하위 오브젝트 로컬 좌표 정리 — 부모(`PacmanRoot`)가 오프셋을 가진 상태에서 자식 좌표가 그 오프셋을 역산해 상쇄하고 있어 음수로 보이던 것을, 월드 좌표를 유지한 채 부모를 (0,0,0)으로 맞추고 자식 좌표를 재계산
+- `SelectSceneCamera` 제거 — cullingMask=0인 미완성 카메라였는데, 실제로는 MainUI 상태에서 활성 카메라가 하나도 없어지는 문제(화면 렌더링 공백)를 막는 임시 땜빵이었음. 근본 원인(`TetrisGameManager.SetGameActive()`가 1인칭 카메라까지 꺼버림)을 고쳐서 제거
+- Canvas 하위 UI 13개를 MainMenuUI/TetrisUI/PacmanUI/CommonUI 4개 그룹으로, PacmanRoot 하위를 PacmanArena/Pellets/GhostGroup으로 정리
+- 에셋 폴더: `01. Scripts`를 Core/Player/Tetris/Pacman/UI로, `02. Prefabs`의 Pellet 관련을 Pellets 폴더로, `04. Art/Materials`를 TetrisBlocks/Tetris/Pacman/Ghosts/Pellets로, Sprites의 Heart를 Heart 폴더로 분류
+
+### 리팩토링 2단계 — 명명법 통일
+- Unity 공식 C# 스타일 가이드 기준으로 전체 스크립트 32건 위반 수정 — bool 매개변수/필드에 is/has 접두사 누락(23건, `active`→`isActive` 등), `On` 접두사 오용(이벤트를 발생시키는 메서드가 아닌데 붙어있던 `OnExitReached`/`OnPlayerPinned`/`OnHitByPellet`/`OnPelletPickedUp`→`Handle*`로, 반대로 진짜 이벤트였던 `Ghost.OnDefeated`→`Defeated`로), `FallingBlock.GlobalPaused`→`IsGlobalPaused`, `PlayerController.ControlsLocked`→`AreControlsLocked`
+- `TetrisFallSequence`(ScriptableObject)의 `lane`/`prefab`/`entries` 필드명 변경은 기존 `.asset` 데이터(테트리스 낙하 시퀀스) 유실 위험이 있어, 변경 전 `TetrisFallSequence_01.asset`의 전체 항목을 별도 백업해두고 `[FormerlySerializedAs]`로 하위 호환을 유지하며 안전하게 진행. 실제로 데이터 유실 없이 21개 항목 정상 로드 확인
+
+### 코드 구조 리팩토링 — 스크립트 순회 리뷰
+파일별로 역할/필드/메서드를 설명받으며 하나씩 검토, 발견된 문제를 그때그때 수정하는 방식으로 진행.
+
+- **`GhostHittable` 추상 클래스 제거**: 구현체가 `Ghost` 하나뿐이고 클래스명 자체가 이미 Ghost 전용임을 암시해, "확장성을 위한 추상화"라는 근거가 이름과 모순됨을 확인 → `ThrownPellet`이 `Ghost`를 직접 참조하도록 단순화
+- **`CameraShake`의 안 쓰이는 오버로드 제거**: `ShakeAll(float, float, float)`/`Shake(float, float, float)`가 실제 호출처 없이 존재하던 죽은 코드 → 제거
+- **`ClimbController`가 `PlayerController`의 Move/Look 액션을 직접 Disable/Enable하던 것을 캡슐화**: `PlayerController.SetMovementEnabled(bool)` 추가(내부적으로 `enabled`만 바꾸면 `OnEnable`/`OnDisable`이 액션까지 처리해줌을 확인해 단순화), `ClimbController`는 이 API만 호출하도록 변경. Jump 액션은 제어 대상이 아니라 구독 대상이라는 성격 차이를 근거로 그대로 유지
+- **`CameraRig`의 콜백 계층 단순화**: `OnCameraSwitchPerformed → ToggleCamera` 2단계 분리가 "다른 트리거 방식(버튼 등) 도입 가능성"을 근거로 존재했으나, 이 게임에서 카메라 전환은 입력 액션 외의 방식으로 절대 트리거되지 않는다고 확정 → 하나로 병합
+- **`TetrisGameManager` 3분할**: 원래 테트리스 전용이었던 클래스가 팩맨 쪽 요구사항(크로스헤어/점프허용/사망팝업)까지 계속 흡수해온 것을 발견 — 이름과 실제 책임이 불일치. 앞으로 팩맨 공격/피격 피드백 기능이 더 늘어날 예정이라는 점을 고려해 `SharedGameplayManager`(테트리스/팩맨 공용 자원: 플레이어/카메라/사망팝업), `TetrisGameManager`(테트리스 전용으로 축소), `PacmanGameManager`(팩맨 전용 신규)로 분리. UI 버튼들의 `onClick` 연결(사망/일시정지/보상 팝업)이 스크립트 교체로 깨져 전부 재연결 필요
+- **분리 과정에서 발견한 추가 버그**: `CameraRig.ToggleCamera()`가 조작 잠금 여부를 확인하지 않아, 테트리스에서 일시정지/사망 팝업 위 좌클릭이 카메라 전환으로도 처리되던 문제 → `PelletThrower`가 이미 쓰던 `AreControlsLocked` 체크 패턴을 동일하게 적용해 수정
+- **크로스헤어 표시 로직 재배치**: `CameraRig`가 "관전 여부를 안다"는 이유로 크로스헤어까지 관리하고 있었는데, 실제로는 테트리스에서 크로스헤어 자체가 불필요하고 팩맨에서 관전 모드가 존재하지 않아(Tab이 원래 안 막혀있던 버그까지 함께 발견) 그 조건이 죽은 로직이었음을 확인 → `CrosshairController` 신규 컴포넌트로 분리, `CameraRig`에는 `SetCameraSwitchAllowed`(팩맨에서 카메라 전환 자체를 막는 것)와 `ResetToFirstPerson`(재진입 시 관전 모드가 남아있는 어긋난 상태를 강제 리셋)만 남김
+
+### 트러블슈팅 — 씬 리네임 및 스크립트 GUID
+- `PlayerHealth` → `PacmanPlayerHealth` 클래스명 변경(다른 팀원과 이름 충돌) 과정에서, 파일명을 에디터 밖에서 바꾸며 `.meta`가 새로 생성되어 GUID가 바뀌는 문제 발생 → 씬의 해당 컴포넌트가 Missing Script로 깨짐 → git 히스토리에서 원래 GUID를 찾아 `.meta` 파일을 직접 복구해 해결. 이후 스크립트 파일명 변경은 반드시 Unity 에디터의 Project 창에서 F2로 진행하기로 함
+- 씬 파일명을 `JooHwan_MiniGame_Tetris` → `JooHwan_MiniGame_Main`으로 변경 (에디터에서 직접 진행, 코드에 문자열로 씬 이름을 참조하는 곳이 없어 안전하게 완료)
+
+### 입력 매핑 변경
+- 테트리스의 카메라 전환(Tab)을 좌클릭으로 변경, 팩맨의 투척(좌클릭)과 물리 키를 공유 — 두 액션이 상태별로 상호 배타적으로 Enable/Disable되어 있어 충돌 없이 자연스럽게 스위칭됨을 확인
+
+### 논의 후 보류/메모
+- `GhostPingPong.EnterIdleState`가 `IGhostMovementSource` 인터페이스에 없는데 `Ghost`가 구체 타입으로 다운캐스팅해 호출하는 부분 — 왕복형 구현체가 하나뿐이라 당장은 문제 없지만, 나중에 구현체가 늘어나면 인터페이스에 정식 편입하거나 별도 역할 인터페이스로 분리 검토
+- 끼임(Pin) 판정 관련 잠재 문제 논의: (1) `SetupPinTrigger()`가 셀들의 bounding box 전체로 트리거를 만들어 L자 등 빈 칸이 있는 블록에서 실제로 블록이 없는 자리도 끼임으로 판정될 수 있음 — 게임 디자인상 낙하 중 회피가 강제되어 실전에서는 발생 안 한다고 보고 보류. (2) 죽는 방식 자체를 "낙하 중 접촉 시 사망"에서 "착지 완료 후 그 자리에 갇힌 경우만 사망"으로 바꾸는 방향 논의 — 표면에 스치기만 해도 죽는 문제가 남아있어, `Physics.ComputePenetration` 기반 침투 깊이 판정(표면 접촉과 실제 끼임을 구분)이 필요하다는 결론
+- 사망 피드백 강화 아이디어: 침투 깊이가 커질수록 화면 가장자리가 어두워지는 비네트 효과 연출, URP Post Processing Volume의 Vignette를 코드로 실시간 조절하는 방식으로 구현 예정 (다음 세션에서 진행)
+
+## 10. 세션 4 종료 시점 남은 작업
+
+- 비네트(화면 가장자리 어두워짐) 사망 피드백 구현 — URP Vignette 사용, 침투 깊이 기반 끼임 판정(방법 C)과 함께 연동 예정
+- 끼임 판정을 "착지 후 갇힘"으로 정확히 재구현 (표면 스침과 구분)
+- 허브 씬 연결, 하트 UI 스프라이트, 고스트 발광 색상 재조정 — 아트 에셋/다른 팀원 작업 의존이라 범위 밖 유지
+- `debugStartInPacman` 디버그 옵션 — 최종 완성 전 반드시 해제
+- `GhostPingPong.EnterIdleState`의 인터페이스 미편입 문제 — 왕복형 구현체가 늘어나면 정리 검토
+- CLAUDE.md 위반사항 팀장 공유 — 아직 미해결

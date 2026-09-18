@@ -49,25 +49,12 @@ public class CameraShake : MonoBehaviour
         }
     }
 
-    public static void ShakeAll(float duration, float positionStrength, float rotationStrength)
-    {
-        foreach (var instance in activeInstances)
-        {
-            instance.Shake(duration, positionStrength, rotationStrength);
-        }
-    }
-
     public void Shake()
     {
-        Shake(defaultDuration, defaultPositionAmplitude, defaultRotationAmplitude);
-    }
-
-    public void Shake(float duration, float positionStrength, float rotationStrength)
-    {
-        shakeDuration = duration;
-        shakeTimer = duration;
-        positionAmplitude = positionStrength;
-        rotationAmplitude = rotationStrength;
+        shakeDuration = defaultDuration;
+        shakeTimer = defaultDuration;
+        positionAmplitude = defaultPositionAmplitude;
+        rotationAmplitude = defaultRotationAmplitude;
         noiseSeed = Random.Range(0f, 100f);
     }
 

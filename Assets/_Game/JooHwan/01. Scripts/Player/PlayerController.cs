@@ -64,6 +64,16 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// 이동/시점 조작을 통째로 켜고 끈다 (예: ClimbController가 등반 연출 중 호출).
+    /// PlayerController 자체를 비활성화하면 OnEnable/OnDisable이 Move/Look 액션까지
+    /// 함께 Enable/Disable해주므로, 여기서는 enabled만 바꿔주면 된다.
+    /// </summary>
+    public void SetMovementEnabled(bool isEnabled)
+    {
+        enabled = isEnabled;
+    }
+
+    /// <summary>
     /// 점프 가능 여부를 런타임에 바꾼다 (예: 팩맨에서는 점프/등반이 없어야 함).
     /// 활성화된 상태에서는 즉시 입력 액션도 함께 Enable/Disable한다.
     /// </summary>

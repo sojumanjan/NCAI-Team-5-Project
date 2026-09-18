@@ -1507,6 +1507,8 @@ GameObject:
   m_Component:
   - component: {fileID: 165953425}
   - component: {fileID: 165953424}
+  - component: {fileID: 165953427}
+  - component: {fileID: 165953426}
   m_Layer: 0
   m_Name: TetrisGameManager
   m_TagString: Untagged
@@ -1526,15 +1528,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c644dbc98d34d88469f2f316ec4eb779, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TetrisGameManager
-  deathPopupRoot: {fileID: 481154392}
-  playerController: {fileID: 768756561}
   fallSequencer: {fileID: 788465019}
   cameraRig: {fileID: 768756560}
   overviewCamera: {fileID: 937778879}
-  playerStartPosition: {x: 0, y: 0, z: 0}
   countdownUI: {fileID: 1614026528}
   countdownStartFrom: 3
-  gameSelectUI: {fileID: 2061940076}
   clearTextRoot: {fileID: 1817143024}
 --- !u!4 &165953425
 Transform:
@@ -1551,6 +1549,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1204624687}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &165953426
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165953423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4060940c13674194d93b9065370d10d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PacmanGameManager
+  playerController: {fileID: 768756561}
+  crosshairController: {fileID: 768756565}
+--- !u!114 &165953427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165953423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc4b5a697f57d93439e3d3294557067b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SharedGameplayManager
+  deathPopupRoot: {fileID: 481154392}
+  playerController: {fileID: 768756561}
+  cameraRig: {fileID: 768756560}
+  tetrisGameManager: {fileID: 165953424}
+  pacmanGameManager: {fileID: 165953426}
+  gameSelectUI: {fileID: 2061940076}
+  playerStartPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &168641082
 GameObject:
   m_ObjectHideFlags: 0
@@ -8950,6 +8981,7 @@ GameObject:
   - component: {fileID: 768756562}
   - component: {fileID: 768756563}
   - component: {fileID: 768756564}
+  - component: {fileID: 768756565}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -9074,7 +9106,6 @@ MonoBehaviour:
   overviewOccluders:
   - {fileID: 1038780773}
   overviewUI: {fileID: 1124093353}
-  crosshair: {fileID: 631578905}
   firstPersonAmbientColor: {r: 0.55, g: 0.5, b: 0.42, a: 1}
   overviewAmbientColor: {r: 0.85, g: 0.82, b: 0.75, a: 1}
 --- !u!114 &768756561
@@ -9162,6 +9193,19 @@ MonoBehaviour:
   heartUI: {fileID: 1490032031}
   pacmanRestartPoint: {fileID: 1120218856}
   invincibleDuration: 1.5
+--- !u!114 &768756565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768756553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe707f60a58c466429c410788be319d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CrosshairController
+  crosshair: {fileID: 631578905}
 --- !u!1 &775010356
 GameObject:
   m_ObjectHideFlags: 0
@@ -9401,8 +9445,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickRestart
         m_Mode: 0
         m_Arguments:
@@ -11297,8 +11341,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickExitToHub
         m_Mode: 0
         m_Arguments:
@@ -12731,8 +12775,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickShowDescription
         m_Mode: 0
         m_Arguments:
@@ -13617,8 +13661,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickShowDescription
         m_Mode: 0
         m_Arguments:
@@ -15531,6 +15575,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TetrisExitTrigger
   playerTag: Player
+  tetrisGameManager: {fileID: 165953424}
 --- !u!65 &1374962739
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -17667,7 +17712,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MiniGameFlowManager
   gameSelectUIRoot: {fileID: 2061940075}
+  sharedGameplayManager: {fileID: 165953427}
   tetrisGameManager: {fileID: 165953424}
+  pacmanGameManager: {fileID: 165953426}
+  playerController: {fileID: 768756561}
   fadeCanvas: {fileID: 536033607}
   countdownUI: {fileID: 1614026528}
   countdownStartFrom: 3
@@ -17812,8 +17860,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickExitToHub
         m_Mode: 0
         m_Arguments:
@@ -20037,8 +20085,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickExitToHub
         m_Mode: 0
         m_Arguments:

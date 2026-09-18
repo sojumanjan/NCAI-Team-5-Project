@@ -1,53 +1,25 @@
 using UnityEngine;
 
+/// <summary>
+/// 테트리스 전용 세부 로직(낙하 시퀀스, 클리어 판정, 관전 카메라 허용)을 담당한다.
+/// 테트리스와 팩맨이 공유하는 플레이어/카메라/사망 팝업 자체는 SharedGameplayManager가 관리한다.
+/// </summary>
 public class TetrisGameManager : MonoBehaviour
 {
-    public static TetrisGameManager Instance { get; private set; }
-
-    [SerializeField] private GameObject deathPopupRoot;
-    [SerializeField] private PlayerController playerController;
     [SerializeField] private TetrisFallSequencer fallSequencer;
     [SerializeField] private CameraRig cameraRig;
     [SerializeField] private Camera overviewCamera;
-    [SerializeField] private Vector3 playerStartPosition;
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
-    [SerializeField] private GameSelectUI gameSelectUI;
     [SerializeField] private GameObject clearTextRoot;
 
-    private CharacterController playerCharacterController;
     private bool isCleared;
 
     public bool IsCleared => isCleared;
 
     private void Awake()
     {
-        Instance = this;
-        playerCharacterController = playerController.GetComponent<CharacterController>();
-        playerStartPosition = playerController.transform.position;
-    }
-
-    /// <summary>
-    /// 씬 오브젝트는 항상 활성 상태를 유지하고, 이 메서드로 테트리스 진행 여부만 켜고 끈다.
-    /// (테트리스 <-> 팩맨 전환 시 SetActive 대신 사용)
-    /// </summary>
-    public void SetGameActive(bool isActive)
-    {
-        // 1인칭 카메라는 MainUI 상태에서도 켜둔다. 꺼버리면 씬에 활성 카메라가 하나도
-        // 남지 않아 화면이 렌더링되지 않으므로(과거 SelectSceneCamera로 임시 땜빵했던 문제),
-        // 대신 playerController.enabled=false로 조작만 막아 화면은 정지된 채로 유지한다.
         overviewCamera.gameObject.SetActive(false);
-
-        playerController.enabled = isActive;
-        cameraRig.enabled = isActive;
-
-        FallingBlock.IsGlobalPaused = !isActive;
-        fallSequencer.SetPaused(!isActive);
-
-        if (!isActive)
-        {
-            deathPopupRoot.SetActive(false);
-        }
     }
 
     /// <summary>
@@ -61,27 +33,17 @@ public class TetrisGameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 에임 포인터(크로스헤어)는 팩맨 상태에서만 보여야 한다 (테트리스에는 조준 요소가 없음).
+    /// 관전 카메라 전환(Tab)은 테트리스 전용이다 (팩맨에는 관전 시점이 없음).
     /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출한다.
     /// </summary>
-    public void SetCrosshairAllowed(bool isAllowed)
+    public void SetCameraSwitchAllowed(bool isAllowed)
     {
-        cameraRig.SetCrosshairAllowed(isAllowed);
-    }
-
-    /// <summary>
-    /// 팩맨에는 점프 지형이 없으므로, 팩맨 상태에서는 비활성화한다.
-    /// ClimbController도 같은 Jump 액션을 구독하므로 별도 처리 없이 함께 막힌다.
-    /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출한다.
-    /// </summary>
-    public void SetJumpAllowed(bool isAllowed)
-    {
-        playerController.SetJumpEnabled(isAllowed);
+        cameraRig.SetCameraSwitchAllowed(isAllowed);
     }
 
     /// <summary>
     /// MiniGameFlowManager가 페이드/카운트다운을 모두 마친 뒤 호출한다.
-    /// (재시작은 OnClickRestart, 최초 시작은 이 메서드로 나뉜다)
+    /// (재시작은 RestartFromDeath, 최초 시작은 이 메서드로 나뉜다)
     /// </summary>
     public void StartSequenceForNewGame()
     {
@@ -92,7 +54,7 @@ public class TetrisGameManager : MonoBehaviour
     /// EXIT 트리거(TetrisExitTrigger)가 플레이어 도달을 감지하면 호출한다.
     /// 별도 성공 UI 없이 CLEAR 텍스트만 짧게 보여준 뒤 조작을 해제한다.
     /// </summary>
-    public void HandleExitReached()
+    public void HandleExitReached(PlayerController playerController)
     {
         if (isCleared)
         {
@@ -107,11 +69,11 @@ public class TetrisGameManager : MonoBehaviour
 
         if (clearTextRoot != null)
         {
-            StartCoroutine(ShowClearTextRoutine());
+            StartCoroutine(ShowClearTextRoutine(playerController));
         }
     }
 
-    private System.Collections.IEnumerator ShowClearTextRoutine()
+    private System.Collections.IEnumerator ShowClearTextRoutine(PlayerController playerController)
     {
         clearTextRoot.SetActive(true);
         yield return new WaitForSeconds(1.5f);
@@ -125,7 +87,7 @@ public class TetrisGameManager : MonoBehaviour
     /// 디버그 전용: CLEAR 연출 없이 즉시 "클리어됨" 상태로 만든다.
     /// (팩맨 진입 직전 상태부터 테스트할 때 사용)
     /// </summary>
-    public void DebugForceClearedState()
+    public void DebugForceClearedState(PlayerController playerController)
     {
         isCleared = true;
         FallingBlock.IsGlobalPaused = true;
@@ -133,39 +95,14 @@ public class TetrisGameManager : MonoBehaviour
         playerController.SetControlsLocked(false);
     }
 
-    public void HandlePlayerPinned()
-    {
-        FallingBlock.IsGlobalPaused = true;
-        playerController.SetControlsLocked(true);
-        deathPopupRoot.SetActive(true);
-    }
-
     /// <summary>
-    /// 팩맨에서 목숨이 0이 되었을 때 PacmanPlayerHealth가 호출한다.
-    /// 테트리스 사망 팝업과 동일한 UI를 재사용하되, 재시작은 OnClickRestart가 상태를 보고 팩맨 쪽으로 분기한다.
+    /// 사망 팝업의 재시작 버튼이 눌렸을 때, 현재 상태가 테트리스면 SharedGameplayManager가 호출한다.
+    /// respawnPlayer는 실제 리스폰 위치 이동(SharedGameplayManager가 담당)을 위한 콜백이다.
     /// </summary>
-    public void ShowDeathPopupForPacman()
+    public void RestartFromDeath(PlayerController playerController, System.Action respawnPlayer)
     {
-        playerController.SetControlsLocked(true);
-        deathPopupRoot.SetActive(true);
-    }
-
-    /// <summary>
-    /// 사망 팝업(DeathPopup)은 테트리스/팩맨 공용이라, 재시작 버튼이 눌리면
-    /// 현재 어느 게임이 진행 중이었는지에 따라 재시작 대상을 나눈다.
-    /// </summary>
-    public void OnClickRestart()
-    {
-        deathPopupRoot.SetActive(false);
-
-        if (MiniGameFlowManager.Instance.CurrentState == MiniGameState.Pacman)
-        {
-            RestartPacmanFromDeath();
-            return;
-        }
-
         fallSequencer.ResetSequence();
-        RespawnPlayer();
+        respawnPlayer();
 
         FallingBlock.IsGlobalPaused = false;
 
@@ -177,31 +114,5 @@ public class TetrisGameManager : MonoBehaviour
         {
             fallSequencer.StartSequence();
         });
-    }
-
-    private void RestartPacmanFromDeath()
-    {
-        playerController.SetControlsLocked(false);
-        var playerHealth = playerController.GetComponent<PacmanPlayerHealth>();
-        MiniGameFlowManager.Instance.RestartPacman(playerHealth.PacmanRestartPoint, playerHealth);
-    }
-
-    private void RespawnPlayer()
-    {
-        playerCharacterController.enabled = false;
-        playerController.transform.position = playerStartPosition;
-        playerCharacterController.enabled = true;
-    }
-
-    public void OnClickShowDescription()
-    {
-        // GameSelectUI의 설명 팝업을 재사용한다.
-        gameSelectUI.OnClickDescription();
-    }
-
-    public void OnClickExitToHub()
-    {
-        // 허브 씬이 아직 없어 자리만 마련해둔다.
-        Debug.Log("[TetrisGameManager] Exit to hub requested (not implemented yet)");
     }
 }

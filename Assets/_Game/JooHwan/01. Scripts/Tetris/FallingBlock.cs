@@ -25,16 +25,6 @@ public class FallingBlock : MonoBehaviour
 
     public bool IsLanded => isLanded;
 
-    public void SetFallSpeed(float speed)
-    {
-        fallSpeed = speed;
-    }
-
-    public void SetLandingMask(LayerMask mask)
-    {
-        landingMask = mask;
-    }
-
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -45,6 +35,61 @@ public class FallingBlock : MonoBehaviour
         cellColliders = GetComponentsInChildren<Collider>();
 
         SetupPinTrigger();
+    }
+
+    private void FixedUpdate()
+    {
+        if (IsGlobalPaused)
+        {
+            return;
+        }
+
+        UpdatePinTimer();
+
+        if (isLanded)
+        {
+            return;
+        }
+
+        rb.MovePosition(rb.position + Vector3.down * fallSpeed * Time.fixedDeltaTime);
+
+        CheckLanding();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            playerIsOverlapping = true;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag(playerTag))
+        {
+            return;
+        }
+
+        playerIsOverlapping = false;
+        playerOverlapTimer = 0f;
+
+        // 착지는 끝났는데 겹침 때문에 미뤄뒀던 레이어 전환을,
+        // Player가 빠져나간 시점에 뒤늦게 적용한다.
+        if (isLanded)
+        {
+            FinishLanding();
+        }
+    }
+
+    public void SetFallSpeed(float speed)
+    {
+        fallSpeed = speed;
+    }
+
+    public void SetLandingMask(LayerMask mask)
+    {
+        landingMask = mask;
     }
 
     private void SetupPinTrigger()
@@ -95,23 +140,22 @@ public class FallingBlock : MonoBehaviour
         return new Vector3(1f / scale.x, 1f / scale.y, 1f / scale.z);
     }
 
-    private void FixedUpdate()
+    private void UpdatePinTimer()
     {
-        if (IsGlobalPaused)
+        if (!playerIsOverlapping)
         {
             return;
         }
 
-        UpdatePinTimer();
+        playerOverlapTimer += Time.fixedDeltaTime;
 
-        if (isLanded)
+        if (playerOverlapTimer >= pinDeathDelay)
         {
-            return;
+            IsGlobalPaused = true;
+            SharedGameplayManager.Instance.OnPlayerPinned();
+            playerOverlapTimer = 0f;
+            playerIsOverlapping = false;
         }
-
-        rb.MovePosition(rb.position + Vector3.down * fallSpeed * Time.fixedDeltaTime);
-
-        CheckLanding();
     }
 
     private void CheckLanding()
@@ -173,49 +217,6 @@ public class FallingBlock : MonoBehaviour
         if (pinTrigger != null)
         {
             pinTrigger.enabled = false;
-        }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag(playerTag))
-        {
-            playerIsOverlapping = true;
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (!other.CompareTag(playerTag))
-        {
-            return;
-        }
-
-        playerIsOverlapping = false;
-        playerOverlapTimer = 0f;
-
-        // 착지는 끝났는데 겹침 때문에 미뤄뒀던 레이어 전환을,
-        // Player가 빠져나간 시점에 뒤늦게 적용한다.
-        if (isLanded)
-        {
-            FinishLanding();
-        }
-    }
-
-    private void UpdatePinTimer()
-    {
-        if (!playerIsOverlapping)
-        {
-            return;
-        }
-
-        playerOverlapTimer += Time.fixedDeltaTime;
-
-        if (playerOverlapTimer >= pinDeathDelay)
-        {
-            TetrisGameManager.Instance.HandlePlayerPinned();
-            playerOverlapTimer = 0f;
-            playerIsOverlapping = false;
         }
     }
 }

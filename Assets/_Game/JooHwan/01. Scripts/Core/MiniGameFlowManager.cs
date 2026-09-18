@@ -18,7 +18,10 @@ public class MiniGameFlowManager : MonoBehaviour
     public static MiniGameFlowManager Instance { get; private set; }
 
     [SerializeField] private GameObject gameSelectUIRoot;
+    [SerializeField] private SharedGameplayManager sharedGameplayManager;
     [SerializeField] private TetrisGameManager tetrisGameManager;
+    [SerializeField] private PacmanGameManager pacmanGameManager;
+    [SerializeField] private PlayerController playerController;
     [SerializeField] private FadeCanvas fadeCanvas;
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
@@ -60,7 +63,7 @@ public class MiniGameFlowManager : MonoBehaviour
             // 테트리스는 이미 클리어했고 아직 팩맨에는 진입하지 않은 상태(문 앞 복도)에서 시작한다.
             // 즉 상태 자체는 Tetris로 유지하되(팩맨 로직은 비활성), 낙하만 멈춘 클리어 상태로 만든다.
             ApplyState(MiniGameState.Tetris, shouldPlayCountdown: false);
-            tetrisGameManager.DebugForceClearedState();
+            tetrisGameManager.DebugForceClearedState(playerController);
 
             if (debugPacmanStartPoint != null)
             {
@@ -221,8 +224,9 @@ public class MiniGameFlowManager : MonoBehaviour
 
         // 팩맨은 아직 전용 카메라가 없어, 테트리스의 1인칭 카메라/조작을 그대로 들고 간다.
         // (관전 카메라 전환만 막고, 낙하 로직은 별도로 정지시킨다)
-        tetrisGameManager.SetGameActive(target == MiniGameState.Tetris || target == MiniGameState.Pacman);
+        sharedGameplayManager.SetGameActive(target == MiniGameState.Tetris || target == MiniGameState.Pacman);
         tetrisGameManager.SetTetrisGameplayPaused(target != MiniGameState.Tetris);
+        tetrisGameManager.SetCameraSwitchAllowed(target == MiniGameState.Tetris);
 
         // 팩맨이 아닌 상태로 전환될 때는(테트리스 클리어 직후 복도 등) 고스트를 즉시 멈춘다.
         // 팩맨 상태로 전환될 때는 카운트다운(3,2,1)이 끝난 뒤(OnGameplayReady)에야 움직이기 시작해야 하므로
@@ -233,11 +237,11 @@ public class MiniGameFlowManager : MonoBehaviour
         }
 
         // 에임 포인터(크로스헤어)와 목숨 하트 UI는 팩맨 전용이라 테트리스에서는 보이면 안 된다.
-        tetrisGameManager.SetCrosshairAllowed(target == MiniGameState.Pacman);
+        pacmanGameManager.SetCrosshairAllowed(target == MiniGameState.Pacman);
 
         // 팩맨에는 점프 지형이 없으므로 비활성화한다.
         // (같은 Jump 액션을 공유하는 ClimbController도 jumpAction이 Disable되면 자동으로 트리거되지 않는다)
-        tetrisGameManager.SetJumpAllowed(target != MiniGameState.Pacman);
+        pacmanGameManager.SetJumpAllowed(target != MiniGameState.Pacman);
 
         if (heartsUIRoot != null)
         {

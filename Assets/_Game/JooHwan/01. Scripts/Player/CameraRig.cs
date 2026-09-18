@@ -18,7 +18,6 @@ public class CameraRig : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private GameObject overviewUI;
-    [SerializeField] private GameObject crosshair;
 
     [Header("Lighting")]
     [Tooltip("1인칭 시점의 파스텔톤 환경광 색상 (허브 분위기와 통일)")]
@@ -28,7 +27,7 @@ public class CameraRig : MonoBehaviour
 
     private InputAction cameraSwitchAction;
     private bool isOverviewActive;
-    private bool isCrosshairAllowed;
+    private bool isCameraSwitchAllowed = true;
 
     private void Awake()
     {
@@ -40,23 +39,66 @@ public class CameraRig : MonoBehaviour
 
     private void OnEnable()
     {
-        cameraSwitchAction.Enable();
-        cameraSwitchAction.performed += OnCameraSwitchPerformed;
+        cameraSwitchAction.performed += ToggleCamera;
+
+        if (isCameraSwitchAllowed)
+        {
+            cameraSwitchAction.Enable();
+        }
     }
 
     private void OnDisable()
     {
-        cameraSwitchAction.performed -= OnCameraSwitchPerformed;
+        cameraSwitchAction.performed -= ToggleCamera;
         cameraSwitchAction.Disable();
     }
 
-    private void OnCameraSwitchPerformed(InputAction.CallbackContext context)
+    /// <summary>
+    /// 관전 전환(Tab)은 테트리스에서만 의미가 있다 (팩맨에는 관전 시점이 없음).
+    /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출해, 팩맨 중엔 Tab 입력 자체를 막는다.
+    /// false로 바뀌는 순간 이미 관전 중이었다면 1인칭으로 강제 복귀시킨다.
+    /// </summary>
+    public void SetCameraSwitchAllowed(bool isAllowed)
     {
-        ToggleCamera();
+        isCameraSwitchAllowed = isAllowed;
+
+        if (isAllowed)
+        {
+            cameraSwitchAction.Enable();
+        }
+        else
+        {
+            cameraSwitchAction.Disable();
+
+            if (isOverviewActive)
+            {
+                ApplyCameraState(false);
+            }
+        }
     }
 
-    private void ToggleCamera()
+    /// <summary>
+    /// 테트리스/팩맨 게임이 (재)활성화될 때마다 호출한다. 관전 모드로 들어간 채
+    /// 사망/재시작 등으로 다시 진입하면 카메라와 조작이 서로 어긋난 상태로 남을 수 있으므로,
+    /// 매번 1인칭 상태로 강제 리셋한다.
+    /// </summary>
+    public void ResetToFirstPerson()
     {
+        if (isOverviewActive)
+        {
+            ApplyCameraState(false);
+        }
+    }
+
+    private void ToggleCamera(InputAction.CallbackContext context)
+    {
+        // 일시정지/사망 팝업 등으로 조작이 잠긴 동안에는, 패널의 버튼을 클릭하는 좌클릭이
+        // 그대로 CameraSwitch 액션으로도 들어와 시점이 전환되므로 잠금 중엔 무시한다.
+        if (playerController.AreControlsLocked)
+        {
+            return;
+        }
+
         ApplyCameraState(!isOverviewActive);
     }
 
@@ -76,27 +118,7 @@ public class CameraRig : MonoBehaviour
 
         overviewUI.SetActive(isOverviewActive);
 
-        UpdateCrosshairVisibility();
-
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = isOverviewActive ? overviewAmbientColor : firstPersonAmbientColor;
-    }
-
-    /// <summary>
-    /// 크로스헤어(에임 포인터)는 팩맨 상태에서만 필요하다 (테트리스에는 조준 요소가 없음).
-    /// MiniGameFlowManager가 팩맨 진입/이탈 시 이 값을 갱신한다.
-    /// </summary>
-    public void SetCrosshairAllowed(bool isAllowed)
-    {
-        isCrosshairAllowed = isAllowed;
-        UpdateCrosshairVisibility();
-    }
-
-    private void UpdateCrosshairVisibility()
-    {
-        if (crosshair != null)
-        {
-            crosshair.SetActive(isCrosshairAllowed && !isOverviewActive);
-        }
     }
 }
