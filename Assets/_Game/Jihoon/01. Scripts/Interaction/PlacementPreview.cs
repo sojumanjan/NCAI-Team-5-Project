@@ -166,6 +166,13 @@ public class PlacementPreview : MonoBehaviour
             return false;
         }
 
+        // 조준한 표면이 없으면 물건은 허공에 떨어진다. 그 자리를 고스트로 그려봐야
+        // 놓일 곳을 알려주는 게 아니라 허공에 떠 있는 물체만 하나 더 보일 뿐이다.
+        if (!interactor.HasHit)
+        {
+            return false;
+        }
+
         position = hands.GetDropPosition();
         rotation = hands.GetDropRotation();
         freeRotation = true;
