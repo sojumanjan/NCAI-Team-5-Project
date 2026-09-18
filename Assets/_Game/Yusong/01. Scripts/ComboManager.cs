@@ -122,6 +122,12 @@ public class ComboManager : MonoBehaviour
         return comboCount;
     }
 
+    public void ForceActivateAoe()
+    {
+        if (aoeActive) return;
+        ActivateAoe();
+    }
+
     private void ActivateAoe()
     {
         aoeActive = true;

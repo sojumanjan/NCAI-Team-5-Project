@@ -35,7 +35,7 @@ public class ClickInviteEffect : MonoBehaviour
         labelObject.transform.SetParent(transform, false);
 
         var labelRt = labelObject.GetComponent<RectTransform>();
-        labelRt.sizeDelta = new Vector2(84f, 28f);
+        labelRt.sizeDelta = new Vector2(110f, 38f);
         labelRt.anchoredPosition = new Vector2(0f, labelOffsetY);
 
         var bgObj = new GameObject("Bg", typeof(RectTransform), typeof(Image));
@@ -45,7 +45,7 @@ public class ClickInviteEffect : MonoBehaviour
         bgRt.anchorMax = Vector2.one;
         bgRt.sizeDelta = Vector2.zero;
         var bgImage = bgObj.GetComponent<Image>();
-        bgImage.color = new Color(0f, 0f, 0f, 0.6f);
+        bgImage.color = new Color(0f, 0f, 0f, 0.85f);
         bgImage.raycastTarget = false;
 
         var textObj = new GameObject("Text", typeof(RectTransform));
@@ -57,10 +57,12 @@ public class ClickInviteEffect : MonoBehaviour
 
         var text = textObj.AddComponent<TextMeshProUGUI>();
         text.text = labelText;
-        text.fontSize = 20f;
+        text.fontSize = 28f;
         text.fontStyle = FontStyles.Bold;
         text.alignment = TextAlignmentOptions.Center;
-        text.color = new Color(1f, 0.9f, 0.2f, 1f);
+        text.color = new Color(1f, 0.95f, 0.3f, 1f);
+        text.outlineWidth = 0.2f;
+        text.outlineColor = new Color(0f, 0f, 0f, 1f);
         text.raycastTarget = false;
         if (theme != null && theme.primaryFont != null) text.font = theme.primaryFont;
     }

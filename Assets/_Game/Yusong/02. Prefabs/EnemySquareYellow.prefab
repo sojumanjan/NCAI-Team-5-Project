@@ -92,7 +92,7 @@ MonoBehaviour:
   speed: 70
   target: {x: 0, y: 0}
   hitRadius: 80
-  damageOnHit: 1
+  damageOnHit: 2
 --- !u!114 &3155812569600421746
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,3 +126,10 @@ MonoBehaviour:
   theme: {fileID: 11400000, guid: e9a41366dba07d74180f49e676b4bdc9, type: 2}
   shape: 2
   healthBarFill: {fileID: 0}
+  isTutorialDemo: 0
+  isBoss: 0
+  bossBurstRadius: 400
+  bossBurstSparkCount: 24
+  bossBurstSparkSpeed: 700
+  bossDeathPunchScale: 1.6
+  bossDeathFadeDuration: 0.35
