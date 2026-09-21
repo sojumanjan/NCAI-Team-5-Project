@@ -11,6 +11,9 @@ public class ComboManager : MonoBehaviour
     public static bool IsAoeActive => Instance != null && Instance.aoeActive;
     public static float AoeRadius => Instance != null ? Instance.aoeRadius : 0f;
 
+    public static event System.Action FeverStarted;
+    public static event System.Action FeverEnded;
+
     [SerializeField] private GameObject root;
     [SerializeField] private Image gaugeFill;
     [SerializeField] private TextMeshProUGUI comboText;
@@ -140,6 +143,8 @@ public class ComboManager : MonoBehaviour
 
         if (fireOverlay != null) fireOverlay.SetActive(true);
         if (feverAnnouncement != null) feverAnnouncement.Show();
+
+        FeverStarted?.Invoke();
     }
 
     private void DeactivateAoe()
@@ -150,10 +155,13 @@ public class ComboManager : MonoBehaviour
         if (fireOverlay != null) fireOverlay.SetActive(false);
 
         ResetCombo();
+        FeverEnded?.Invoke();
     }
 
     public void ResetState()
     {
+        bool wasAoeActive = aoeActive;
+
         aoeActive = false;
         aoeTimer = 0f;
         gaugeFill.color = normalGaugeColor;
@@ -162,6 +170,10 @@ public class ComboManager : MonoBehaviour
         if (feverAnnouncement != null) feverAnnouncement.HideImmediate();
 
         ResetCombo();
+
+        // Covers the wave-end case: fever was still running when the wave was cut short,
+        // so nothing else would have told listeners (e.g. the mascot) that it ended.
+        if (wasAoeActive) FeverEnded?.Invoke();
     }
 
     private void SpawnPopup(Vector2 position, Transform parent, int stacks)

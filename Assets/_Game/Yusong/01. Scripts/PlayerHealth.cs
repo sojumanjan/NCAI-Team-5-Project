@@ -8,6 +8,7 @@ public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
     public static bool IsGameOver { get; private set; }
+    public static event System.Action Damaged;
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
 
@@ -35,8 +36,10 @@ public class PlayerHealth : MonoBehaviour
         if (theme != null)
         {
             hitColor = theme.playerHitColor;
-            if (theme.circleSprite != null) image.sprite = theme.circleSprite;
         }
+        // Sprite is intentionally left as whatever is set on the Image in the prefab —
+        // this object has its own distinct "water source" design, unlike the generic
+        // round enemies that share theme.circleSprite.
 
         originalColor = image.color;
         UpdateHpText();
@@ -52,10 +55,20 @@ public class PlayerHealth : MonoBehaviour
         if (flashRoutine != null) StopCoroutine(flashRoutine);
         flashRoutine = StartCoroutine(FlashHit());
 
-        if (currentHealth <= 0)
+        Damaged?.Invoke();
+
+        // Dying during the Wave 0 tutorial shouldn't end the run — health just clamps at 0
+        // and gets reset once the real game starts at Wave 1.
+        if (currentHealth <= 0 && !CountdownTimer.IsTutorialWave)
         {
             TriggerGameOver();
         }
+    }
+
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+        UpdateHpText();
     }
 
     private void UpdateHpText()

@@ -17,7 +17,7 @@ public class CountdownTimer : MonoBehaviour
     }
 
     [SerializeField] private float startSeconds = 60f;
-    [SerializeField] private float wave0Seconds = 40f;
+    [SerializeField] private float wave0Seconds = 25f;
     [SerializeField] private int totalWaves = 3;
     [SerializeField] private GameObject tutorialSpotlight;
     [SerializeField] private GameObject introExplainGroup;
@@ -36,6 +36,7 @@ public class CountdownTimer : MonoBehaviour
     [SerializeField] private float secondaryObjectSpawnAtRemaining = 30f;
     [SerializeField] private float secondaryObjectWarningLeadTime = 5f;
     [SerializeField] private RectTransform spawnMarkerPrefab;
+    [SerializeField] private RectTransform secondaryMarkerPrefab;
     [SerializeField] private float secondaryAnnounceDuration = 1.5f;
     [SerializeField] private int secondaryObjectLastConfiguredWave = 2;
     [SerializeField] private UITheme theme;
@@ -54,6 +55,7 @@ public class CountdownTimer : MonoBehaviour
     public event System.Action WaveEnding;
 
     public static bool IsWaveActive { get; private set; }
+    public static bool IsTutorialWave { get; private set; } = true;
 
     private TextMeshProUGUI timerText;
     private State state;
@@ -341,9 +343,9 @@ public class CountdownTimer : MonoBehaviour
 
     private void SpawnPositionMarker(Vector2 position)
     {
-        if (spawnMarkerPrefab == null || secondaryObjectParent == null) return;
+        if (secondaryMarkerPrefab == null || secondaryObjectParent == null) return;
 
-        activeMarker = Instantiate(spawnMarkerPrefab, secondaryObjectParent);
+        activeMarker = Instantiate(secondaryMarkerPrefab, secondaryObjectParent);
         activeMarker.anchoredPosition = position;
     }
 
@@ -527,9 +529,15 @@ public class CountdownTimer : MonoBehaviour
     {
         if (ComboManager.Instance != null) ComboManager.Instance.ResetState();
 
-        // Wave 0 is the tutorial — whatever score the player picked up while practicing
+        IsTutorialWave = currentWave == 0;
+
+        // Wave 0 is the tutorial — whatever score/damage the player picked up while practicing
         // shouldn't carry into the real run that starts at Wave 1.
-        if (currentWave == 1 && ScoreManager.Instance != null) ScoreManager.Instance.ResetScore();
+        if (currentWave == 1)
+        {
+            if (ScoreManager.Instance != null) ScoreManager.Instance.ResetScore();
+            if (PlayerHealth.Instance != null) PlayerHealth.Instance.ResetHealth();
+        }
 
         remaining = currentWave == 0 ? wave0Seconds : startSeconds;
         state = State.Counting;

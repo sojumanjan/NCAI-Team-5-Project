@@ -47,6 +47,15 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
     [SerializeField] private float bossDeathPunchScale = 1.6f;
     [SerializeField] private float bossDeathFadeDuration = 0.35f;
 
+    [Header("HP-based Sprite States")]
+    [Tooltip("Index i shows while hitsTaken == i (index 0 = full health). Leave empty to keep a single static sprite.")]
+    [SerializeField] private Sprite[] damageStateSprites;
+
+    [Header("Shatter Death (e.g. glass/plastic shard)")]
+    [SerializeField] private bool shatterOnDeath = false;
+    [SerializeField] private float shatterDuration = 0.2f;
+    [SerializeField] private float shatterScalePunch = 1.3f;
+
     private Image image;
     private RectTransform rt;
     private Color originalColor;
@@ -70,6 +79,12 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
             {
                 healthBarFill.color = theme.bossHealthBarColor;
             }
+        }
+
+        // A dedicated damage-state sprite takes priority over the shared theme shape sprite.
+        if (damageStateSprites != null && damageStateSprites.Length > 0 && damageStateSprites[0] != null)
+        {
+            image.sprite = damageStateSprites[0];
         }
 
         originalColor = image.color;
@@ -182,6 +197,11 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         SpawnHitMark();
         UpdateHealthBar();
 
+        if (damageStateSprites != null && hitsTaken < damageStateSprites.Length && damageStateSprites[hitsTaken] != null)
+        {
+            image.sprite = damageStateSprites[hitsTaken];
+        }
+
         var clickInvite = GetComponent<ClickInviteEffect>();
         if (clickInvite != null) clickInvite.enabled = false;
 
@@ -211,6 +231,10 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
             if (isBoss)
             {
                 StartCoroutine(PlayBossDeathBurst());
+            }
+            else if (shatterOnDeath)
+            {
+                StartCoroutine(PlayShatterDeath());
             }
             else
             {
@@ -274,6 +298,29 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         {
             t += Time.unscaledDeltaTime;
             float p = Mathf.Clamp01(t / bossDeathFadeDuration);
+            rt.localScale = Vector3.LerpUnclamped(startScale, targetScale, p);
+
+            Color c = startColor;
+            c.a = Mathf.Lerp(startColor.a, 0f, p);
+            image.color = c;
+
+            yield return null;
+        }
+
+        Destroy(gameObject);
+    }
+
+    private IEnumerator PlayShatterDeath()
+    {
+        Vector3 startScale = rt.localScale;
+        Vector3 targetScale = startScale * shatterScalePunch;
+        Color startColor = image.color;
+
+        float t = 0f;
+        while (t < shatterDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(t / shatterDuration);
             rt.localScale = Vector3.LerpUnclamped(startScale, targetScale, p);
 
             Color c = startColor;

@@ -43,10 +43,9 @@ public class SecondaryObjectController : MonoBehaviour
         rt = GetComponent<RectTransform>();
         image = GetComponent<Image>();
 
-        if (theme != null && theme.circleSprite != null)
-        {
-            image.sprite = theme.circleSprite;
-        }
+        // Sprite is intentionally left as whatever is set on the Image in the prefab —
+        // 이름미정 has its own distinct design, unlike the generic round enemies that
+        // share theme.circleSprite.
 
         originalColor = image.color;
         UpdateHpText();
