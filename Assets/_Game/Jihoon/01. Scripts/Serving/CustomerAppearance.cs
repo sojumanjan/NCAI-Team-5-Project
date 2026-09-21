@@ -37,11 +37,31 @@ public class CustomerAppearance : MonoBehaviour
     [Tooltip("튕기는 곡선. OutBack이면 끝에서 한 번 더 튀어 만화 같습니다.")]
     [SerializeField] private Ease bounceEase = Ease.OutBack;
 
+    [Header("기뻐하는 연출")]
+    [Tooltip("만족했을 때 부푸는 배율. 화날 때보다 작게 두면 들뜬 정도로 읽힙니다.")]
+    [SerializeField] private float happyScale = 1.08f;
+
+    [Tooltip("한 번 부풀었다 돌아오는 시간 (초). 길수록 느긋합니다.")]
+    [SerializeField] private float happyDuration = 0.32f;
+
+    [Tooltip("기뻐하는 곡선. InOutSine이면 숨 쉬듯 부드럽습니다.")]
+    [SerializeField] private Ease happyEase = Ease.InOutSine;
+
     private Transform _active;
     private Vector3 _restScale = Vector3.one;
     private bool _angryShown;
-    private bool _bouncing;
+
+    // 무엇으로 튕기고 있는지까지 기억해야 한다. 참/거짓만 보면 화내기와 기뻐하기가 서로
+    // 갈아탈 때 트윈이 바뀌지 않는다.
+    private BounceKind _bouncing = BounceKind.None;
     private Tween _bounce;
+
+    private enum BounceKind
+    {
+        None,
+        Angry,
+        Happy,
+    }
 
     /// <summary>지금 켜져 있는 몸.</summary>
     public Transform ActiveModel => _active;
@@ -95,38 +115,53 @@ public class CustomerAppearance : MonoBehaviour
             }
         }
 
-        SetBouncing(customer.IsFuming);
+        if (customer.IsFuming)
+        {
+            SetBouncing(BounceKind.Angry);
+        }
+        else if (customer.IsHappy)
+        {
+            SetBouncing(BounceKind.Happy);
+        }
+        else
+        {
+            SetBouncing(BounceKind.None);
+        }
     }
 
     // ---------------------------------------------------------------- 화내는 연출
 
     /// <summary>
-    /// 제자리에서 씩씩대는 동안 몸을 통통 부풀린다. 지속 시간을 따로 두지 않고
-    /// <see cref="Customer.IsFuming"/>을 그대로 따라가므로, 시간은 손님 쪽 값 하나로 정해진다.
+    /// 제자리에 머무는 동안 몸을 통통 부풀린다. 지속 시간을 따로 두지 않고 손님의 단계를
+    /// 그대로 따라가므로, 얼마나 오래 하는지는 손님 쪽 값 하나로 정해진다.
     /// </summary>
-    private void SetBouncing(bool bouncing)
+    private void SetBouncing(BounceKind kind)
     {
-        if (bouncing == _bouncing)
+        if (kind == _bouncing)
         {
             return;
         }
 
-        _bouncing = bouncing;
+        _bouncing = kind;
+        StopBounce();
 
-        if (!bouncing)
+        if (kind == BounceKind.None || _active == null)
         {
-            StopBounce();
             return;
         }
 
-        if (_active == null || bounceScale <= 1f)
+        float scale = kind == BounceKind.Angry ? bounceScale : happyScale;
+        float duration = kind == BounceKind.Angry ? bounceDuration : happyDuration;
+        Ease ease = kind == BounceKind.Angry ? bounceEase : happyEase;
+
+        if (scale <= 1f || duration <= 0f)
         {
             return;
         }
 
         _restScale = _active.localScale;
-        _bounce = _active.DOScale(_restScale * bounceScale, bounceDuration)
-                         .SetEase(bounceEase)
+        _bounce = _active.DOScale(_restScale * scale, duration)
+                         .SetEase(ease)
                          .SetLoops(-1, LoopType.Yoyo)
                          .SetLink(gameObject);
     }
@@ -194,8 +229,10 @@ public class CustomerAppearance : MonoBehaviour
     /// <summary>하나만 켜고 나머지는 전부 끈다.</summary>
     private void Show(Transform target)
     {
-        // 몸을 갈아입기 전에 튕김을 정리해야 이전 몸이 부푼 채로 꺼지지 않는다.
+        // 몸을 갈아입기 전에 튕김을 정리해야 이전 몸이 부푼 채로 꺼지지 않는다. 종류까지
+        // 비워야 새 몸에서 같은 연출이 다시 시작된다.
         StopBounce();
+        _bouncing = BounceKind.None;
 
         _active = target;
         _restScale = target != null ? target.localScale : Vector3.one;

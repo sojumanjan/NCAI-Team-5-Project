@@ -15,4 +15,4 @@ MonoBehaviour:
   displayName: "\uBC14\uB098\uB098"
   category: 0
   worldPrefab: {fileID: 4871766255676245410, guid: 374a9fab9379cf94e90bdda4c9a92db1, type: 3}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: fe4f6af00ce29f343a75e7152416000b, type: 3}

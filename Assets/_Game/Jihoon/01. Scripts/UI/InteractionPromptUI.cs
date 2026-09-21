@@ -32,6 +32,9 @@ public class InteractionPromptUI : MonoBehaviour
     [Tooltip("길게 눌러야 하는 행동일 때 대신 쓸 표기. 위 표기를 통째로 대체합니다.")]
     [SerializeField] private string interactHoldKey = "[E 홀드]";
 
+    [Tooltip("놓기 직전 회전 키를 뭐라고 쓸지. PlacementPreview의 회전 키와 맞추세요.")]
+    [SerializeField] private string rotateKey = "[R]";
+
     private void Awake()
     {
         if (source == null || lines == null || lines.Length == 0)
@@ -83,13 +86,18 @@ public class InteractionPromptUI : MonoBehaviour
 
     private string KeyLabel(ActionPrompt prompt)
     {
-        if (prompt.Verb != InputVerb.Interact)
+        switch (prompt.Verb)
         {
-            return leftClickKey;
-        }
+            case InputVerb.Rotate:
+                return rotateKey;
 
-        // Hold gets its own complete string rather than a suffix, so the brackets can sit
-        // around the whole thing: "[E 홀드]" instead of "[E] 홀드".
-        return prompt.IsHold ? interactHoldKey : interactKey;
+            case InputVerb.Interact:
+                // Hold gets its own complete string rather than a suffix, so the brackets
+                // can sit around the whole thing: "[E 홀드]" instead of "[E] 홀드".
+                return prompt.IsHold ? interactHoldKey : interactKey;
+
+            default:
+                return leftClickKey;
+        }
     }
 }
