@@ -47,6 +47,10 @@ public class Customer : MonoBehaviour
     [Tooltip("목표 지점보다 얼마나 위에 설지 (m). 프리팹 원점이 몸 가운데면 키의 절반을 넣으세요.")]
     [SerializeField] private float groundOffset = 1f;
 
+    [Header("소리")]
+    [Tooltip("카운터에 도착해 주문을 말할 때 나는 소리. 비워두면 조용히 도착합니다.")]
+    [SerializeField] private SoundData orderSound;
+
     [Header("인내심")]
     [Tooltip("스포너가 값을 주지 않았을 때 쓸 기본 인내심 (초).")]
     [SerializeField] private float defaultPatience = 30f;
@@ -227,6 +231,12 @@ public class Customer : MonoBehaviour
                 {
                     _phase = Phase.Ordering;
                     FaceCounter();
+
+                    // 주문을 알리는 소리는 손님 자리에서 난다. SO의 Spatial Blend가 0이면
+                    // 어차피 어디서나 같게 들리므로, 위치를 넘겨두면 나중에 3D로 바꿀 때
+                    // 코드를 고칠 일이 없다.
+                    AudioManager.PlayAt(orderSound, transform.position);
+
                     _spot.OnCustomerReady(this, _orders);
                 }
                 break;

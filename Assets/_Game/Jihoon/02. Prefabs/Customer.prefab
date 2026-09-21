@@ -1017,6 +1017,7 @@ MonoBehaviour:
   turnSpeed: 240
   cornerLookAhead: 1.5
   groundOffset: 1
+  orderSound: {fileID: 11400000, guid: 420b6f178fdd5a446abbcbb6d413a9eb, type: 2}
   defaultPatience: 30
   angryPauseSeconds: 2
   happyPauseSeconds: 2
