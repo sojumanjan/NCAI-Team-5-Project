@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_Game/Jihoon/03. Scenes/Main_Logo.unity
+    path: Assets/_Game/MainLogo/03. Scenes/Main_Logo.unity
     guid: 3b4f6c3fa38214647a3425810ecc5ee0
   - enabled: 1
     path: Assets/_Game/Hub/03. Scenes/Main.unity

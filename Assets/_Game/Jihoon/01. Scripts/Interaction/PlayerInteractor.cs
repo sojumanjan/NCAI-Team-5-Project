@@ -62,6 +62,12 @@ public class PlayerInteractor : MonoBehaviour
     /// <summary>Where the last successful cast landed. Useful for placing items or world-space UI.</summary>
     public Vector3 LastHitPoint { get; private set; }
 
+    /// <summary>
+    /// 마지막으로 맞은 표면이 향한 방향. 바닥인지 벽인지 여기서만 구분할 수 있다 —
+    /// 조준점만으로는 조리대 상판과 벽면이 똑같아 보인다.
+    /// </summary>
+    public Vector3 LastHitNormal { get; private set; } = Vector3.up;
+
     /// <summary>True while the crosshair is over any surface within reach.</summary>
     public bool HasHit => CurrentCollider != null;
 
@@ -204,6 +210,7 @@ public class PlayerInteractor : MonoBehaviour
 
         CurrentCollider = _hits[nearest].collider;
         LastHitPoint = _hits[nearest].point;
+        LastHitNormal = _hits[nearest].normal;
 
         // The collider usually sits on a child mesh, so search upwards from it.
         return CurrentCollider.GetComponentInParent<IInteractable>();

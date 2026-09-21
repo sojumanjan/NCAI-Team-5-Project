@@ -192,6 +192,7 @@ GameObject:
   - component: {fileID: 5871638195379114230}
   - component: {fileID: 5825255872571974215}
   - component: {fileID: 8276269495349751372}
+  - component: {fileID: 6818435010403386562}
   m_Layer: 0
   m_Name: Milk
   m_TagString: Untagged
@@ -249,6 +250,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldItem
   item: {fileID: 11400000, guid: 388ecd8dfc5006146990239f6f1a02ea, type: 2}
-  heldPositionOffset: {x: 0, y: 0, z: 0}
+  heldPositionOffset: {x: 0, y: -0.14, z: 0}
   heldRotationOffset: {x: 0, y: 0, z: 0}
   placedRotationOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &6818435010403386562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6078213550192935780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickableItem

@@ -53,13 +53,6 @@ public class OrderSlotUI : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float servedFade = 0.75f;
 
-    [Header("상태 표시")]
-    [Tooltip("주문 수락 전에 켜질 표시. (선택)")]
-    [SerializeField] private GameObject awaitingBadge;
-
-    [Tooltip("수락한 뒤 켜질 표시. (선택)")]
-    [SerializeField] private GameObject acceptedBadge;
-
     [Header("인내심 게이지")]
     [Tooltip("줄어드는 바. Image Type을 Filled로 두세요. (선택)")]
     [SerializeField] private Image patienceFill;
@@ -69,8 +62,6 @@ public class OrderSlotUI : MonoBehaviour
 
     [Tooltip("다 닳아갈 때 색.")]
     [SerializeField] private Color patienceAngryColor = new Color(0.95f, 0.35f, 0.35f);
-
-    private bool _accepted;
 
     // 빈 칸은 자기 자신을 끄기도 한다. OnEnable에 구독을 걸면 그 순간 구독이 끊겨
     // 다시는 켜지지 못하므로 Awake/OnDestroy를 쓴다.
@@ -84,7 +75,6 @@ public class OrderSlotUI : MonoBehaviour
         }
 
         spot.OrderPlaced += HandlePlaced;
-        spot.OrderAccepted += HandleAccepted;
         spot.OrderProgress += HandleProgress;
         spot.OrderResolved += HandleResolved;
 
@@ -99,7 +89,6 @@ public class OrderSlotUI : MonoBehaviour
         }
 
         spot.OrderPlaced -= HandlePlaced;
-        spot.OrderAccepted -= HandleAccepted;
         spot.OrderProgress -= HandleProgress;
         spot.OrderResolved -= HandleResolved;
     }
@@ -120,17 +109,7 @@ public class OrderSlotUI : MonoBehaviour
         patienceFill.color = Color.Lerp(patienceAngryColor, patienceCalmColor, remaining);
     }
 
-    private void HandlePlaced(ServingSpot _, System.Collections.Generic.IReadOnlyList<ItemData> orders)
-    {
-        _accepted = false;
-        Show();
-    }
-
-    private void HandleAccepted(ServingSpot _, System.Collections.Generic.IReadOnlyList<ItemData> orders)
-    {
-        _accepted = true;
-        Show();
-    }
+    private void HandlePlaced(ServingSpot _, System.Collections.Generic.IReadOnlyList<ItemData> orders) => Show();
 
     private void HandleProgress(ServingSpot _) => Show();
 
@@ -166,16 +145,6 @@ public class OrderSlotUI : MonoBehaviour
                     DrawColumn(column, orders[i], spot.IsServed(i));
                 }
             }
-        }
-
-        if (awaitingBadge != null)
-        {
-            awaitingBadge.SetActive(!_accepted);
-        }
-
-        if (acceptedBadge != null)
-        {
-            acceptedBadge.SetActive(_accepted);
         }
     }
 
