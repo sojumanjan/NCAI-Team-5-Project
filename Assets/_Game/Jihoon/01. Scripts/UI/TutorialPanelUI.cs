@@ -31,6 +31,9 @@ public class TutorialPanelUI : MonoBehaviour
 
         /// <summary>그 기구가 돌기 시작하면 끝. 홀드식은 완성까지 한 번에 간다.</summary>
         StationRunning,
+
+        /// <summary>셔터를 올리면 끝. 다 올라갈 때까지 기다리지 않는다.</summary>
+        ShopOpened,
     }
 
     [Serializable]
@@ -103,6 +106,8 @@ public class TutorialPanelUI : MonoBehaviour
     private readonly StringBuilder _builder = new();
     private readonly List<StationBase> _stations = new();
 
+    private ShopOpener _shopOpener;
+
     private int _sequence;
     private int _step;
     private bool _finished;
@@ -130,6 +135,7 @@ public class TutorialPanelUI : MonoBehaviour
         }
 
         _stations.AddRange(FindObjectsByType<StationBase>(FindObjectsSortMode.None));
+        _shopOpener = FindFirstObjectByType<ShopOpener>();
 
         SkipEmpty();
         Redraw();
@@ -241,6 +247,9 @@ public class TutorialPanelUI : MonoBehaviour
                 // 홀드식 기구는 Processing을 거치지 않고 곧장 Done으로 간다. 둘 다 "돌렸다"로 본다.
                 return AnyStation(step.station,
                                   s => s.State == StationState.Processing || s.State == StationState.Done);
+
+            case StepGoal.ShopOpened:
+                return _shopOpener != null && _shopOpener.HasOpened;
 
             default:
                 return false;

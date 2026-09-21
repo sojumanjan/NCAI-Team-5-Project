@@ -48,6 +48,12 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     private bool _opened;
     private Tween _tween;
 
+    /// <summary>
+    /// 셔터를 올리기 시작했는지. 올라가는 중도 포함한다 — 튜토리얼 쪽지가 이걸 보고
+    /// 접히는데, 다 올라갈 때까지(6초) 기다리면 눌렀는데 안 먹힌 것처럼 보인다.
+    /// </summary>
+    public bool HasOpened => _opening || _opened;
+
     // ---------------------------------------------------------------- 수명주기
 
     private void Awake()

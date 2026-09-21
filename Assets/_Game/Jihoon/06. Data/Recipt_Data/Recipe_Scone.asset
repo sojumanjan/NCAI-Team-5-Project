@@ -15,6 +15,6 @@ MonoBehaviour:
   station: 1
   inputs:
   - {fileID: 11400000, guid: aa6febabe1068914daed02668a081055, type: 2}
-  duration: 3
+  duration: 6
   output: {fileID: 11400000, guid: e028dc49265b2af46b946b420017a0b8, type: 2}
   orderWeight: 0.5
