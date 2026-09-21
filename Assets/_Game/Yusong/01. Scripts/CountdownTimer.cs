@@ -17,7 +17,7 @@ public class CountdownTimer : MonoBehaviour
     }
 
     [SerializeField] private float startSeconds = 60f;
-    [SerializeField] private float wave0Seconds = 15f;
+    [SerializeField] private float wave0Seconds = 40f;
     [SerializeField] private int totalWaves = 3;
     [SerializeField] private GameObject tutorialSpotlight;
     [SerializeField] private GameObject introExplainGroup;
@@ -78,6 +78,7 @@ public class CountdownTimer : MonoBehaviour
     private List<Transform> highlightedObjectsOriginalParents;
 
     public bool IsWaitingForIntroClick => waitingForIntroClick;
+    public int CurrentWave => currentWave;
 
     private void Awake()
     {
@@ -405,7 +406,8 @@ public class CountdownTimer : MonoBehaviour
     public void PauseForEnemyHighlight(RectTransform enemyRect)
     {
         if (enemyRect == null) return;
-        PauseForObjectsHighlight(new List<RectTransform> { enemyRect }, "접근하는 적군을 클릭을 통해 제거할 수 있습니다");
+        PauseForObjectsHighlight(new List<RectTransform> { enemyRect },
+            "접근하는 적군을 클릭을 통해 제거할 수 있습니다\n적군이 중앙에 도달하면 체력이 줄어들고, 체력이 모두 소진되면 게임이 종료됩니다");
     }
 
     public void PauseForGroupHighlight(List<RectTransform> group, string message)
@@ -524,6 +526,10 @@ public class CountdownTimer : MonoBehaviour
     private void StartWave()
     {
         if (ComboManager.Instance != null) ComboManager.Instance.ResetState();
+
+        // Wave 0 is the tutorial — whatever score the player picked up while practicing
+        // shouldn't carry into the real run that starts at Wave 1.
+        if (currentWave == 1 && ScoreManager.Instance != null) ScoreManager.Instance.ResetScore();
 
         remaining = currentWave == 0 ? wave0Seconds : startSeconds;
         state = State.Counting;

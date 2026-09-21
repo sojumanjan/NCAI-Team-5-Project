@@ -27,6 +27,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private RectTransform wave0YellowTrianglePrefab;
     [SerializeField] private RectTransform wave0RedTrianglePrefab;
     [SerializeField] private RectTransform wave0BlackSquarePrefab;
+    [SerializeField] private RectTransform wave0SecondaryObjectPrefab;
     [SerializeField] private RectTransform[] wave0FeverPrefabs;
     [SerializeField] private int wave0FeverClusterSize = 4;
     [SerializeField] private float wave0FeverClusterSpread = 80f;
@@ -74,16 +75,15 @@ public class EnemySpawner : MonoBehaviour
 
     private void HandleWaveEnding()
     {
-        if (spawnRoutine != null)
-        {
-            StopCoroutine(spawnRoutine);
-            spawnRoutine = null;
-        }
+        // StopAllCoroutines (not just spawnRoutine) so any still-running Wave 0 tutorial
+        // routine (e.g. the fever filler loop) can't survive into the next wave.
+        StopAllCoroutines();
+        spawnRoutine = null;
 
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             var child = transform.GetChild(i);
-            if (child.GetComponent<EnemyHealth>() != null)
+            if (child.GetComponent<EnemyHealth>() != null || child.GetComponent<SecondaryObjectController>() != null)
             {
                 Destroy(child.gameObject);
             }
@@ -222,7 +222,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.PauseForGroupHighlight(group,
-                "노란 적군은 다른 적군보다 강하지만, 제거하면 자신의 주변에 데미지를 전이시킵니다");
+                "노란 적군은 다른 적군보다 강하지만, 제거하면 자신의 주변에 데미지를 전이시킵니다\n막아내지 못하고 중앙에 도달하면 더 강력한 피해를 입으니 주의하세요!");
         }
 
         // Wait for that pause to be dismissed before starting the next tutorial beat.
@@ -290,17 +290,66 @@ public class EnemySpawner : MonoBehaviour
                 "일정 콤보에 도달하면 피버타임에 진입합니다\n피버타임에는 점수 보너스와 공격 전이가 적용됩니다!");
         }
 
-        // Wait for that pause to be dismissed, then force fever time right away (instead of
-        // waiting for a real combo streak) and keep feeding the player enemies to click through
-        // it for however long is left in Wave 0.
+        // Wait for that pause to be dismissed, then run the "protect 이름미정" beat before
+        // forcing fever time right away (instead of waiting for a real combo streak) and
+        // feeding the player enemies to click through it for however long is left in Wave 0.
         while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
         {
             yield return null;
         }
 
+        yield return StartCoroutine(SpawnWave0SecondaryObjectDemo());
+
         if (ComboManager.Instance != null) ComboManager.Instance.ForceActivateAoe();
 
         StartCoroutine(SpawnWave0FeverFiller());
+    }
+
+    private IEnumerator SpawnWave0SecondaryObjectDemo()
+    {
+        if (wave0SecondaryObjectPrefab == null || wave0PracticeEnemyPrefab == null) yield break;
+
+        var parent = (RectTransform)transform;
+
+        // Placed directly on the left-side approach line (same line the tutorial enemy below
+        // spawns on and moves straight along toward the center) so it reliably passes right by
+        // it, demonstrating the "protect it from incoming enemies" mechanic every time.
+        var secondaryObject = Instantiate(wave0SecondaryObjectPrefab, parent);
+        secondaryObject.anchoredPosition = new Vector2(-200f, 0f);
+
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForGroupHighlight(new List<RectTransform> { secondaryObject },
+                "진행 중 랜덤한 위치에 이름미정이 생성됩니다!\n적군이 접근해 부딪히면 이름미정이 피해를 입습니다\n적군을 제거해서 이름미정을 지켜주세요!");
+        }
+
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        // A second beat on the same highlight explaining the score risk/reward before the
+        // enemy actually shows up.
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForGroupHighlight(new List<RectTransform> { secondaryObject },
+                "이름미정을 지켜내면 보너스 점수를 얻을 수 있지만, 지키지 못하면 일정 점수를 잃습니다!");
+        }
+
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        var enemy = SpawnEnemy(wave0PracticeEnemyPrefab, parent, 0);
+        enemy.anchoredPosition = PerimeterPointAtAngle(parent.rect, Mathf.PI);
+
+        // Ends whether the player clicks it down first or it collides with 이름미정 instead —
+        // either way the enemy is gone and the demo is over.
+        while (enemy != null)
+        {
+            yield return null;
+        }
     }
 
     private IEnumerator SpawnWave0FeverFiller()
@@ -312,7 +361,10 @@ public class EnemySpawner : MonoBehaviour
         // Small tight clusters (well within the fever AOE radius) so a single click during
         // fever chain-clears the whole group, the way fever time is meant to feel. Each cluster
         // mixes shapes/colors (normal, black, yellow) instead of a single repeated enemy type.
-        while (CountdownTimer.IsWaveActive)
+        // Belt-and-suspenders: HandleWaveEnding() already stops this via StopAllCoroutines()
+        // when Wave 0 ends, but this also guards against ever spawning tutorial filler into
+        // a later wave whose IsWaveActive flag happens to be true.
+        while (CountdownTimer.IsWaveActive && countdownTimer != null && countdownTimer.CurrentWave == 0)
         {
             Vector2 anchor = RandomPerimeterPoint(parent.rect);
 

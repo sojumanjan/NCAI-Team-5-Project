@@ -72,6 +72,16 @@ public class ScoreManager : MonoBehaviour
         UpdateText();
     }
 
+    public void ResetScore()
+    {
+        totalScore = 0;
+        enemyKillScore = 0;
+        feverBonusScore = 0;
+        secondaryBonusScore = 0;
+        remainingHpScore = 0;
+        UpdateText();
+    }
+
     private void SpawnPopup(int amount, Vector2 position, Transform parent, bool emphasize)
     {
         if (scorePopupPrefab == null || parent == null || amount == 0) return;
