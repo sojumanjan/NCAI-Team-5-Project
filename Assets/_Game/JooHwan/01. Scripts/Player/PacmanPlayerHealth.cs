@@ -53,5 +53,9 @@ public class PacmanPlayerHealth : MonoBehaviour
         {
             PacmanGameManager.Instance.ShowDeathPopupForPacman();
         }
+        else
+        {
+            PacmanGameManager.Instance.OnPlayerHit();
+        }
     }
 }

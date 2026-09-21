@@ -50,15 +50,44 @@ public class SharedGameplayManager : MonoBehaviour
         }
     }
 
+    [Tooltip("사망 판정 후 재시작 팝업이 뜨기까지의 지연 시간. 죽었다는 사실을 인지할 틈도 없이 팝업이 바로 뜨는 것을 방지한다.")]
+    [SerializeField] private float deathPopupDelay = 0.6f;
+
+    [Header("Death Feedback")]
+    [Tooltip("사망 시 카메라 흔들림 지속 시간. deathPopupDelay와 비슷하게 맞춰 팝업이 뜰 때까지 흔들리게 한다.")]
+    [SerializeField] private float deathShakeDuration = 0.6f;
+    [SerializeField] private float deathShakePositionAmplitude = 0.3f;
+    [SerializeField] private float deathShakeRotationAmplitude = 6f;
+    [SerializeField] private DeathFlashOverlay deathFlashOverlay;
+
     public void OnPlayerPinned()
     {
         playerController.SetControlsLocked(true);
-        deathPopupRoot.SetActive(true);
+        CameraShake.ShakeAll(deathShakeDuration, deathShakePositionAmplitude, deathShakeRotationAmplitude);
+        deathFlashOverlay.Flash();
+        StartCoroutine(ShowDeathPopupAfterDelay());
     }
 
     public void ShowDeathPopupForPacman()
     {
         playerController.SetControlsLocked(true);
+        CameraShake.ShakeAll(deathShakeDuration, deathShakePositionAmplitude, deathShakeRotationAmplitude);
+        deathFlashOverlay.Flash();
+        StartCoroutine(ShowDeathPopupAfterDelay());
+    }
+
+    /// <summary>
+    /// 목숨이 남아있는 일반 피격(고스트 접촉) 시 PacmanGameManager가 호출한다.
+    /// 사망 팝업/플래시 없이, 사망과 동일한 강도의 흔들림만 재생한다.
+    /// </summary>
+    public void PlayHitFeedback()
+    {
+        CameraShake.ShakeAll(deathShakeDuration, deathShakePositionAmplitude, deathShakeRotationAmplitude);
+    }
+
+    private System.Collections.IEnumerator ShowDeathPopupAfterDelay()
+    {
+        yield return new WaitForSeconds(deathPopupDelay);
         deathPopupRoot.SetActive(true);
     }
 

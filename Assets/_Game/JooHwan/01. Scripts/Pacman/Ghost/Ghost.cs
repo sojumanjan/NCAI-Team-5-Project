@@ -13,11 +13,18 @@ public class Ghost : MonoBehaviour
     [Header("이동 속도")]
     [SerializeField] private float patrolSpeed = 2f;
     [SerializeField] private float chaseSpeed = 3.5f;
+    [Tooltip("추격 시작 순간 목표 속도(chaseSpeed)까지 가속하는 속도. NavMeshAgent 기본 acceleration(8)로는 speed를 아무리 올려도 서서히 가속되어 '순간적으로 확 쫓아오는' 느낌이 나지 않는다. 순찰 가속도보다 훨씬 크게 잡아야 즉각적으로 느껴진다.")]
+    [SerializeField] private float chaseAcceleration = 200f;
+    [SerializeField] private float patrolAcceleration = 8f;
 
     [Header("플레이어 탐지")]
     [SerializeField] private float detectRange = 6f;
     [SerializeField] private float detectAngle = 100f;
     [SerializeField] private float loseSightRange = 9f;
+
+    [Header("피격 후 스턴")]
+    [Tooltip("플레이어를 접촉 피격한 직후 그 자리에 완전히 멈춰 서는 시간. 가속이 붙은 추격을 플레이어가 따돌릴 틈을 준다.")]
+    [SerializeField] private float hitStunDuration = 1f;
 
     [Header("발광(공격 신호) 주기")]
     [Tooltip("평소 약한 발광 상태로 유지되는 시간 (이 동안은 피격 무효)")]
@@ -47,9 +54,11 @@ public class Ghost : MonoBehaviour
     private bool isGlowing;
     private bool isActive;
     private bool isDefeated;
+    private bool isStunned;
     private Vector3 lastKnownPlayerPosition;
     private Material bodyMaterialInstance;
     private Coroutine glowCycleCoroutine;
+    private Coroutine hitStunCoroutine;
     private Color originalBodyColor;
 
     /// <summary>처치된 순간(디졸브 연출 시작 시점)에 발생한다. 전멸 판정에 사용한다.</summary>
@@ -93,6 +102,7 @@ public class Ghost : MonoBehaviour
         }
 
         agent.speed = patrolSpeed;
+        agent.acceleration = patrolAcceleration;
 
         // 팩맨 상태가 활성화되기 전(예: 테트리스 클리어 직후, 문 앞 복도)에는
         // 고스트가 움직이면 안 되므로, 기본값은 정지 상태로 시작한다.
@@ -106,8 +116,15 @@ public class Ghost : MonoBehaviour
             return;
         }
 
-        UpdateDetection();
         UpdatePulseVisual();
+
+        // 스턴 중에는 탐지/추격 자체를 멈춰 그 자리에 완전히 서 있게 한다.
+        if (isStunned)
+        {
+            return;
+        }
+
+        UpdateDetection();
 
         if (!isChasing && movementSource != null)
         {
@@ -127,7 +144,37 @@ public class Ghost : MonoBehaviour
         if (playerHealth != null)
         {
             playerHealth.TakeHit();
+            StartHitStun();
         }
+    }
+
+    /// <summary>
+    /// 플레이어를 피격한 직후, 가속이 붙은 추격에서 플레이어가 벗어날 틈을 주기 위해
+    /// 고스트를 그 자리에 완전히 멈춰 세운다. 스턴이 끝나면 무조건 순찰 상태로 복귀하며,
+    /// 이후 탐지 범위 내에 있으면 다시 추격으로 전환될 수 있다.
+    /// </summary>
+    private void StartHitStun()
+    {
+        if (hitStunCoroutine != null)
+        {
+            StopCoroutine(hitStunCoroutine);
+        }
+
+        hitStunCoroutine = StartCoroutine(HitStunRoutine());
+    }
+
+    private IEnumerator HitStunRoutine()
+    {
+        isStunned = true;
+        agent.isStopped = true;
+        agent.velocity = Vector3.zero;
+        StopChase();
+
+        yield return new WaitForSeconds(hitStunDuration);
+
+        agent.isStopped = false;
+        isStunned = false;
+        hitStunCoroutine = null;
     }
 
     /// <summary>
@@ -158,6 +205,13 @@ public class Ghost : MonoBehaviour
                 StopCoroutine(glowCycleCoroutine);
                 glowCycleCoroutine = null;
             }
+
+            if (hitStunCoroutine != null)
+            {
+                StopCoroutine(hitStunCoroutine);
+                hitStunCoroutine = null;
+            }
+            isStunned = false;
 
             if (glowAura != null)
             {
@@ -287,12 +341,14 @@ public class Ghost : MonoBehaviour
     {
         isChasing = true;
         agent.speed = chaseSpeed;
+        agent.acceleration = chaseAcceleration;
     }
 
     private void StopChase()
     {
         isChasing = false;
         agent.speed = patrolSpeed;
+        agent.acceleration = patrolAcceleration;
 
         if (movementSource != null)
         {

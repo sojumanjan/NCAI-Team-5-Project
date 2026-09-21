@@ -46,6 +46,15 @@ public class PacmanGameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 목숨이 남아있는 일반 피격(고스트 접촉) 시 PacmanPlayerHealth가 호출한다.
+    /// 사망 팝업 없이, 사망보다 약한 흔들림/플래시 피드백만 재생한다.
+    /// </summary>
+    public void OnPlayerHit()
+    {
+        SharedGameplayManager.Instance.PlayHitFeedback();
+    }
+
+    /// <summary>
     /// 사망 팝업의 재시작 버튼이 눌렸을 때, 현재 상태가 팩맨이면 SharedGameplayManager가 호출한다.
     /// </summary>
     public void RestartPacmanFromDeath()

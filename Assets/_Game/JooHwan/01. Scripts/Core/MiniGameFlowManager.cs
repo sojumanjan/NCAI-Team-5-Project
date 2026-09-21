@@ -36,6 +36,13 @@ public class MiniGameFlowManager : MonoBehaviour
     [SerializeField] private bool isDebugStartInPacman = false;
     [SerializeField] private Transform debugPacmanStartPoint;
 
+    [Header("Debug (테트리스 클리어 연출 확인용 임시 사용)")]
+    [Tooltip("체크하면 시작 시 EXIT 트리거 바로 아래에 임시 디딤대를 만들고 플레이어를 그 위로 옮겨, 실제로 EXIT을 밟아 클리어 연출(플래시/셰이크/텍스트)이 재생되는 것을 바로 확인할 수 있게 한다. 연출 확인이 끝나면 반드시 해제할 것.")]
+    [SerializeField] private bool isDebugStartAtTetrisClear = false;
+    [SerializeField] private TetrisExitTrigger debugExitTrigger;
+
+    private GameObject debugClearTestPlatform;
+
     private MiniGameState currentState = MiniGameState.MainUI;
 
     public MiniGameState CurrentState => currentState;
@@ -58,6 +65,18 @@ public class MiniGameFlowManager : MonoBehaviour
 
     private void Start()
     {
+        if (isDebugStartAtTetrisClear && debugExitTrigger != null)
+        {
+            // 실제로 EXIT 트리거를 밟게 만들어 HandleExitReached()의 정식 클리어 연출
+            // (플래시/셰이크/텍스트 등)이 그대로 재생되는지 바로 확인할 수 있게 한다.
+            // 낙하 시퀀스는 필요 없으므로 시작하지 않고, 그 자리에 서 있을 임시 디딤대만 만든다.
+            ApplyState(MiniGameState.Tetris, shouldPlayCountdown: false);
+            FallingBlock.IsGlobalPaused = true;
+
+            SpawnDebugClearTestPlatform();
+            return;
+        }
+
         if (isDebugStartInPacman)
         {
             // 테트리스는 이미 클리어했고 아직 팩맨에는 진입하지 않은 상태(문 앞 복도)에서 시작한다.
@@ -186,6 +205,11 @@ public class MiniGameFlowManager : MonoBehaviour
 
     private void TeleportPlayer(Transform target)
     {
+        TeleportPlayer(target.position);
+    }
+
+    private void TeleportPlayer(Vector3 position)
+    {
         var player = GameObject.FindGameObjectWithTag("Player");
         if (player == null)
         {
@@ -196,13 +220,52 @@ public class MiniGameFlowManager : MonoBehaviour
         if (controller != null)
         {
             controller.enabled = false;
-            player.transform.position = target.position;
+            player.transform.position = position;
             controller.enabled = true;
         }
         else
         {
-            player.transform.position = target.position;
+            player.transform.position = position;
         }
+    }
+
+    /// <summary>
+    /// EXIT 트리거 바로 아래에 임시 디딤대(Cube)를 만들고 플레이어를 그 위로 옮겨,
+    /// 실제로 EXIT 콜라이더를 통과시켜 정식 클리어 연출을 그대로 재생시킨다.
+    /// 디버그 전용이라 씬에 영구적으로 남기지 않고 코드로만 생성한다.
+    /// </summary>
+    private const float DebugClearPlatformExtraDepth = 3f;
+    [Tooltip("디버그 클리어 테스트 디딤대가 뒤쪽(진행 방향 반대) 벽을 뚫지 않도록 남겨둘 여유 거리.")]
+    [SerializeField] private float debugClearPlatformWallMargin = 0.5f;
+
+    private void SpawnDebugClearTestPlatform()
+    {
+        Bounds exitBounds = debugExitTrigger.GetComponent<Collider>().bounds;
+
+        // 아레나 뒤쪽 벽(Floor 바운즈의 -Z 끝)을 뚫지 않도록, 추가하려는 깊이(큐브 한 칸)를
+        // 실제로 남아있는 여유 거리로 제한한다.
+        float floorMinZ = float.MinValue;
+        Transform floorTransform = debugExitTrigger.transform.parent != null ? debugExitTrigger.transform.parent.Find("Floor") : null;
+        if (floorTransform != null && floorTransform.TryGetComponent(out Collider floorCollider))
+        {
+            floorMinZ = floorCollider.bounds.min.z;
+        }
+
+        float availableDepth = floorMinZ > float.MinValue ? exitBounds.min.z - floorMinZ - debugClearPlatformWallMargin : DebugClearPlatformExtraDepth;
+        float extraDepth = Mathf.Clamp(availableDepth, 0f, DebugClearPlatformExtraDepth);
+
+        // EXIT 트리거 안쪽으로 바로 텔레포트되면 걸어갈 필요 없이 즉시 클리어되어 버리므로,
+        // 진행 방향(-Z)으로 여유가 허용하는 만큼(최대 큐브 한 칸, 3유닛) 더 길게 만들어 그 뒤쪽에서 걸어오게 한다.
+        float platformDepth = exitBounds.size.z + extraDepth;
+        float platformCenterZ = exitBounds.center.z - extraDepth * 0.5f;
+
+        debugClearTestPlatform = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        debugClearTestPlatform.name = "DebugClearTestPlatform";
+        debugClearTestPlatform.transform.position = new Vector3(exitBounds.center.x, exitBounds.min.y - 0.5f, platformCenterZ);
+        debugClearTestPlatform.transform.localScale = new Vector3(exitBounds.size.x, 1f, platformDepth);
+
+        Vector3 spawnPosition = new Vector3(exitBounds.center.x, exitBounds.min.y - 0.5f + 1.5f, exitBounds.center.z - extraDepth);
+        TeleportPlayer(spawnPosition);
     }
 
     /// <summary>

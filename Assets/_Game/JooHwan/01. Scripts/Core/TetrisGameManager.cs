@@ -1,4 +1,6 @@
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 테트리스 전용 세부 로직(낙하 시퀀스, 클리어 판정, 관전 카메라 허용)을 담당한다.
@@ -12,6 +14,20 @@ public class TetrisGameManager : MonoBehaviour
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
     [SerializeField] private GameObject clearTextRoot;
+
+    [Header("Clear Feedback")]
+    [SerializeField] private DeathFlashOverlay screenFlashOverlay;
+    [SerializeField] private Color clearFlashColor = new Color(1f, 0.95f, 0.6f, 0.55f);
+    [SerializeField] private float clearFlashDuration = 0.5f;
+    [SerializeField] private float clearShakeDuration = 0.3f;
+    [SerializeField] private float clearShakePositionAmplitude = 0.15f;
+    [SerializeField] private float clearShakeRotationAmplitude = 3f;
+    [Tooltip("CLEAR 텍스트가 작게 시작해서 커지며 나타나는 시간")]
+    [SerializeField] private float clearTextPopDuration = 0.3f;
+    [Tooltip("CLEAR 텍스트가 유지되는 시간 (팝업 애니메이션 이후, 페이드아웃 전)")]
+    [SerializeField] private float clearTextHoldDuration = 1f;
+    [Tooltip("CLEAR 텍스트가 사라질 때 페이드아웃되는 시간")]
+    [SerializeField] private float clearTextFadeOutDuration = 0.3f;
 
     private bool isCleared;
 
@@ -30,6 +46,13 @@ public class TetrisGameManager : MonoBehaviour
     {
         FallingBlock.IsGlobalPaused = isPaused;
         fallSequencer.SetPaused(isPaused);
+
+        // 일시정지 순간 FallingBlock.FixedUpdate가 멈춰 비네트 값 갱신도 함께 멈추므로,
+        // 위험 상태에서 정지했을 때 그 값이 화면에 그대로 남지 않도록 즉시 초기화한다.
+        if (isPaused && TetrisDangerVignette.Instance != null)
+        {
+            TetrisDangerVignette.Instance.SetDangerRatio(0f);
+        }
     }
 
     /// <summary>
@@ -67,6 +90,14 @@ public class TetrisGameManager : MonoBehaviour
         fallSequencer.SetPaused(true);
         playerController.SetControlsLocked(true);
 
+        // 사망 플래시(어두운 빨강)와 대비되는 밝은 색으로, 성공했다는 느낌을 즉시 전달한다.
+        if (screenFlashOverlay != null)
+        {
+            screenFlashOverlay.Flash(clearFlashColor, clearFlashDuration);
+        }
+
+        CameraShake.ShakeAll(clearShakeDuration, clearShakePositionAmplitude, clearShakeRotationAmplitude);
+
         if (clearTextRoot != null)
         {
             StartCoroutine(ShowClearTextRoutine(playerController));
@@ -75,8 +106,31 @@ public class TetrisGameManager : MonoBehaviour
 
     private System.Collections.IEnumerator ShowClearTextRoutine(PlayerController playerController)
     {
+        var rectTransform = clearTextRoot.GetComponent<RectTransform>();
+        var text = clearTextRoot.GetComponent<Text>();
+
+        rectTransform.localScale = Vector3.zero;
+        if (text != null)
+        {
+            Color startColor = text.color;
+            startColor.a = 1f;
+            text.color = startColor;
+        }
+
         clearTextRoot.SetActive(true);
-        yield return new WaitForSeconds(1.5f);
+
+        yield return rectTransform
+            .DOScale(Vector3.one, clearTextPopDuration)
+            .SetEase(Ease.OutBack)
+            .WaitForCompletion();
+
+        yield return new WaitForSeconds(clearTextHoldDuration);
+
+        if (text != null)
+        {
+            yield return text.DOFade(0f, clearTextFadeOutDuration).WaitForCompletion();
+        }
+
         clearTextRoot.SetActive(false);
 
         // 클리어 후에는 문 앞까지 자유롭게 이동할 수 있어야 하므로 조작을 다시 푼다.
@@ -105,6 +159,12 @@ public class TetrisGameManager : MonoBehaviour
         respawnPlayer();
 
         FallingBlock.IsGlobalPaused = false;
+
+        // 끼임 사망 시 비네트가 최대치 근처에서 멈춘 채 남아있을 수 있으므로, 재시작 시 명시적으로 초기화한다.
+        if (TetrisDangerVignette.Instance != null)
+        {
+            TetrisDangerVignette.Instance.SetDangerRatio(0f);
+        }
 
         // 카운트다운(3,2,1)이 보이는 동안에도 플레이어는 바로 움직일 수 있어야 하므로,
         // 조작 잠금은 카운트다운을 재생하기 전에 미리 풀어둔다.

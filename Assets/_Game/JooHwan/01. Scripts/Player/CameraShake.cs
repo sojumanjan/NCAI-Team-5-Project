@@ -49,12 +49,28 @@ public class CameraShake : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 사망 등 임팩트가 더 커야 하는 상황에서, 기본값보다 강하고 긴 흔들림을 지정해 재생한다.
+    /// </summary>
+    public static void ShakeAll(float duration, float positionAmplitude, float rotationAmplitude)
+    {
+        foreach (var instance in activeInstances)
+        {
+            instance.Shake(duration, positionAmplitude, rotationAmplitude);
+        }
+    }
+
     public void Shake()
     {
-        shakeDuration = defaultDuration;
-        shakeTimer = defaultDuration;
-        positionAmplitude = defaultPositionAmplitude;
-        rotationAmplitude = defaultRotationAmplitude;
+        Shake(defaultDuration, defaultPositionAmplitude, defaultRotationAmplitude);
+    }
+
+    public void Shake(float duration, float positionAmplitude, float rotationAmplitude)
+    {
+        shakeDuration = duration;
+        shakeTimer = duration;
+        this.positionAmplitude = positionAmplitude;
+        this.rotationAmplitude = rotationAmplitude;
         noiseSeed = Random.Range(0f, 100f);
     }
 

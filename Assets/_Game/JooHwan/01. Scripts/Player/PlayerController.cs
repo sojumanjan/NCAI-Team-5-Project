@@ -23,6 +23,10 @@ public class PlayerController : MonoBehaviour
     [Header("References")]
     [Tooltip("실제 회전을 적용할 대상. 카메라 흔들림 연출을 쓰는 경우 카메라의 부모(피벗)를 지정한다.")]
     [SerializeField] private Transform cameraPivot;
+    [Tooltip("테트리스 끼임(침투 깊이) 판정 전용 트리거 콜라이더. CharacterController와 동일한 높이/반지름으로 맞춰둔다.")]
+    [SerializeField] private CapsuleCollider pinPenetrationProbe;
+
+    public CapsuleCollider PinPenetrationProbe => pinPenetrationProbe;
 
     private CharacterController controller;
     private InputAction moveAction;
