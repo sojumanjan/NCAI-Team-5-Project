@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -9,6 +9,112 @@ namespace Taegeon
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "EscapeRoomProgress")]
 public sealed class EscapeRoomProgress : MonoBehaviour
 {
+    #region 테스트 클리어 설정
+
+    [Header("테스트 클리어 (실행 중 체크하면 보상 생성)")]
+    [SerializeField, InspectorName("1번 주크박스 클리어")]
+    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다. 체크를 해제해도 지급 기록은 초기화되지 않습니다.")]
+    private bool testClearJukebox = false;
+    [SerializeField, InspectorName("2번 룬 원판 클리어")]
+    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
+    private bool testClearDial = false;
+    [SerializeField, InspectorName("3번 슬라이딩 클리어")]
+    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
+    private bool testClearSliding = false;
+    [SerializeField, InspectorName("4번 라디오 클리어")]
+    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
+    private bool testClearRadio = false;
+
+    /// <summary>
+    /// 해당 게임의 테스트용 클리어 설정을 확인합니다.
+    /// </summary>
+    private bool IsTestCleared(int index)
+    {
+        switch (index)
+        {
+            case 0: return testClearJukebox;
+            case 1: return testClearDial;
+            case 2: return testClearSliding;
+            case 3: return testClearRadio;
+            default: return false;
+        }
+    }
+
+    #endregion
+
+    #region 시작 상자 흔들림
+
+    [Header("시작 부품 상자 연출")]
+    [SerializeField, InspectorName("상자 흔들기")] private bool shakeStarterBox = true;
+    [SerializeField, Range(0f, 15f), InspectorName("좌우 기울기")] private float starterShakeAngle = 7f;
+    [SerializeField, Range(0f, .2f), InspectorName("좌우 이동 폭")] private float starterShakeDistance = .07f;
+    private Vector3 starterRestPosition;
+    private Quaternion starterRestRotation;
+    private float starterShakeTime;
+
+    /// <summary>열기 전에는 상자를 짧게 흔들고, 열면 원래 자세로 부드럽게 되돌립니다.</summary>
+    private void UpdateStarterBoxMotion(float deltaTime)
+    {
+        if (!usePartProgression || starterBox == null) return;
+        if (starterOpened || !shakeStarterBox)
+        {
+            starterBox.localPosition = Vector3.MoveTowards(starterBox.localPosition, starterRestPosition, deltaTime * .8f);
+            starterBox.localRotation = Quaternion.RotateTowards(starterBox.localRotation, starterRestRotation, deltaTime * 70f);
+            return;
+        }
+
+        // 짧은 흔들림과 쉼을 반복해 가챠 상자처럼 주의를 끕니다.
+        starterShakeTime += deltaTime;
+        float phase = Mathf.Repeat(starterShakeTime, 2.4f);
+        float wave = phase < 1.1f
+            ? Mathf.Sin(phase / 1.1f * Mathf.PI * 6f) * Mathf.Sin(phase / 1.1f * Mathf.PI)
+            : 0f;
+        float angle = wave * starterShakeAngle;
+        // 아래쪽 모서리가 책상에 파묻히지 않도록 기울어진 만큼 살짝 들어 올립니다.
+        float lift = Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad)) * .8f;
+        starterBox.localPosition = starterRestPosition
+            + starterRestRotation * new Vector3(wave * starterShakeDistance, lift, 0f);
+        starterBox.localRotation = starterRestRotation * Quaternion.Euler(0f, 0f, angle);
+    }
+
+    #endregion
+
+    #region 부품 수리 설정
+
+    [System.Serializable]
+    public sealed class RepairPart
+    {
+        public string displayName;
+        public Transform machineRoot;
+        public Transform socket;
+        public GameObject installedVisual;
+        public GameObject emptySocket;
+        public GameObject pickupVisual;
+    }
+
+    [SerializeField] private bool usePartProgression;
+    [SerializeField] private RepairPart[] repairParts = new RepairPart[4];
+    [SerializeField] private Transform starterBox;
+    [SerializeField] private Transform starterAim;
+    [SerializeField] private Transform starterLid;
+    [SerializeField] private Vector3[] drawerOpenOffsets;
+    [SerializeField] private Vector3[] drawerOpenAngles;
+    [SerializeField] private Text hintText;
+    [SerializeField] private HintNoteOverlay hintNote;
+    [SerializeField] private string[] hidingHints = {
+        "세 봉우리 위에 떠 있는 둥근 태양. 그 그림 속 빛의 중심을 살펴보자.",
+        "모든 이야기들이 모여 있는 곳의 가장 아래 칸을 살펴보자.",
+        "파도를 그리는 작은 기계 곁, 나무 책상의 서랍이 비밀을 품고 있다.",
+        "모든 여정의 끝에는 이것이 필요하다. 언제나 기대를 품게 되는 물건을 살펴보자."
+    };
+    private readonly bool[] partCarried = new bool[4];
+    private readonly bool[] partInstalled = new bool[4];
+    private readonly Quaternion[] closedDrawerRotations = new Quaternion[4];
+    private Quaternion starterClosed;
+    private bool starterOpened;
+
+    #endregion
+
     #region 참조 및 설정
 
     [SerializeField] private ColorMemoryGame memory;
@@ -56,9 +162,9 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     #region 게임 잠금 확인
 
     /// <summary>
-    /// 이전 열쇠 사용 여부로 해당 미니게임의 잠금 상태를 확인합니다.
+    /// 부품 장착 여부로 해당 미니게임의 입장 가능 상태를 확인합니다.
     /// </summary>
-    public bool IsGameUnlocked(int index) => index >= 0 && index < 4 && (index == 0 || used[index-1]);
+    public bool IsGameUnlocked(int index) => index >= 0 && index < 4 && (usePartProgression ? partInstalled[index] : (index == 0 || used[index-1]));
 
     #endregion
 
@@ -75,8 +181,22 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         for (int i=0;i<4;i++)
         {
             closedDrawers[i] = drawers[i].localPosition;
+            closedDrawerRotations[i] = drawers[i].localRotation;
             loosePieces[i].SetActive(false);
             framePieces[i].SetActive(false);
+        }
+        if (usePartProgression)
+        {
+            starterClosed = starterLid.localRotation;
+            starterRestPosition = starterBox.localPosition;
+            starterRestRotation = starterBox.localRotation;
+            for (int i = 0; i < 4; i++)
+            {
+                repairParts[i].installedVisual.SetActive(false);
+                repairParts[i].emptySocket.SetActive(true);
+                repairParts[i].pickupVisual.SetActive(false);
+            }
+            hintText.gameObject.SetActive(false);
         }
         ApplyGameLocks();
         RefreshDisplays();
@@ -87,7 +207,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// </summary>
     private void ApplyGameLocks()
     {
-        // 이전 게임의 열쇠로 잠금을 해제하기 전까지 조작을 막습니다.
+        // 수리에 필요한 부품이 장착되기 전까지 조작을 막습니다.
+        if (usePartProgression) memory.enabled = IsGameUnlocked(0);
         dial.enabled = IsGameUnlocked(1);
         sliding.enabled = IsGameUnlocked(2);
         radio.enabled = IsGameUnlocked(3);
@@ -99,11 +220,17 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private void Update()
     {
         if (ending) return;
+        UpdateStarterBoxMotion(Time.deltaTime);
         PollRewards();
         UpdateDoor(Time.deltaTime);
         for (int i=0;i<4;i++)
         {
-            Vector3 target=closedDrawers[i]+(used[i]?Vector3.back*.65f:Vector3.zero);
+            Vector3 offset = usePartProgression && drawerOpenOffsets != null && drawerOpenOffsets.Length > i
+                ? drawerOpenOffsets[i] : Vector3.back * .65f;
+            Vector3 target=closedDrawers[i]+(used[i]?offset:Vector3.zero);
+            if (usePartProgression && drawerOpenAngles != null && drawerOpenAngles.Length > i)
+                drawers[i].localRotation = Quaternion.RotateTowards(drawers[i].localRotation,
+                    closedDrawerRotations[i] * Quaternion.Euler(used[i] ? drawerOpenAngles[i] : Vector3.zero), Time.deltaTime * 100f);
             drawers[i].localPosition=Vector3.MoveTowards(drawers[i].localPosition,target,Time.deltaTime*1.2f);
         }
         if (DoorOpen && player.ViewActive && escapeArea.bounds.Contains(player.transform.position))
@@ -111,10 +238,15 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             FinishGame(true, 1f);
             return;
         }
+        if (usePartProgression && starterOpened)
+            starterLid.localRotation = Quaternion.RotateTowards(starterLid.localRotation,
+                starterClosed * Quaternion.Euler(105f, 0f, 0f), Time.deltaTime * 100f);
         RefreshPrompt();
 #if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame) ToggleHints();
         if (Keyboard.current!=null && Keyboard.current.eKey.wasPressedThisFrame) TryInteract();
 #else
+        if (Input.GetKeyDown(KeyCode.H)) ToggleHints();
         if (Input.GetKeyDown(KeyCode.E)) TryInteract();
 #endif
     }
@@ -137,9 +269,11 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             return;
         }
 
+        if (hintNote != null) hintNote.Close();
         ending = true;
         Escaped = cleared;
         prompt.text = "";
+        if (hintText != null) hintText.gameObject.SetActive(false);
         victoryText.gameObject.SetActive(true);
         victoryText.text = cleared
             ? "탈출 성공!\n잠시 후 메인 허브로 돌아갑니다."
@@ -169,19 +303,22 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     #region 열쇠 보상 생성
 
     /// <summary>
-    /// 클리어한 미니게임의 열쇠를 한 번만 생성합니다.
+    /// 실제 클리어 또는 테스트 설정에 따라 보상과 단서를 한 번만 지급합니다.
     /// </summary>
     private void PollRewards()
     {
         for(int i=0;i<4;i++)
         {
             bool solved=i==0?memory.IsSolved:i==1?dial.IsSolved:i==2?sliding.HasKey:radio.IsSolved;
-            if (!IsGameUnlocked(i)||!solved||rewarded[i])continue;
+            // 테스트 클리어는 부품 잠금을 건너뛰되 기존 보상 지급 경로를 그대로 사용합니다.
+            if (rewarded[i] || (!IsTestCleared(i) && (!IsGameUnlocked(i) || !solved))) continue;
             rewarded[i]=true;
             worldKeys[i]=Instantiate(keyPrefab,keySpawns[i].position,keySpawns[i].rotation);
-            worldKeys[i].name=(i+1)+"번 열쇠";
+            worldKeys[i].name=(i+1)+"번 액자 열쇠";
+            if (usePartProgression && i < 3) repairParts[i + 1].pickupVisual.SetActive(true);
             ColorKey(worldKeys[i],i);
-            ShowNotice(names[i]+" 클리어!  0번으로 돌아가 열쇠를 바라보고 E");
+            RefreshHintText();
+            ShowNotice(names[i]+" 클리어!  0번으로 돌아가 보상을 바라보고 E · 노란 쪽지 [H]");
         }
     }
 
@@ -206,12 +343,12 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// <summary>
     /// 시야와 거리 및 장애물을 기준으로 상호작용 가능 여부를 확인합니다.
     /// </summary>
-    private bool CanSee(Vector3 point,Transform target)
+    private bool CanSee(Vector3 point,Transform target, float maxDistance = -1f)
     {
         if(!player.ViewActive||!player.enabled||ending)return false;
         var camera=player.ViewCamera;
         Vector3 delta=point-camera.transform.position;
-        if(delta.magnitude>interactDistance||Vector3.Angle(camera.transform.forward,delta)>aimHalfAngle)return false;
+        if(delta.magnitude>(maxDistance > 0f ? maxDistance : interactDistance)||Vector3.Angle(camera.transform.forward,delta)>aimHalfAngle)return false;
         foreach(var hit in Physics.RaycastAll(camera.transform.position,delta.normalized,delta.magnitude,
             Physics.DefaultRaycastLayers,QueryTriggerInteraction.Ignore))
         {
@@ -222,21 +359,32 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         return true;
     }
 
-    // 화면 중앙에 가장 가까운 대상 하나만 선택합니다.
     /// <summary>
     /// 화면 중앙에 가까운 상호작용 대상을 선택합니다.
     /// </summary>
     private int FindInteraction(out int kind)
     {
         kind=-1;int selected=-1;float best=float.MaxValue;
-        for(int category=0;category<3;category++)
+        for(int category=0;category<(usePartProgression?5:3);category++)
         for(int i=0;i<4;i++)
         {
             Transform target=null;Vector3 point=Vector3.zero;
             if(category==0){if(worldKeys[i]==null||carried[i]||used[i])continue;target=worldKeys[i].transform;point=target.position;}
             else if(category==1){if(!used[i]||collected[i]||!loosePieces[i].activeInHierarchy)continue;target=lockRoots[i];point=loosePieces[i].transform.position;}
-            else {if(used[i])continue;target=lockRoots[i];point=lockAimPoints[i].position;}
-            if(!CanSee(point,target))continue;
+            else if(category==2){if(used[i])continue;target=lockRoots[i];point=lockAimPoints[i].position;}
+            else if(category==3)
+            {
+                if(partInstalled[i])continue;
+                target=repairParts[i].machineRoot;point=repairParts[i].socket.position;
+            }
+            else
+            {
+                if(i!=0 || partCarried[0] || partInstalled[0])continue;
+                target=starterBox;point=starterOpened?repairParts[0].pickupVisual.transform.position:starterAim.position;
+            }
+            // 높은 벽난로 액자는 바닥에서 바라보고 조작할 수 있습니다.
+            float range = usePartProgression && i == 0 && (category == 1 || category == 2) ? 7f : interactDistance;
+            if(!CanSee(point,target,range))continue;
             float angle=Vector3.Angle(player.ViewCamera.transform.forward,point-player.ViewCamera.transform.position);
             if(angle<best){best=angle;selected=i;kind=category;}
         }
@@ -248,6 +396,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// </summary>
     public bool TryInteract()
     {
+        if (hintNote != null && hintNote.IsOpen) return false;
         int kind;int index=FindInteraction(out kind);
         if(index<0)return false;
         if(kind==0)
@@ -255,7 +404,18 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             carried[index]=true;
             worldKeys[index].SetActive(false);
             Destroy(worldKeys[index]);worldKeys[index]=null;
-            ShowNotice((index+1)+"번 열쇠 획득! "+(index<3?names[index+1]+" 옆 서랍":"탈출방 액자 아래 서랍")+"에 사용하세요.");
+            if (usePartProgression)
+            {
+                if (index < 3)
+                {
+                    partCarried[index + 1] = true;
+                    repairParts[index + 1].pickupVisual.SetActive(false);
+                }
+                ShowNotice((index < 3 ? repairParts[index + 1].displayName + " + " : "")
+                    + "액자 열쇠 획득!  [H]를 눌러 노란 쪽지를 살펴보세요.");
+                RefreshHintText();
+            }
+            else ShowNotice((index+1)+"번 열쇠 획득! 서랍에 사용하세요.");
         }
         else if(kind==1)
         {
@@ -263,19 +423,38 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             RefreshDisplays();
             ShowNotice(PieceCount==4?"Leap 액자 완성! 탈출방 문을 지나 나가세요.":"액자 조각 획득 · "+PieceCount+" / 4  — 탈출방 액자에 복원되었습니다.");
         }
+        else if(kind==3)
+        {
+            if(!partCarried[index]){ShowNotice(GetRepairHint(index));return false;}
+            partCarried[index]=false;partInstalled[index]=true;
+            repairParts[index].installedVisual.SetActive(true);
+            repairParts[index].emptySocket.SetActive(false);
+            ApplyGameLocks();
+            ShowNotice(repairParts[index].displayName+" 장착 완료! 주변 원 안에서 ["+(index+1)+"]로 플레이하세요.");
+        }
+        else if(kind==4)
+        {
+            if(!starterOpened)
+            {
+                starterOpened=true;repairParts[0].pickupVisual.SetActive(true);
+                ShowNotice("상자 안에 음표가 새겨진 버튼이 있습니다. 바라보고 [E]로 집어 드세요.");
+            }
+            else
+            {
+                partCarried[0]=true;repairParts[0].pickupVisual.SetActive(false);
+                ShowNotice("음표 버튼 획득. 이 모양이 들어갈 빈자리를 찾아보세요.");
+            }
+        }
         else
         {
-            if(!carried[index]){ShowNotice((index+1)+"번 열쇠가 필요합니다. "+names[index]+"을 먼저 클리어하세요.");return false;}
+            if(!carried[index]){ShowNotice(usePartProgression?"맞는 열쇠가 없습니다. 클리어 후 받은 단서를 살펴보세요. [H]":(index+1)+"번 열쇠가 필요합니다.");return false;}
             carried[index]=false;used[index]=true;
             loosePieces[index].SetActive(true);
-            var key=Instantiate(keyPrefab,lockAimPoints[index].position,lockAimPoints[index].rotation);
-            key.name="Used key "+(index+1);key.transform.localScale=Vector3.one*.35f;
-            key.transform.SetParent(lockRoots[index],true);
-            foreach(var c in key.GetComponentsInChildren<Collider>())c.enabled=false;
-            ColorKey(key,index);
+            // 사용한 열쇠는 소비하여 열린 서랍이나 조각과 겹치지 않게 합니다.
             ApplyGameLocks();RefreshDisplays();
-            ShowNotice((index<3?names[index+1]+" 잠금 해제! ":"마지막 서랍이 열렸습니다! ")+"서랍 속 액자 조각을 바라보고 E");
+            ShowNotice("숨겨진 보관함이 열렸습니다! 액자 조각을 바라보고 [E]");
         }
+        RefreshHintText();
         return true;
     }
 
@@ -289,6 +468,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private void RefreshDisplays()
     {
         frameCounter.text="LEAP · 액자 복원 "+PieceCount+" / 4";
+        if (usePartProgression) return;
         for(int i=0;i<4;i++)lockLabels[i].text=
             used[i]?(collected[i]?"조각 획득 완료":"열림 · 액자 조각을 획득하세요"):
             (i<3?names[i+1]+" 잠금장치":"마지막 액자 서랍")+"\n"+(i+1)+"번 열쇠 필요";
@@ -299,20 +479,71 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// </summary>
     private void RefreshPrompt()
     {
+        if (hintNote != null && hintNote.IsOpen) { prompt.text = ""; return; }
         int kind;int index=FindInteraction(out kind);
         if(index>=0)
         {
-            if(kind==0)prompt.text="[E] "+(index+1)+"번 열쇠 획득";
+            if(kind==0)prompt.text=usePartProgression
+                ? "[E] " + (index < 3 ? repairParts[index+1].displayName + " + " : "") + "액자 열쇠 받기"
+                : "[E] "+(index+1)+"번 열쇠 획득";
             else if(kind==1)prompt.text="[E] 액자 조각 획득 · "+PieceCount+" / 4";
+            else if(kind==3)prompt.text=partCarried[index]?"[E] "+repairParts[index].displayName+" 끼우기":GetRepairHint(index);
+            else if(kind==4)prompt.text=starterOpened?"[E] 음표 버튼 집기":"[E] 작은 상자 열기";
+            else if(usePartProgression)prompt.text=carried[index]?"[E] 열쇠를 끼워 보관함 열기":"작은 열쇠구멍이 있다 · 단서 보기 [H]";
             else prompt.text=carried[index]?"[E] "+(index+1)+"번 열쇠 사용 — 서랍 열기":
                 "잠김 · "+names[index]+"의 "+(index+1)+"번 열쇠가 필요합니다";
         }
         else prompt.text=Time.unscaledTime<noticeUntil?notice:"";
     }
     /// <summary>
+    /// 미니게임의 빈 부품 자리에 대한 안내를 반환합니다.
+    /// </summary>
+    public string GetRepairHint(int index)
+    {
+        if (!usePartProgression || index < 0 || index >= 4) return "잠금장치를 확인하세요.";
+        return partCarried[index] ? "빈자리를 바라보고 [E]로 " + repairParts[index].displayName + " 장착"
+            : new[] { "음표 버튼 하나가 빠져 있다.", "안쪽 그림 원판이 빠져 있다.", "열쇠 무늬 블록 자리가 비어 있다.", "안테나가 없어 신호를 받을 수 없다." }[index];
+    }
+
+    /// <summary>
+    /// 지금까지 얻은 장소 단서를 다시 보거나 닫습니다.
+    /// </summary>
+    private void ToggleHints()
+    {
+        if (!usePartProgression || ending || hintText == null) return;
+        RefreshHintText();
+        if (hintNote != null)
+        {
+            if (hintNote.IsOpen) hintNote.Close();
+            else hintNote.Open();
+        }
+        else hintText.gameObject.SetActive(!hintText.gameObject.activeSelf);
+    }
+
+    /// <summary>
+    /// 획득한 장소 단서와 액자 회수 상태를 갱신합니다.
+    /// </summary>
+    private void RefreshHintText()
+    {
+        if (!usePartProgression || hintText == null) return;
+        var text = new System.Text.StringBuilder();
+        bool any = false;
+        for (int i = 0; i < 4; i++)
+        {
+            if (!rewarded[i]) continue;
+            any = true;
+            text.Append("\n").Append(names[i]).Append(collected[i] ? " · 액자 회수 완료" : carried[i] ? " · 열쇠 소지" : used[i] ? " · 보관함 열림" : " · 보상 수령 전");
+            text.Append("\n").Append(hidingHints[i]).Append("\n");
+        }
+        if (!any) text.Append("\n먼저 상자를 살펴보고, 발견한 부품에 맞는 빈자리를 찾아보세요.");
+        hintText.text = text.ToString();
+        if (hintNote != null) hintNote.SetText(hintText.text);
+    }
+
+    /// <summary>
     /// 일정 시간 표시할 알림을 등록합니다.
     /// </summary>
-    private void ShowNotice(string text){notice=text;noticeUntil=Time.unscaledTime+7f;}
+    private void ShowNotice(string text){notice=text;noticeUntil=Time.unscaledTime+12f;}
     /// <summary>
     /// 액자 완성 후 탈출문을 부드럽게 엽니다.
     /// </summary>

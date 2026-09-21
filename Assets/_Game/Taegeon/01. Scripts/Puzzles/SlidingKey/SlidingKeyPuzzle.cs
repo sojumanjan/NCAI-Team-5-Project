@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -164,6 +164,7 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
     /// </summary>
 private void Update()
     {
+        if (HintNoteOverlay.IsAnyOpen) return;
         if (inputCamera == null || !inputCamera.isActiveAndEnabled) { dragging = false; return; }
         ReadPointer(out Vector2 pointer, out bool down, out bool up);
 #if ENABLE_INPUT_SYSTEM
