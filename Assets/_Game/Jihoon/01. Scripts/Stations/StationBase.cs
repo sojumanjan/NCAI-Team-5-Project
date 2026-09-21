@@ -289,6 +289,13 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             taken.transform.SetParent(null, true);
             ItemData data = taken.Item;
 
+            // 기구에서 나오는 순간부터 상하기 시작한다. 안에 있는 동안은 세지 않는다.
+            PerishableDish perishable = taken.GetComponent<PerishableDish>();
+            if (perishable != null)
+            {
+                perishable.Begin();
+            }
+
             SetState(StationState.Idle);
             OnOutputTaken(data);
             return taken.gameObject;
