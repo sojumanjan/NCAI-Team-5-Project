@@ -31,11 +31,28 @@ public class PromptLineView : MonoBehaviour
     [SerializeField] private float disabledAlpha = 0.4f;
 
     private CanvasGroup _group;
+    private bool _groupResolved;
 
-    private void Awake()
+    /// <summary>
+    /// CanvasGroup을 Awake가 아니라 쓸 때 찾는다.
+    ///
+    /// 예전에는 Awake에서 찾으면서 Hide()까지 했는데, root가 비어 있으면 그 Hide가 자기
+    /// GameObject를 끈다. 부모의 첫 Redraw가 먼저 돌아 이 줄을 꺼버리면 Awake는 실행되지
+    /// 못한 채 보류되고, 나중에 Show()의 SetActive(true) 순간에야 실행돼 방금 켠 줄을 도로
+    /// 끈다. 그래서 프롬프트가 처음 몇 번은 안 떴다. 초기 숨김은 InteractionPromptUI가 한다.
+    /// </summary>
+    private CanvasGroup Group
     {
-        _group = GetComponent<CanvasGroup>();
-        Hide();
+        get
+        {
+            if (!_groupResolved)
+            {
+                _group = GetComponent<CanvasGroup>();
+                _groupResolved = true;
+            }
+
+            return _group;
+        }
     }
 
     /// <summary>Shows this line with the given content.</summary>
@@ -53,9 +70,10 @@ public class PromptLineView : MonoBehaviour
             labelText.text = label;
         }
 
-        if (_group != null)
+        CanvasGroup group = Group;
+        if (group != null)
         {
-            _group.alpha = enabled ? 1f : disabledAlpha;
+            group.alpha = enabled ? 1f : disabledAlpha;
         }
     }
 

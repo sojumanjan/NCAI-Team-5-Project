@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   displayName: "\uBC00\uAC00\uB8E8"
   category: 0
-  worldPrefab: {fileID: 4487736733259838372, guid: dad01a56708a57444a9fce165d534412, type: 3}
-  icon: {fileID: 0}
+  worldPrefab: {fileID: 8215964827013275064, guid: dad01a56708a57444a9fce165d534412, type: 3}
+  icon: {fileID: 21300000, guid: b81969ac1450fa5499a1b6f0b52f528a, type: 3}

@@ -32,6 +32,11 @@ public class PlayerHands : MonoBehaviour
     [Tooltip("아무것도 조준하지 않았을 때 몸 앞 어느 거리에 놓을지 (m).")]
     [SerializeField] private float dropForwardDistance = 1.2f;
 
+    [Tooltip("물건을 얹을 수 있는 면의 최대 기울기 (도). 이보다 가파르면 벽으로 보고 " +
+             "붙이지 않고 떨어뜨립니다.")]
+    [Range(0f, 89f)]
+    [SerializeField] private float maxPlacementSlope = 45f;
+
     [Header("입력 (비워두면 마우스 좌클릭 자동 생성)")]
     [SerializeField] private InputActionProperty pickInput;
 
@@ -56,6 +61,18 @@ public class PlayerHands : MonoBehaviour
     /// 오븐은 입구를 볼 때만 재료를 받고, 문을 볼 때는 문에 양보해야 한다.
     /// </summary>
     public PlayerInteractor Interactor => interactor;
+
+    /// <summary>
+    /// 지금 조준한 곳이 물건을 얹어둘 수 있는 면인지. 조리대·바닥은 참, 벽·천장은 거짓이다.
+    ///
+    /// 놓는 자리를 표면에서 위로만 밀어 올리기 때문에, 이 구분이 없으면 벽면을 조준했을 때
+    /// 물건이 벽 속에 반쯤 박힌 채로 생긴다. 게다가 그 상태로 고정까지 되어 영영 빠져나오지
+    /// 못한다. 벽에 대고 놓은 것은 붙지 말고 떨어지는 게 맞다.
+    /// </summary>
+    public bool HasPlaceableSurface =>
+        interactor != null
+        && interactor.HasHit
+        && Vector3.Dot(interactor.LastHitNormal, Vector3.up) >= Mathf.Cos(maxPlacementSlope * Mathf.Deg2Rad);
 
     /// <summary>Fires whenever the hands change contents. Null means the hands are now empty.</summary>
     public event Action<ItemData> HeldChanged;
@@ -282,8 +299,8 @@ public class PlayerHands : MonoBehaviour
         dropped.transform.SetPositionAndRotation(position, rotation);
         dropped.SetCarried(false);
 
-        // 표면에 얹은 경우에만 고정한다. 허공에서 놓은 건 떨어지는 게 맞다.
-        if (interactor.HasHit)
+        // 얹을 수 있는 면에 올린 경우에만 고정한다. 벽에 댔거나 허공에서 놓은 건 떨어져야 한다.
+        if (HasPlaceableSurface)
         {
             dropped.RestOnSurface();
         }
@@ -295,13 +312,21 @@ public class PlayerHands : MonoBehaviour
     private Vector3 ResolveDropPosition()
     {
         // Prefer the surface under the crosshair so putting things on counters feels aimed.
-        if (interactor.HasHit)
+        if (HasPlaceableSurface)
         {
             // 피벗이 아니라 물체의 바닥을 표면에 맞춘다. 프리팹 피벗이 메시 한가운데인
             // 경우가 많아, 이 보정이 없으면 고스트가 파묻혀 보이고 실제로 놓는 순간
             // 콜라이더가 켜지며 물리가 위로 튕겨낸다.
             float clearance = _held != null ? _held.GetPivotToBottom(GetDropRotation()) : 0f;
             return interactor.LastHitPoint + Vector3.up * (clearance + dropSurfaceOffset);
+        }
+
+        // 벽이나 천장을 조준한 경우. 조준한 자리는 살리되 면에서 물체 반경만큼 떼어놓는다.
+        // 여기서 밀어내지 않으면 벽 속에서 태어나 물리가 엉뚱한 방향으로 튕겨낸다.
+        if (interactor.HasHit)
+        {
+            float radius = _held != null ? _held.GetPlacementRadius() : 0f;
+            return interactor.LastHitPoint + interactor.LastHitNormal * (radius + dropSurfaceOffset);
         }
 
         Transform origin = interactor.RayOrigin != null ? interactor.RayOrigin : transform;
@@ -331,5 +356,6 @@ public class PlayerHands : MonoBehaviour
     {
         dropSurfaceOffset = Mathf.Max(0f, dropSurfaceOffset);
         dropForwardDistance = Mathf.Max(0.1f, dropForwardDistance);
+        maxPlacementSlope = Mathf.Clamp(maxPlacementSlope, 0f, 89f);
     }
 }

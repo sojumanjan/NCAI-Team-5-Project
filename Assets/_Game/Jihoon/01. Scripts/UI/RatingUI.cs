@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,8 +17,8 @@ public class RatingUI : MonoBehaviour
     [Tooltip("평점 숫자. {0} 자리에 값이 들어갑니다.")]
     [SerializeField] private TMP_Text ratingText;
 
-    [Tooltip("표시 형식. 예: \"★ {0:0.0}\"")]
-    [SerializeField] private string ratingFormat = "★ {0:0.0}";
+    [Tooltip("표시 형식. 숫자만 넣으세요 — 별은 스프라이트로 따로 그립니다.")]
+    [SerializeField] private string ratingFormat = "{0:0.0}";
 
     [Tooltip("평점 바. Image Type을 Filled로 두세요. (선택)")]
     [SerializeField] private Image fillBar;

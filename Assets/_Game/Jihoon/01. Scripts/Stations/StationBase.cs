@@ -118,6 +118,9 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     /// <summary>조리 중 진행도 0~1.</summary>
     public event Action<float> ProgressChanged;
 
+    /// <summary>담긴 재료 목록이 바뀔 때마다. 재료 표시 UI가 이걸 듣는다.</summary>
+    public event Action LoadedChanged;
+
     // ---------------------------------------------------------------- IInteractable
 
     public override string Prompt
@@ -236,6 +239,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
         RecomputePending();
         OnIngredientReceived(data);
+        LoadedChanged?.Invoke();
     }
 
     // ---------------------------------------------------------------- IItemSource
@@ -283,6 +287,8 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             RecomputePending();
 
             // 실물을 세워두는 기구(오븐)는 그걸 그대로 돌려준다. 새로 만들면 두 개가 된다.
+            LoadedChanged?.Invoke();
+
             GameObject parked = TakeBackIngredientObject(last);
             if (parked != null)
             {
@@ -359,6 +365,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         ClearIngredientObjects();
         _loaded.Clear();
         RecomputePending();
+        LoadedChanged?.Invoke();
 
         if (recipe != null && recipe.Output != null && recipe.Output.WorldPrefab != null)
         {
