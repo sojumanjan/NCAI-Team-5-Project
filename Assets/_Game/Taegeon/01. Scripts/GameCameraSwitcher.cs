@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -95,10 +95,10 @@ public sealed class GameCameraSwitcher : MonoBehaviour
         {
             if (!IsInEntryZone(i)) continue;
             hint += CanEnterGame(i) ? "["+(i+1)+"] "+names[i]+" 시작   "
-                : names[i]+" 잠김 · "+i+"번 열쇠로 옆 서랍을 여세요   ";
+                : names[i]+" · "+(progression != null ? progression.GetRepairHint(i) : "부품을 확인하세요")+"   ";
         }
         if (hint.Length == 0) hint = "게임 앞 원 안으로 이동하세요";
-        cameraLabel.text = hint+"\nWASD 이동 · 마우스 시점 · E 상호작용 · 0 이동 시점";
+        cameraLabel.text = hint+"\nWASD 이동 · 마우스 시점 · E 상호작용 · H 단서 · 0 이동 시점";
     }
 
     /// <summary>
