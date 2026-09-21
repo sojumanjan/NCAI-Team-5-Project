@@ -36,6 +36,12 @@ public class RecipeData : ScriptableObject
     [Tooltip("완성품.")]
     [SerializeField] private ItemData output;
 
+    [Header("주문 빈도")]
+    [Tooltip("손님이 이 메뉴를 시킬 상대 확률. 1이 기본이고 0.3이면 대략 3분의 1 빈도로 " +
+             "나옵니다. 0이면 주문에 아예 나오지 않습니다 (레시피는 그대로 만들 수 있습니다). " +
+             "반죽처럼 손님이 시키지 않는 중간 산출물에는 영향이 없습니다.")]
+    [SerializeField] private float orderWeight = 1f;
+
     public StationKind Station => station;
 
     public IReadOnlyList<ItemData> Inputs => inputs;
@@ -43,6 +49,9 @@ public class RecipeData : ScriptableObject
     public float Duration => Mathf.Max(0.1f, duration);
 
     public ItemData Output => output;
+
+    /// <summary>손님 주문에서 뽑힐 상대 가중치. 0이면 메뉴판에서 빠진다.</summary>
+    public float OrderWeight => Mathf.Max(0f, orderWeight);
 
     public int InputCount => inputs != null ? inputs.Length : 0;
 
@@ -126,5 +135,6 @@ public class RecipeData : ScriptableObject
     private void OnValidate()
     {
         duration = Mathf.Max(0.1f, duration);
+        orderWeight = Mathf.Max(0f, orderWeight);
     }
 }

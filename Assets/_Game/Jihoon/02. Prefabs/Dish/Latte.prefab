@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7911740899429358187}
   - component: {fileID: 8231455160495575666}
   - component: {fileID: 4158634532623269716}
+  - component: {fileID: 1955430285043880470}
   m_Layer: 0
   m_Name: Latte
   m_TagString: Untagged
@@ -56,8 +57,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldItem
   item: {fileID: 11400000, guid: 66ecdcb6129011e4e8676ec9db31b388, type: 2}
-  heldPositionOffset: {x: 0, y: 0, z: 0}
-  heldRotationOffset: {x: 0, y: 0, z: 0}
+  heldPositionOffset: {x: 0.1, y: -0.1, z: 0.26}
+  heldRotationOffset: {x: 15, y: 200, z: 0}
   placedRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!65 &4158634532623269716
 BoxCollider:
@@ -80,6 +81,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.2812488, y: 1.5240126, z: 1.18175}
   m_Center: {x: 0.030800164, y: 0.66392285, z: -0.019191543}
+--- !u!114 &1955430285043880470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3597197396353227615}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickableItem
 --- !u!1001 &7227433180316807475
 PrefabInstance:
   m_ObjectHideFlags: 0

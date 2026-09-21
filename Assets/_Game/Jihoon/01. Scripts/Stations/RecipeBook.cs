@@ -19,6 +19,11 @@ public class RecipeBook : ScriptableObject
 
     public IReadOnlyList<RecipeData> Recipes => recipes;
 
+    // 손님 한 명당 한 번만 쓰는 임시 버퍼. 매번 새로 할당하지 않으려고 들고 있는다.
+    private readonly List<ItemData> _poolItems = new();
+    private readonly List<float> _poolWeights = new();
+    private readonly List<ItemData> _single = new();
+
     /// <summary>담긴 재료와 정확히 맞아떨어지는 레시피. 없으면 null.</summary>
     public RecipeData FindMatch(StationKind kind, IReadOnlyList<ItemData> loaded)
     {
@@ -83,58 +88,22 @@ public class RecipeBook : ScriptableObject
     }
 
     /// <summary>
-    /// 손님이 주문할 메뉴 하나를 무작위로. 따로 적지 않고 레시피에서 끌어내기 때문에
-    /// 메뉴판과 실제로 만들 수 있는 것이 어긋날 수가 없다.
-    ///
-    /// Dish만 뽑는다. 반죽처럼 중간 산출물인 레시피가 생기면 그것도 '만들 수 있는 것'이라,
-    /// 거르지 않으면 손님이 반죽을 주문한다.
+    /// 손님이 주문할 메뉴 하나. 가중치를 따르며, 없으면 null.
+    /// 메뉴판을 따로 적지 않고 레시피에서 끌어내므로 둘이 어긋날 수가 없다.
     /// </summary>
     public ItemData GetRandomOutput()
     {
-        if (recipes == null || recipes.Length == 0)
-        {
-            return null;
-        }
-
-        // 주문마다 리스트를 만들지 않으면서도 균등하게 뽑으려고 개수를 먼저 센다.
-        int usable = 0;
-        foreach (RecipeData recipe in recipes)
-        {
-            if (IsOrderable(recipe))
-            {
-                usable++;
-            }
-        }
-
-        if (usable == 0)
-        {
-            Debug.LogError($"{name}: 완성 요리(Dish)를 만드는 레시피가 하나도 없어 손님이 주문할 수 없습니다.", this);
-            return null;
-        }
-
-        int chosen = Random.Range(0, usable);
-        foreach (RecipeData recipe in recipes)
-        {
-            if (!IsOrderable(recipe))
-            {
-                continue;
-            }
-
-            if (chosen == 0)
-            {
-                return recipe.Output;
-            }
-
-            chosen--;
-        }
-
-        return null;
+        GetRandomOutputs(1, _single);
+        return _single.Count > 0 ? _single[0] : null;
     }
 
     /// <summary>
     /// 서로 다른 메뉴 <paramref name="count"/>개. 같은 메뉴를 두 번 시키지 않는다.
     /// 만들 수 있는 메뉴가 모자라면 있는 만큼만 담는다 — 메뉴가 두 종류뿐인데 세 개를
     /// 시키면 주문이 영영 완성되지 않기 때문이다.
+    ///
+    /// 뽑기는 <see cref="RecipeData.OrderWeight"/>를 따른다. 손이 많이 가는 메뉴는 가중치를
+    /// 낮춰 덜 나오게 할 수 있고, 0으로 두면 레시피는 남겨둔 채 주문에서만 뺄 수 있다.
     /// </summary>
     public void GetRandomOutputs(int count, List<ItemData> into)
     {
@@ -150,30 +119,82 @@ public class RecipeBook : ScriptableObject
             return;
         }
 
-        // 중복 레시피가 같은 메뉴를 내놓을 수 있으므로 메뉴 기준으로 한 번 걸러낸다.
-        List<ItemData> pool = new List<ItemData>();
-        foreach (RecipeData recipe in recipes)
-        {
-            if (IsOrderable(recipe) && !pool.Contains(recipe.Output))
-            {
-                pool.Add(recipe.Output);
-            }
-        }
+        BuildPool();
 
-        if (pool.Count == 0)
+        if (_poolItems.Count == 0)
         {
-            Debug.LogError($"{name}: 완성 요리(Dish)를 만드는 레시피가 하나도 없어 손님이 주문할 수 없습니다.", this);
+            Debug.LogError($"{name}: 주문 가능한 메뉴가 없습니다. 완성 요리(Dish) 레시피가 있는지 " +
+                           "확인하세요.", this);
             return;
         }
 
-        int take = Mathf.Min(count, pool.Count);
+        int take = Mathf.Min(count, _poolItems.Count);
         for (int i = 0; i < take; i++)
         {
-            int pick = Random.Range(i, pool.Count);
-            (pool[i], pool[pick]) = (pool[pick], pool[i]);
-            into.Add(pool[i]);
+            int pick = PickWeighted();
+
+            into.Add(_poolItems[pick]);
+
+            // 뽑은 것은 후보에서 뺀다. 한 주문에 같은 메뉴를 두 번 넣지 않기 위해서.
+            _poolItems.RemoveAt(pick);
+            _poolWeights.RemoveAt(pick);
         }
     }
+
+    /// <summary>
+    /// 주문 가능한 메뉴와 가중치를 모은다. 같은 메뉴를 내는 레시피가 둘이면 큰 쪽을 쓴다.
+    /// </summary>
+    private void BuildPool()
+    {
+        _poolItems.Clear();
+        _poolWeights.Clear();
+
+        foreach (RecipeData recipe in recipes)
+        {
+            if (!IsOrderable(recipe))
+            {
+                continue;
+            }
+
+            int existing = _poolItems.IndexOf(recipe.Output);
+            if (existing >= 0)
+            {
+                _poolWeights[existing] = Mathf.Max(_poolWeights[existing], recipe.OrderWeight);
+                continue;
+            }
+
+            _poolItems.Add(recipe.Output);
+            _poolWeights.Add(recipe.OrderWeight);
+        }
+    }
+
+    /// <summary>가중치 룰렛. 전부 0이면 균등하게 뽑는다 — 아무도 안 나오는 것보다는 낫다.</summary>
+    private int PickWeighted()
+    {
+        float total = 0f;
+        foreach (float weight in _poolWeights)
+        {
+            total += weight;
+        }
+
+        if (total <= 0f)
+        {
+            return Random.Range(0, _poolItems.Count);
+        }
+
+        float roll = Random.value * total;
+        for (int i = 0; i < _poolWeights.Count; i++)
+        {
+            roll -= _poolWeights[i];
+            if (roll <= 0f)
+            {
+                return i;
+            }
+        }
+
+        return _poolItems.Count - 1;
+    }
+
 
     /// <summary>손님이 시킬 수 있는 레시피인지. 중간 산출물은 메뉴가 아니다.</summary>
     private static bool IsOrderable(RecipeData recipe)

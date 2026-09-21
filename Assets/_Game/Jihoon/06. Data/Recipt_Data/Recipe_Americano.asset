@@ -17,3 +17,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6b18293749d47694ebd5106b98888008, type: 2}
   duration: 3
   output: {fileID: 11400000, guid: d4c579004f3cc634a8f276872110da45, type: 2}
+  orderWeight: 1
