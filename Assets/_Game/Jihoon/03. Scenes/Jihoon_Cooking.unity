@@ -718,6 +718,7 @@ MonoBehaviour:
   openScaleY: 0.05
   duration: 6
   ease: 4
+  shutterSound: {fileID: 11400000, guid: 47edb8a478107454d994c594ad1b0053, type: 2}
   readyPrompt: "\uC7A5\uC0AC \uC2DC\uC791\uD558\uAE30"
   openingPrompt: "\uC154\uD130 \uC5EC\uB294 \uC911..."
 --- !u!1 &72555431
@@ -5507,8 +5508,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.44619012, y: 0.86602426, z: 0.66789097}
-  m_Center: {x: 0.01019776, y: 0.44367468, z: 0.108424574}
+  m_Size: {x: 0.44619012, y: 0.86602426, z: 0.48406163}
+  m_Center: {x: 0.01019776, y: 0.44367468, z: 0.01650992}
 --- !u!114 &369122452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5532,6 +5533,8 @@ MonoBehaviour:
   shakeTarget: {fileID: 369122453}
   shakeAmount: 0.025
   shakeSpeed: 60
+  cookingLoopSound: {fileID: 11400000, guid: 1d188a684a41c5f45ac02903c0b2abe3, type: 2}
+  completeSound: {fileID: 11400000, guid: cc7685c65ac67254caa442dd002bb6e5, type: 2}
   emptyPrompt: "\uC7AC\uB8CC\uB97C \uB123\uC73C\uC138\uC694"
   wrongPrompt: "\uC7AC\uB8CC \uC870\uD569\uC774 \uB9DE\uC9C0 \uC54A\uC74C"
   startPrompt: "\uC791\uB3D9\uC2DC\uD0A4\uAE30"
@@ -9579,7 +9582,7 @@ Transform:
   m_GameObject: {fileID: 630864658}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.013, y: 0, z: 0.349}
+  m_LocalPosition: {x: -0.016, y: 0.754, z: 0.008}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -14401,6 +14404,8 @@ MonoBehaviour:
   shakeTarget: {fileID: 902634359}
   shakeAmount: 0.02
   shakeSpeed: 40
+  cookingLoopSound: {fileID: 11400000, guid: c5990e12a17dee147940f2f9a15ccd7a, type: 2}
+  completeSound: {fileID: 11400000, guid: cc7685c65ac67254caa442dd002bb6e5, type: 2}
   emptyPrompt: "\uC7AC\uB8CC\uB97C \uB123\uC73C\uC138\uC694"
   wrongPrompt: "\uC7AC\uB8CC \uC870\uD569\uC774 \uB9DE\uC9C0 \uC54A\uC74C"
   startPrompt: "\uC791\uB3D9\uC2DC\uD0A4\uAE30"
@@ -21493,6 +21498,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Oven2
       objectReference: {fileID: 0}
+    - target: {fileID: 6166014566806805740, guid: 596f06b310df82a44be1a12b1f3aa363, type: 3}
+      propertyPath: openSound
+      value: 
+      objectReference: {fileID: 11400000, guid: f077eea5806c36e438553b5584601358, type: 2}
+    - target: {fileID: 6166014566806805740, guid: 596f06b310df82a44be1a12b1f3aa363, type: 3}
+      propertyPath: closeSound
+      value: 
+      objectReference: {fileID: 11400000, guid: e5c99c64a94e0b9458d236fd48967df3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -21559,6 +21572,8 @@ MonoBehaviour:
   shakeTarget: {fileID: 1462662139}
   shakeAmount: 0.02
   shakeSpeed: 40
+  cookingLoopSound: {fileID: 11400000, guid: c05774be772eab446927e40a4909e798, type: 2}
+  completeSound: {fileID: 11400000, guid: cc7685c65ac67254caa442dd002bb6e5, type: 2}
   emptyPrompt: "\uC7AC\uB8CC\uB97C \uB123\uC73C\uC138\uC694"
   wrongPrompt: "\uC7AC\uB8CC \uC870\uD569\uC774 \uB9DE\uC9C0 \uC54A\uC74C"
   startPrompt: "\uC791\uB3D9\uC2DC\uD0A4\uAE30"
@@ -26532,6 +26547,8 @@ MonoBehaviour:
   openPrompt: "\uB0C9\uB3D9\uC2E4 \uC5F4\uAE30"
   closePrompt: "\uB0C9\uB3D9\uC2E4 \uB2EB\uAE30"
   lockedPrompt: "\uC9C0\uAE08\uC740 \uC5F4 \uC218 \uC5C6\uC74C"
+  openSound: {fileID: 11400000, guid: e32ba3283d8d846498e6e0ff51a72e58, type: 2}
+  closeSound: {fileID: 11400000, guid: 7d2c1b309c842af42b9045be4af4c33e, type: 2}
   parts:
   - label: Refrigerator01_Door02
     target: {fileID: 1866178292}
@@ -26577,6 +26594,8 @@ MonoBehaviour:
   openPrompt: "\uB0C9\uC7A5\uC2E4 \uC5F4\uAE30"
   closePrompt: "\uB0C9\uC7A5\uC2E4 \uB2EB\uAE30"
   lockedPrompt: "\uC9C0\uAE08\uC740 \uC5F4 \uC218 \uC5C6\uC74C"
+  openSound: {fileID: 11400000, guid: e32ba3283d8d846498e6e0ff51a72e58, type: 2}
+  closeSound: {fileID: 11400000, guid: 7d2c1b309c842af42b9045be4af4c33e, type: 2}
   parts:
   - label: Refrigerator01_Door01
     target: {fileID: 1866178285}
@@ -27105,6 +27124,8 @@ MonoBehaviour:
   shakeTarget: {fileID: 1899527236}
   shakeAmount: 0.04
   shakeSpeed: 40
+  cookingLoopSound: {fileID: 11400000, guid: 066e942e85a5053439c5ed95d710ccfa, type: 2}
+  completeSound: {fileID: 11400000, guid: cc7685c65ac67254caa442dd002bb6e5, type: 2}
   emptyPrompt: "\uC7AC\uB8CC\uB97C \uB123\uC73C\uC138\uC694"
   wrongPrompt: "\uC7AC\uB8CC \uC870\uD569\uC774 \uB9DE\uC9C0 \uC54A\uC74C"
   startPrompt: "\uC791\uB3D9\uC2DC\uD0A4\uAE30"
@@ -27556,6 +27577,8 @@ MonoBehaviour:
   shakeTarget: {fileID: 1943255208}
   shakeAmount: 0.02
   shakeSpeed: 40
+  cookingLoopSound: {fileID: 11400000, guid: c5990e12a17dee147940f2f9a15ccd7a, type: 2}
+  completeSound: {fileID: 11400000, guid: cc7685c65ac67254caa442dd002bb6e5, type: 2}
   emptyPrompt: "\uC7AC\uB8CC\uB97C \uB123\uC73C\uC138\uC694"
   wrongPrompt: "\uC7AC\uB8CC \uC870\uD569\uC774 \uB9DE\uC9C0 \uC54A\uC74C"
   startPrompt: "\uC791\uB3D9\uC2DC\uD0A4\uAE30"
@@ -29525,6 +29548,8 @@ MonoBehaviour:
   dropSurfaceOffset: 0.001
   dropForwardDistance: 1.2
   maxPlacementSlope: 45
+  pickUpSound: {fileID: 11400000, guid: eb6678fbe9c00804a92c22c39432da9b, type: 2}
+  putDownSound: {fileID: 11400000, guid: 7f6ab0cf93d74f242b5ca78b976c1ddb, type: 2}
   pickInput:
     m_UseReference: 0
     m_Action:
@@ -30418,6 +30443,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Oven1
       objectReference: {fileID: 0}
+    - target: {fileID: 6166014566806805740, guid: 596f06b310df82a44be1a12b1f3aa363, type: 3}
+      propertyPath: openSound
+      value: 
+      objectReference: {fileID: 11400000, guid: f077eea5806c36e438553b5584601358, type: 2}
+    - target: {fileID: 6166014566806805740, guid: 596f06b310df82a44be1a12b1f3aa363, type: 3}
+      propertyPath: closeSound
+      value: 
+      objectReference: {fileID: 11400000, guid: e5c99c64a94e0b9458d236fd48967df3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -30569,6 +30602,8 @@ MonoBehaviour:
   shakeTarget: {fileID: 1157546436830146911}
   shakeAmount: 0.02
   shakeSpeed: 40
+  cookingLoopSound: {fileID: 11400000, guid: c05774be772eab446927e40a4909e798, type: 2}
+  completeSound: {fileID: 11400000, guid: cc7685c65ac67254caa442dd002bb6e5, type: 2}
   emptyPrompt: "\uC7AC\uB8CC\uB97C \uB123\uC73C\uC138\uC694"
   wrongPrompt: "\uC7AC\uB8CC \uC870\uD569\uC774 \uB9DE\uC9C0 \uC54A\uC74C"
   startPrompt: "\uC791\uB3D9\uC2DC\uD0A4\uAE30"

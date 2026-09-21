@@ -32,6 +32,10 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     [Tooltip("올라가는 가속 곡선.")]
     [SerializeField] private Ease ease = Ease.InOutSine;
 
+    [Header("소리")]
+    [Tooltip("셔터가 올라갈 때.")]
+    [SerializeField] private SoundData shutterSound;
+
     [Header("문구")]
     [Tooltip("아직 시작 전일 때.")]
     [SerializeField] private string readyPrompt = "장사 시작하기";
@@ -112,6 +116,8 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     public void OpenShutter()
     {
         _opening = true;
+
+        AudioManager.PlayAt(shutterSound, shutterPivot.position);
 
         _tween?.Kill();
         _tween = shutterPivot.DOScaleY(openScaleY, duration)

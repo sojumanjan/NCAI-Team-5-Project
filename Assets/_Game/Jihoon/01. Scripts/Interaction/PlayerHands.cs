@@ -37,6 +37,13 @@ public class PlayerHands : MonoBehaviour
     [Range(0f, 89f)]
     [SerializeField] private float maxPlacementSlope = 45f;
 
+    [Header("소리")]
+    [Tooltip("물건을 집을 때.")]
+    [SerializeField] private SoundData pickUpSound;
+
+    [Tooltip("물건을 내려놓을 때.")]
+    [SerializeField] private SoundData putDownSound;
+
     [Header("입력 (비워두면 마우스 좌클릭 자동 생성)")]
     [SerializeField] private InputActionProperty pickInput;
 
@@ -305,6 +312,8 @@ public class PlayerHands : MonoBehaviour
             dropped.RestOnSurface();
         }
 
+        AudioManager.Play(putDownSound);
+
         DropYaw = 0f;
         HeldChanged?.Invoke(null);
     }
@@ -348,6 +357,8 @@ public class PlayerHands : MonoBehaviour
         worldItem.transform.SetParent(holdAnchor, true);
         worldItem.transform.SetLocalPositionAndRotation(worldItem.HeldPositionOffset,
                                                         worldItem.HeldRotationOffset);
+
+        AudioManager.Play(pickUpSound);
 
         HeldChanged?.Invoke(worldItem.Item);
     }
