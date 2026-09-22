@@ -19,7 +19,7 @@ public class PelletSpawner : MonoBehaviour
         remainingCount = pellets.Count;
     }
 
-    public void OnPelletPickedUp(PowerPellet pellet)
+    public void HandlePelletPickedUp(PowerPellet pellet)
     {
         remainingCount--;
 

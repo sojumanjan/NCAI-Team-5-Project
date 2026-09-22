@@ -8,16 +8,23 @@ using UnityEngine.AI;
 /// 순찰 경로 자체는 GhostPatrolLoop/GhostPingPong 같은 별도 컴포넌트가 제공한다.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
-public class Ghost : GhostHittable
+public class Ghost : MonoBehaviour
 {
     [Header("이동 속도")]
     [SerializeField] private float patrolSpeed = 2f;
     [SerializeField] private float chaseSpeed = 3.5f;
+    [Tooltip("추격 시작 순간 목표 속도(chaseSpeed)까지 가속하는 속도. NavMeshAgent 기본 acceleration(8)로는 speed를 아무리 올려도 서서히 가속되어 '순간적으로 확 쫓아오는' 느낌이 나지 않는다. 순찰 가속도보다 훨씬 크게 잡아야 즉각적으로 느껴진다.")]
+    [SerializeField] private float chaseAcceleration = 200f;
+    [SerializeField] private float patrolAcceleration = 8f;
 
     [Header("플레이어 탐지")]
     [SerializeField] private float detectRange = 6f;
     [SerializeField] private float detectAngle = 100f;
     [SerializeField] private float loseSightRange = 9f;
+
+    [Header("피격 후 스턴")]
+    [Tooltip("플레이어를 접촉 피격한 직후 그 자리에 완전히 멈춰 서는 시간. 가속이 붙은 추격을 플레이어가 따돌릴 틈을 준다.")]
+    [SerializeField] private float hitStunDuration = 1f;
 
     [Header("발광(공격 신호) 주기")]
     [Tooltip("평소 약한 발광 상태로 유지되는 시간 (이 동안은 피격 무효)")]
@@ -35,7 +42,7 @@ public class Ghost : GhostHittable
     [SerializeField] private float glowBrightness = 2.2f;
     [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private GhostDefeatEffect defeatEffect;
-    [Tooltip("발광(타격 가능) 중 켜지는 오라 파티클. 몸이 전부 노란빛으로 바뀌어도 이 색으로 어느 고스트인지 구별할 수 있게, 고스트 원래 색으로 재생한다.")]
+    [Tooltip("발광(타격 가능) 중 켜지는 오라 파티클. 고스트 원래 색으로 재생한다.")]
     [SerializeField] private ParticleSystem glowAura;
 
     private NavMeshAgent agent;
@@ -47,13 +54,15 @@ public class Ghost : GhostHittable
     private bool isGlowing;
     private bool isActive;
     private bool isDefeated;
+    private bool isStunned;
     private Vector3 lastKnownPlayerPosition;
     private Material bodyMaterialInstance;
     private Coroutine glowCycleCoroutine;
+    private Coroutine hitStunCoroutine;
     private Color originalBodyColor;
 
-    /// <summary>처치된 순간(디졸브 연출 시작 시점)에 호출된다. 전멸 판정에 사용한다.</summary>
-    public System.Action<Ghost> OnDefeated;
+    /// <summary>처치된 순간(디졸브 연출 시작 시점)에 발생한다. 전멸 판정에 사용한다.</summary>
+    public System.Action<Ghost> Defeated;
 
     public bool IsDefeated => isDefeated;
 
@@ -71,7 +80,7 @@ public class Ghost : GhostHittable
 
         if (glowAura != null)
         {
-            var auraMain = glowAura.main;
+            ParticleSystem.MainModule auraMain = glowAura.main;
             auraMain.startColor = originalBodyColor;
 
             var auraRenderer = glowAura.GetComponent<ParticleSystemRenderer>();
@@ -93,24 +102,93 @@ public class Ghost : GhostHittable
         }
 
         agent.speed = patrolSpeed;
+        agent.acceleration = patrolAcceleration;
 
         // 팩맨 상태가 활성화되기 전(예: 테트리스 클리어 직후, 문 앞 복도)에는
         // 고스트가 움직이면 안 되므로, 기본값은 정지 상태로 시작한다.
         SetActive(false);
     }
 
+    private void Update()
+    {
+        if (!isActive)
+        {
+            return;
+        }
+
+        UpdatePulseVisual();
+
+        // 스턴 중에는 탐지/추격 자체를 멈춰 그 자리에 완전히 서 있게 한다.
+        if (isStunned)
+        {
+            return;
+        }
+
+        UpdateDetection();
+
+        if (!isChasing && movementSource != null)
+        {
+            movementSource.TickPatrol(agent);
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!other.CompareTag("Player"))
+        {
+            return;
+        }
+
+        // 발광 상태와 무관하게 접촉하면 플레이어가 피격당한다.
+        var playerHealth = other.GetComponentInParent<PacmanPlayerHealth>();
+        if (playerHealth != null)
+        {
+            playerHealth.TakeHit();
+            StartHitStun();
+        }
+    }
+
+    /// <summary>
+    /// 플레이어를 피격한 직후, 가속이 붙은 추격에서 플레이어가 벗어날 틈을 주기 위해
+    /// 고스트를 그 자리에 완전히 멈춰 세운다. 스턴이 끝나면 무조건 순찰 상태로 복귀하며,
+    /// 이후 탐지 범위 내에 있으면 다시 추격으로 전환될 수 있다.
+    /// </summary>
+    private void StartHitStun()
+    {
+        if (hitStunCoroutine != null)
+        {
+            StopCoroutine(hitStunCoroutine);
+        }
+
+        hitStunCoroutine = StartCoroutine(HitStunRoutine());
+    }
+
+    private IEnumerator HitStunRoutine()
+    {
+        isStunned = true;
+        agent.isStopped = true;
+        agent.velocity = Vector3.zero;
+        StopChase();
+
+        yield return new WaitForSeconds(hitStunDuration);
+
+        agent.isStopped = false;
+        isStunned = false;
+        hitStunCoroutine = null;
+    }
+
     /// <summary>
     /// 팩맨 게임 활성 여부에 맞춰 고스트의 이동/발광 사이클을 켜고 끈다.
     /// MiniGameFlowManager가 Pacman 상태로 전환될 때 호출한다.
-    /// enterIdlePose가 true면(팩맨 종료 등) 대기 지점으로 워프해 자세를 잡고,
+    /// shouldEnterIdlePose가 true면(팩맨 종료 등) 대기 지점으로 워프해 자세를 잡고,
     /// false면(파워펠릿에 처치된 순간 등) 위치는 그대로 둔 채 이동/발광만 멈춘다.
     /// </summary>
-    public void SetActive(bool active, bool enterIdlePose = true)
+    public void SetActive(bool isActive, bool shouldEnterIdlePose = true)
     {
-        isActive = active;
-        agent.isStopped = !active;
+        this.isActive = isActive;
+        agent.isStopped = !isActive;
 
-        if (active)
+        if (isActive)
         {
             if (glowCycleCoroutine == null)
             {
@@ -128,12 +206,19 @@ public class Ghost : GhostHittable
                 glowCycleCoroutine = null;
             }
 
+            if (hitStunCoroutine != null)
+            {
+                StopCoroutine(hitStunCoroutine);
+                hitStunCoroutine = null;
+            }
+            isStunned = false;
+
             if (glowAura != null)
             {
                 glowAura.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
 
-            if (enterIdlePose)
+            if (shouldEnterIdlePose)
             {
                 // GhostPingPong처럼 "대기 지점에서 플레이어 쪽을 바라보며 서 있는" 연출을 지원하는
                 // 이동 소스라면, 비활성화 시 그 자세를 취하게 한다 (없으면 아무 동작 안 함).
@@ -162,20 +247,58 @@ public class Ghost : GhostHittable
         agent.isStopped = true;
     }
 
-    private void Update()
+    /// <summary>파워펠릿에 맞았을 때 호출된다. 발광 중(타이밍 유효)일 때만 처치된다.</summary>
+    public void HandlePelletHit()
     {
-        if (!isActive)
+        if (!isGlowing || isDefeated)
         {
             return;
         }
 
-        UpdateDetection();
-        UpdatePulseVisual();
+        isDefeated = true;
+        Defeated?.Invoke(this);
 
-        if (!isChasing && movementSource != null)
+        // 디졸브 연출(수 초)이 끝날 때까지 GameObject는 활성 상태로 남아있어야 하지만,
+        // 그동안 콜라이더까지 살아있으면 연출 중에 플레이어가 지나가다 피격당하므로 즉시 꺼준다.
+        if (ghostCollider != null)
         {
-            movementSource.TickPatrol(agent);
+            ghostCollider.enabled = false;
         }
+
+        // 맞은 즉시 움직임/추격/충돌은 멈추되, 화면에서는 디졸브 연출이 끝난 뒤에 사라진다.
+        // 죽은 그 자리에서 연출이 재생되어야 하므로, 대기 지점으로 워프하는 EnterIdleState는 건너뛴다.
+        SetActive(false, shouldEnterIdlePose: false);
+
+        if (defeatEffect != null)
+        {
+            defeatEffect.Play(() => gameObject.SetActive(false));
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 팩맨 재시작(사망 팝업의 재시작, 또는 팩맨 최초 진입) 시 호출한다.
+    /// 처치되어 있었다면 되살리고, 대기 자세로 되돌린다.
+    /// </summary>
+    public void ResetForRestart()
+    {
+        isDefeated = false;
+        gameObject.SetActive(true);
+
+        if (ghostCollider != null)
+        {
+            ghostCollider.enabled = true;
+        }
+
+        if (defeatEffect != null)
+        {
+            defeatEffect.ResetVisual();
+        }
+
+        SetActive(false);
     }
 
     private void UpdateDetection()
@@ -218,12 +341,14 @@ public class Ghost : GhostHittable
     {
         isChasing = true;
         agent.speed = chaseSpeed;
+        agent.acceleration = chaseAcceleration;
     }
 
     private void StopChase()
     {
         isChasing = false;
         agent.speed = patrolSpeed;
+        agent.acceleration = patrolAcceleration;
 
         if (movementSource != null)
         {
@@ -279,74 +404,5 @@ public class Ghost : GhostHittable
 
         bodyMaterialInstance.SetColor("_EmissionColor", baseColor);
         bodyMaterialInstance.EnableKeyword("_EMISSION");
-    }
-
-    /// <summary>파워펠릿에 맞았을 때 호출된다. 발광 중(타이밍 유효)일 때만 처치된다.</summary>
-    public override void OnHitByPellet()
-    {
-        if (!isGlowing || isDefeated)
-        {
-            return;
-        }
-
-        isDefeated = true;
-        OnDefeated?.Invoke(this);
-
-        // 디졸브 연출(수 초)이 끝날 때까지 GameObject는 활성 상태로 남아있어야 하지만,
-        // 그동안 콜라이더까지 살아있으면 연출 중에 플레이어가 지나가다 피격당하므로 즉시 꺼준다.
-        if (ghostCollider != null)
-        {
-            ghostCollider.enabled = false;
-        }
-
-        // 맞은 즉시 움직임/추격/충돌은 멈추되, 화면에서는 디졸브 연출이 끝난 뒤에 사라진다.
-        // 죽은 그 자리에서 연출이 재생되어야 하므로, 대기 지점으로 워프하는 EnterIdleState는 건너뛴다.
-        SetActive(false, enterIdlePose: false);
-
-        if (defeatEffect != null)
-        {
-            defeatEffect.Play(() => gameObject.SetActive(false));
-        }
-        else
-        {
-            gameObject.SetActive(false);
-        }
-    }
-
-    /// <summary>
-    /// 팩맨 재시작(사망 팝업의 재시작, 또는 팩맨 최초 진입) 시 호출한다.
-    /// 처치되어 있었다면 되살리고, 대기 자세로 되돌린다.
-    /// </summary>
-    public void ResetForRestart()
-    {
-        isDefeated = false;
-        gameObject.SetActive(true);
-
-        if (ghostCollider != null)
-        {
-            ghostCollider.enabled = true;
-        }
-
-        if (defeatEffect != null)
-        {
-            defeatEffect.ResetVisual();
-        }
-
-        SetActive(false);
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!other.CompareTag("Player"))
-        {
-            return;
-        }
-
-        // 발광 상태와 무관하게 접촉하면 플레이어가 피격당한다.
-        var playerHealth = other.GetComponentInParent<PacmanPlayerHealth>();
-        if (playerHealth != null)
-        {
-            playerHealth.TakeHit();
-        }
     }
 }

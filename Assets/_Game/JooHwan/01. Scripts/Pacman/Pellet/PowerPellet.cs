@@ -22,7 +22,7 @@ public class PowerPellet : MonoBehaviour
             return;
         }
 
-        PelletSpawner.Instance.OnPelletPickedUp(this);
+        PelletSpawner.Instance.HandlePelletPickedUp(this);
         gameObject.SetActive(false);
     }
 }

@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/_Game/Jihoon/03. Scenes/Jihoon_Cooking.unity
     guid: f840cba665dfdd145a56e5eb7adb3379
   - enabled: 1
-    path: Assets/_Game/JooHwan/03. Scenes/JooHwan_MiniGame_Tetris.unity
+    path: Assets/_Game/JooHwan/03. Scenes/JooHwan_MiniGame_Main.unity
     guid: 42637b09bb8646546827cf090fc7cced
   - enabled: 1
     path: Assets/_Game/Yusong/yusonggame.unity

@@ -498,19 +498,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 70215472}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!134 &80564403
-PhysicsMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 2
-  m_DynamicFriction: 0.6
-  m_StaticFriction: 0.6
-  m_Bounciness: 0
-  m_FrictionCombine: 0
-  m_BounceCombine: 0
 --- !u!1 &94500744
 GameObject:
   m_ObjectHideFlags: 0
@@ -1507,6 +1494,8 @@ GameObject:
   m_Component:
   - component: {fileID: 165953425}
   - component: {fileID: 165953424}
+  - component: {fileID: 165953427}
+  - component: {fileID: 165953426}
   m_Layer: 0
   m_Name: TetrisGameManager
   m_TagString: Untagged
@@ -1526,16 +1515,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c644dbc98d34d88469f2f316ec4eb779, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TetrisGameManager
-  deathPopupRoot: {fileID: 481154392}
-  playerController: {fileID: 768756561}
   fallSequencer: {fileID: 788465019}
   cameraRig: {fileID: 768756560}
   overviewCamera: {fileID: 937778879}
-  playerStartPosition: {x: 0, y: 0, z: 0}
   countdownUI: {fileID: 1614026528}
   countdownStartFrom: 3
-  gameSelectUI: {fileID: 2061940076}
   clearTextRoot: {fileID: 1817143024}
+  screenFlashOverlay: {fileID: 1471794681}
+  clearFlashColor: {r: 1, g: 0.95, b: 0.6, a: 0.55}
+  clearFlashDuration: 0.5
+  clearShakeDuration: 0.3
+  clearShakePositionAmplitude: 0.15
+  clearShakeRotationAmplitude: 3
+  clearTextPopDuration: 0.3
+  clearTextHoldDuration: 1
+  clearTextFadeOutDuration: 0.3
 --- !u!4 &165953425
 Transform:
   m_ObjectHideFlags: 0
@@ -1551,6 +1545,44 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1204624687}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &165953426
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165953423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4060940c13674194d93b9065370d10d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PacmanGameManager
+  playerController: {fileID: 768756561}
+  crosshairController: {fileID: 768756565}
+--- !u!114 &165953427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165953423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc4b5a697f57d93439e3d3294557067b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SharedGameplayManager
+  deathPopupRoot: {fileID: 481154392}
+  playerController: {fileID: 768756561}
+  cameraRig: {fileID: 768756560}
+  tetrisGameManager: {fileID: 165953424}
+  pacmanGameManager: {fileID: 165953426}
+  gameSelectUI: {fileID: 2061940076}
+  playerStartPosition: {x: 0, y: 0, z: 0}
+  deathPopupDelay: 0.6
+  deathShakeDuration: 0.6
+  deathShakePositionAmplitude: 0.3
+  deathShakeRotationAmplitude: 6
+  deathFlashOverlay: {fileID: 1471794681}
 --- !u!1 &168641082
 GameObject:
   m_ObjectHideFlags: 0
@@ -2577,7 +2609,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 86804de28129fb14882087bb1419072f, type: 2}
+  - {fileID: 2100000, guid: 64e4ba626a98d8948b838236b027c01a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4423,7 +4455,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 86804de28129fb14882087bb1419072f, type: 2}
+  - {fileID: 2100000, guid: 994e05ae37f148646b1e2eac4210738e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5590,6 +5622,19 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 486005723}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!134 &501219286
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance) (Instance) (Instance)'
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1 &507635974
 GameObject:
   m_ObjectHideFlags: 0
@@ -5709,6 +5754,19 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c75a8f43640fb814e9df8817eafc0d4b, type: 3}
+--- !u!134 &513652085
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance) (Instance)'
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1001 &526180361
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6806,7 +6864,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -7772,6 +7830,69 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 661810723}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &669224416
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 669224419}
+  - component: {fileID: 669224418}
+  - component: {fileID: 669224417}
+  m_Layer: 0
+  m_Name: TetrisDangerVolume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &669224417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 669224416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2b629833c9e29640b9493849dcd1dcf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TetrisDangerVignette
+  maxIntensity: 1
+--- !u!114 &669224418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 669224416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 1
+  priority: 100
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: 376c3f6ae7b4e934ba982653735beb53, type: 2}
+--- !u!4 &669224419
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 669224416}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &680585912
 GameObject:
   m_ObjectHideFlags: 0
@@ -8950,6 +9071,8 @@ GameObject:
   - component: {fileID: 768756562}
   - component: {fileID: 768756563}
   - component: {fileID: 768756564}
+  - component: {fileID: 768756565}
+  - component: {fileID: 768756566}
   m_Layer: 10
   m_Name: Player
   m_TagString: Player
@@ -9037,7 +9160,7 @@ CharacterController:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 768756553}
-  m_Material: {fileID: 80564403}
+  m_Material: {fileID: 501219286}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -9074,7 +9197,6 @@ MonoBehaviour:
   overviewOccluders:
   - {fileID: 1038780773}
   overviewUI: {fileID: 1124093353}
-  crosshair: {fileID: 631578905}
   firstPersonAmbientColor: {r: 0.55, g: 0.5, b: 0.42, a: 1}
   overviewAmbientColor: {r: 0.85, g: 0.82, b: 0.75, a: 1}
 --- !u!114 &768756561
@@ -9092,12 +9214,13 @@ MonoBehaviour:
   inputActions: {fileID: -944628639613478452, guid: 2ad6ac0a73e595a4da9250c3f0eb7460, type: 3}
   moveSpeed: 5
   gravity: -20
-  jumpEnabled: 1
+  isJumpEnabled: 1
   jumpHeight: 1.5
   mouseSensitivity: 0.1
   minPitch: -80
   maxPitch: 80
   cameraPivot: {fileID: 149589425}
+  pinPenetrationProbe: {fileID: 768756566}
 --- !u!114 &768756562
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9162,6 +9285,42 @@ MonoBehaviour:
   heartUI: {fileID: 1490032031}
   pacmanRestartPoint: {fileID: 1120218856}
   invincibleDuration: 1.5
+--- !u!114 &768756565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768756553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe707f60a58c466429c410788be319d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CrosshairController
+  crosshair: {fileID: 631578905}
+--- !u!136 &768756566
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768756553}
+  m_Material: {fileID: 513652085}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.6
+  m_Height: 2.2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &775010356
 GameObject:
   m_ObjectHideFlags: 0
@@ -9401,8 +9560,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickRestart
         m_Mode: 0
         m_Arguments:
@@ -11297,8 +11456,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickExitToHub
         m_Mode: 0
         m_Arguments:
@@ -11389,7 +11548,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -12731,8 +12890,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickShowDescription
         m_Mode: 0
         m_Arguments:
@@ -13617,8 +13776,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickShowDescription
         m_Mode: 0
         m_Arguments:
@@ -15531,6 +15690,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TetrisExitTrigger
   playerTag: Player
+  tetrisGameManager: {fileID: 165953424}
 --- !u!65 &1374962739
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15538,7 +15698,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1374962736}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1654063310}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -15782,6 +15942,7 @@ RectTransform:
   - {fileID: 481154393}
   - {fileID: 1791194613}
   - {fileID: 918031268}
+  - {fileID: 1471794680}
   m_Father: {fileID: 755351278}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -16574,6 +16735,96 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1471794679
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1471794680}
+  - component: {fileID: 1471794683}
+  - component: {fileID: 1471794682}
+  - component: {fileID: 1471794681}
+  m_Layer: 0
+  m_Name: DeathFlashOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1471794680
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471794679}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1400687034}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1471794681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471794679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 646dc8bdfbc643e4aa582bb2ff269018, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeathFlashOverlay
+  flashColor: {r: 0.4, g: 0.02, b: 0.02, a: 0.6}
+  fadeOutDuration: 0.4
+--- !u!114 &1471794682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471794679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1471794683
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471794679}
+  m_CullTransparentMesh: 1
 --- !u!1 &1479990945
 GameObject:
   m_ObjectHideFlags: 0
@@ -17667,7 +17918,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MiniGameFlowManager
   gameSelectUIRoot: {fileID: 2061940075}
+  sharedGameplayManager: {fileID: 165953427}
   tetrisGameManager: {fileID: 165953424}
+  pacmanGameManager: {fileID: 165953426}
+  playerController: {fileID: 768756561}
   fadeCanvas: {fileID: 536033607}
   countdownUI: {fileID: 1614026528}
   countdownStartFrom: 3
@@ -17680,8 +17934,11 @@ MonoBehaviour:
   heartsUIRoot: {fileID: 1490032029}
   pelletSpawner: {fileID: 1056635151}
   rewardBox: {fileID: 1991334664}
-  debugStartInPacman: 1
+  isDebugStartInPacman: 0
   debugPacmanStartPoint: {fileID: 1831296196}
+  isDebugStartAtTetrisClear: 0
+  debugExitTrigger: {fileID: 1374962738}
+  debugClearPlatformWallMargin: 0.5
 --- !u!4 &1614026527
 Transform:
   m_ObjectHideFlags: 0
@@ -17812,8 +18069,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickExitToHub
         m_Mode: 0
         m_Arguments:
@@ -18183,6 +18440,19 @@ Transform:
   - {fileID: 1991334665}
   m_Father: {fileID: 232583704}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!134 &1654063310
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1 &1695079477
 GameObject:
   m_ObjectHideFlags: 0
@@ -18437,6 +18707,18 @@ PrefabInstance:
     - target: {fileID: 1566607484541347833, guid: ed8b4f06336adaa40b2235410000e1d7, type: 3}
       propertyPath: m_Name
       value: Ghost_Purple
+      objectReference: {fileID: 0}
+    - target: {fileID: 8638015400700718545, guid: ed8b4f06336adaa40b2235410000e1d7, type: 3}
+      propertyPath: chaseSpeed
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 8638015400700718545, guid: ed8b4f06336adaa40b2235410000e1d7, type: 3}
+      propertyPath: hitStunDuration
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8638015400700718545, guid: ed8b4f06336adaa40b2235410000e1d7, type: 3}
+      propertyPath: chaseAcceleration
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 8993497342241103156, guid: ed8b4f06336adaa40b2235410000e1d7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -19055,7 +19337,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 86804de28129fb14882087bb1419072f, type: 2}
+  - {fileID: 2100000, guid: 64e4ba626a98d8948b838236b027c01a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -20037,8 +20319,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 165953424}
-        m_TargetAssemblyTypeName: TetrisGameManager, Assembly-CSharp
+      - m_Target: {fileID: 165953427}
+        m_TargetAssemblyTypeName: SharedGameplayManager, Assembly-CSharp
         m_MethodName: OnClickExitToHub
         m_Mode: 0
         m_Arguments:
@@ -20720,7 +21002,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 86804de28129fb14882087bb1419072f, type: 2}
+  - {fileID: 2100000, guid: 994e05ae37f148646b1e2eac4210738e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -23390,3 +23672,4 @@ SceneRoots:
   - {fileID: 232583704}
   - {fileID: 1820081511}
   - {fileID: 5527193}
+  - {fileID: 669224419}

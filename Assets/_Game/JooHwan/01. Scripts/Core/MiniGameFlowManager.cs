@@ -18,7 +18,10 @@ public class MiniGameFlowManager : MonoBehaviour
     public static MiniGameFlowManager Instance { get; private set; }
 
     [SerializeField] private GameObject gameSelectUIRoot;
+    [SerializeField] private SharedGameplayManager sharedGameplayManager;
     [SerializeField] private TetrisGameManager tetrisGameManager;
+    [SerializeField] private PacmanGameManager pacmanGameManager;
+    [SerializeField] private PlayerController playerController;
     [SerializeField] private FadeCanvas fadeCanvas;
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
@@ -30,8 +33,15 @@ public class MiniGameFlowManager : MonoBehaviour
 
     [Header("Debug (팩맨 로직 작업 중 임시 사용)")]
     [Tooltip("체크하면 시작 시 인트로를 건너뛰고, 테트리스를 이미 클리어한 직후(문 앞 복도, 팩맨은 아직 비활성) 상태로 진입한다. 팩맨 구현이 끝나면 반드시 해제할 것.")]
-    [SerializeField] private bool debugStartInPacman = false;
+    [SerializeField] private bool isDebugStartInPacman = false;
     [SerializeField] private Transform debugPacmanStartPoint;
+
+    [Header("Debug (테트리스 클리어 연출 확인용 임시 사용)")]
+    [Tooltip("체크하면 시작 시 EXIT 트리거 바로 아래에 임시 디딤대를 만들고 플레이어를 그 위로 옮겨, 실제로 EXIT을 밟아 클리어 연출(플래시/셰이크/텍스트)이 재생되는 것을 바로 확인할 수 있게 한다. 연출 확인이 끝나면 반드시 해제할 것.")]
+    [SerializeField] private bool isDebugStartAtTetrisClear = false;
+    [SerializeField] private TetrisExitTrigger debugExitTrigger;
+
+    private GameObject debugClearTestPlatform;
 
     private MiniGameState currentState = MiniGameState.MainUI;
 
@@ -47,7 +57,7 @@ public class MiniGameFlowManager : MonoBehaviour
             {
                 if (ghost != null)
                 {
-                    ghost.OnDefeated += OnGhostDefeated;
+                    ghost.Defeated += HandleGhostDefeated;
                 }
             }
         }
@@ -55,12 +65,24 @@ public class MiniGameFlowManager : MonoBehaviour
 
     private void Start()
     {
-        if (debugStartInPacman)
+        if (isDebugStartAtTetrisClear && debugExitTrigger != null)
+        {
+            // 실제로 EXIT 트리거를 밟게 만들어 HandleExitReached()의 정식 클리어 연출
+            // (플래시/셰이크/텍스트 등)이 그대로 재생되는지 바로 확인할 수 있게 한다.
+            // 낙하 시퀀스는 필요 없으므로 시작하지 않고, 그 자리에 서 있을 임시 디딤대만 만든다.
+            ApplyState(MiniGameState.Tetris, shouldPlayCountdown: false);
+            FallingBlock.IsGlobalPaused = true;
+
+            SpawnDebugClearTestPlatform();
+            return;
+        }
+
+        if (isDebugStartInPacman)
         {
             // 테트리스는 이미 클리어했고 아직 팩맨에는 진입하지 않은 상태(문 앞 복도)에서 시작한다.
             // 즉 상태 자체는 Tetris로 유지하되(팩맨 로직은 비활성), 낙하만 멈춘 클리어 상태로 만든다.
-            ApplyState(MiniGameState.Tetris, playCountdown: false);
-            tetrisGameManager.DebugForceClearedState();
+            ApplyState(MiniGameState.Tetris, shouldPlayCountdown: false);
+            tetrisGameManager.DebugForceClearedState(playerController);
 
             if (debugPacmanStartPoint != null)
             {
@@ -70,17 +92,17 @@ public class MiniGameFlowManager : MonoBehaviour
             return;
         }
 
-        ApplyState(MiniGameState.MainUI, playCountdown: false);
+        ApplyState(MiniGameState.MainUI, shouldPlayCountdown: false);
     }
 
     public void ShowGameSelect()
     {
-        SwitchTo(MiniGameState.MainUI, playCountdown: false);
+        SwitchTo(MiniGameState.MainUI, shouldPlayCountdown: false);
     }
 
     public void StartTetris()
     {
-        SwitchTo(MiniGameState.Tetris, playCountdown: true);
+        SwitchTo(MiniGameState.Tetris, shouldPlayCountdown: true);
     }
 
     /// <summary>
@@ -89,7 +111,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// </summary>
     public void StartPacman(Transform teleportTarget = null)
     {
-        SwitchTo(MiniGameState.Pacman, playCountdown: true, teleportTarget);
+        SwitchTo(MiniGameState.Pacman, shouldPlayCountdown: true, teleportTarget);
     }
 
     /// <summary>
@@ -116,7 +138,7 @@ public class MiniGameFlowManager : MonoBehaviour
 
         ResetAllGhosts();
 
-        SwitchTo(MiniGameState.Pacman, playCountdown: true, teleportTarget);
+        SwitchTo(MiniGameState.Pacman, shouldPlayCountdown: true, teleportTarget);
     }
 
     private void ResetAllGhosts()
@@ -144,7 +166,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// 고스트가 처치될 때마다 호출된다. 5마리(pacmanGhosts 전부)가 모두 처치되면
     /// 클리어 조건 달성으로 보고 보상 상자를 맵 중앙에 등장시킨다.
     /// </summary>
-    private void OnGhostDefeated(Ghost defeated)
+    private void HandleGhostDefeated(Ghost defeatedGhost)
     {
         if (pacmanGhosts == null || rewardBox == null)
         {
@@ -162,7 +184,7 @@ public class MiniGameFlowManager : MonoBehaviour
         rewardBox.SetActive(true);
     }
 
-    private void SwitchTo(MiniGameState target, bool playCountdown, Transform teleportTarget = null)
+    private void SwitchTo(MiniGameState target, bool shouldPlayCountdown, Transform teleportTarget = null)
     {
         fadeCanvas.FadeOut(() =>
         {
@@ -177,11 +199,16 @@ public class MiniGameFlowManager : MonoBehaviour
                 PrepareGhostsForPacman();
             }
 
-            ApplyState(target, playCountdown);
+            ApplyState(target, shouldPlayCountdown);
         });
     }
 
     private void TeleportPlayer(Transform target)
+    {
+        TeleportPlayer(target.position);
+    }
+
+    private void TeleportPlayer(Vector3 position)
     {
         var player = GameObject.FindGameObjectWithTag("Player");
         if (player == null)
@@ -193,19 +220,58 @@ public class MiniGameFlowManager : MonoBehaviour
         if (controller != null)
         {
             controller.enabled = false;
-            player.transform.position = target.position;
+            player.transform.position = position;
             controller.enabled = true;
         }
         else
         {
-            player.transform.position = target.position;
+            player.transform.position = position;
         }
+    }
+
+    /// <summary>
+    /// EXIT 트리거 바로 아래에 임시 디딤대(Cube)를 만들고 플레이어를 그 위로 옮겨,
+    /// 실제로 EXIT 콜라이더를 통과시켜 정식 클리어 연출을 그대로 재생시킨다.
+    /// 디버그 전용이라 씬에 영구적으로 남기지 않고 코드로만 생성한다.
+    /// </summary>
+    private const float DebugClearPlatformExtraDepth = 3f;
+    [Tooltip("디버그 클리어 테스트 디딤대가 뒤쪽(진행 방향 반대) 벽을 뚫지 않도록 남겨둘 여유 거리.")]
+    [SerializeField] private float debugClearPlatformWallMargin = 0.5f;
+
+    private void SpawnDebugClearTestPlatform()
+    {
+        Bounds exitBounds = debugExitTrigger.GetComponent<Collider>().bounds;
+
+        // 아레나 뒤쪽 벽(Floor 바운즈의 -Z 끝)을 뚫지 않도록, 추가하려는 깊이(큐브 한 칸)를
+        // 실제로 남아있는 여유 거리로 제한한다.
+        float floorMinZ = float.MinValue;
+        Transform floorTransform = debugExitTrigger.transform.parent != null ? debugExitTrigger.transform.parent.Find("Floor") : null;
+        if (floorTransform != null && floorTransform.TryGetComponent(out Collider floorCollider))
+        {
+            floorMinZ = floorCollider.bounds.min.z;
+        }
+
+        float availableDepth = floorMinZ > float.MinValue ? exitBounds.min.z - floorMinZ - debugClearPlatformWallMargin : DebugClearPlatformExtraDepth;
+        float extraDepth = Mathf.Clamp(availableDepth, 0f, DebugClearPlatformExtraDepth);
+
+        // EXIT 트리거 안쪽으로 바로 텔레포트되면 걸어갈 필요 없이 즉시 클리어되어 버리므로,
+        // 진행 방향(-Z)으로 여유가 허용하는 만큼(최대 큐브 한 칸, 3유닛) 더 길게 만들어 그 뒤쪽에서 걸어오게 한다.
+        float platformDepth = exitBounds.size.z + extraDepth;
+        float platformCenterZ = exitBounds.center.z - extraDepth * 0.5f;
+
+        debugClearTestPlatform = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        debugClearTestPlatform.name = "DebugClearTestPlatform";
+        debugClearTestPlatform.transform.position = new Vector3(exitBounds.center.x, exitBounds.min.y - 0.5f, platformCenterZ);
+        debugClearTestPlatform.transform.localScale = new Vector3(exitBounds.size.x, 1f, platformDepth);
+
+        Vector3 spawnPosition = new Vector3(exitBounds.center.x, exitBounds.min.y - 0.5f + 1.5f, exitBounds.center.z - extraDepth);
+        TeleportPlayer(spawnPosition);
     }
 
     /// <summary>
     /// 대상 상태에 맞춰 UI/카메라/각 게임의 진행 여부를 일괄 적용한다.
     /// </summary>
-    private void ApplyState(MiniGameState target, bool playCountdown)
+    private void ApplyState(MiniGameState target, bool shouldPlayCountdown)
     {
         currentState = target;
 
@@ -221,23 +287,24 @@ public class MiniGameFlowManager : MonoBehaviour
 
         // 팩맨은 아직 전용 카메라가 없어, 테트리스의 1인칭 카메라/조작을 그대로 들고 간다.
         // (관전 카메라 전환만 막고, 낙하 로직은 별도로 정지시킨다)
-        tetrisGameManager.SetGameActive(target == MiniGameState.Tetris || target == MiniGameState.Pacman);
+        sharedGameplayManager.SetGameActive(target == MiniGameState.Tetris || target == MiniGameState.Pacman);
         tetrisGameManager.SetTetrisGameplayPaused(target != MiniGameState.Tetris);
+        tetrisGameManager.SetCameraSwitchAllowed(target == MiniGameState.Tetris);
 
         // 팩맨이 아닌 상태로 전환될 때는(테트리스 클리어 직후 복도 등) 고스트를 즉시 멈춘다.
         // 팩맨 상태로 전환될 때는 카운트다운(3,2,1)이 끝난 뒤(OnGameplayReady)에야 움직이기 시작해야 하므로
         // 여기서는 끄기만 하고, 켜는 시점은 OnGameplayReady로 미룬다.
         if (target != MiniGameState.Pacman)
         {
-            SetGhostsActive(false);
+            SetGhostsActive(isActive: false);
         }
 
         // 에임 포인터(크로스헤어)와 목숨 하트 UI는 팩맨 전용이라 테트리스에서는 보이면 안 된다.
-        tetrisGameManager.SetCrosshairAllowed(target == MiniGameState.Pacman);
+        pacmanGameManager.SetCrosshairAllowed(target == MiniGameState.Pacman);
 
         // 팩맨에는 점프 지형이 없으므로 비활성화한다.
         // (같은 Jump 액션을 공유하는 ClimbController도 jumpAction이 Disable되면 자동으로 트리거되지 않는다)
-        tetrisGameManager.SetJumpAllowed(target != MiniGameState.Pacman);
+        pacmanGameManager.SetJumpAllowed(target != MiniGameState.Pacman);
 
         if (heartsUIRoot != null)
         {
@@ -246,14 +313,14 @@ public class MiniGameFlowManager : MonoBehaviour
 
         fadeCanvas.FadeIn(() =>
         {
-            if (playCountdown)
+            if (shouldPlayCountdown)
             {
-                countdownUI.Play(countdownStartFrom, () => OnGameplayReady(target));
+                countdownUI.Play(countdownStartFrom, () => HandleGameplayReady(target));
             }
         });
     }
 
-    private void OnGameplayReady(MiniGameState target)
+    private void HandleGameplayReady(MiniGameState target)
     {
         if (target == MiniGameState.Tetris)
         {
@@ -261,11 +328,11 @@ public class MiniGameFlowManager : MonoBehaviour
         }
         else if (target == MiniGameState.Pacman)
         {
-            SetGhostsActive(true);
+            SetGhostsActive(isActive: true);
         }
     }
 
-    private void SetGhostsActive(bool active)
+    private void SetGhostsActive(bool isActive)
     {
         if (pacmanGhosts == null)
         {
@@ -276,7 +343,7 @@ public class MiniGameFlowManager : MonoBehaviour
         {
             if (ghost != null)
             {
-                ghost.SetActive(active);
+                ghost.SetActive(isActive);
             }
         }
     }
@@ -286,7 +353,7 @@ public class MiniGameFlowManager : MonoBehaviour
     /// 팩맨 상태가 아니거나(고스트가 이미 꺼져있음) 이미 처치된 고스트는 건드리지 않는다.
     /// PauseUI가 호출한다.
     /// </summary>
-    public void SetGhostsPaused(bool paused)
+    public void SetGhostsPaused(bool isPaused)
     {
         if (pacmanGhosts == null || currentState != MiniGameState.Pacman)
         {
@@ -297,7 +364,7 @@ public class MiniGameFlowManager : MonoBehaviour
         {
             if (ghost != null && !ghost.IsDefeated)
             {
-                ghost.SetActive(!paused, enterIdlePose: false);
+                ghost.SetActive(!isPaused, shouldEnterIdlePose: false);
             }
         }
     }

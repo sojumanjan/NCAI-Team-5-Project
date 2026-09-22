@@ -18,8 +18,8 @@ public class PacmanEntranceWall : MonoBehaviour
 
     private MeshRenderer meshRenderer;
     private InputAction interactAction;
-    private bool playerInRange;
-    private bool consumed;
+    private bool isPlayerInRange;
+    private bool isConsumed;
 
     private void Awake()
     {
@@ -42,7 +42,7 @@ public class PacmanEntranceWall : MonoBehaviour
 
     private void Update()
     {
-        if (!playerInRange || consumed)
+        if (!isPlayerInRange || isConsumed)
         {
             return;
         }
@@ -55,7 +55,7 @@ public class PacmanEntranceWall : MonoBehaviour
 
     private void Enter()
     {
-        consumed = true;
+        isConsumed = true;
 
         if (promptRoot != null)
         {
@@ -72,12 +72,12 @@ public class PacmanEntranceWall : MonoBehaviour
     /// <summary>interactTrigger(자식 오브젝트)가 감지를 대신 넘겨준다.</summary>
     public void NotifyPlayerEnter()
     {
-        if (consumed)
+        if (isConsumed)
         {
             return;
         }
 
-        playerInRange = true;
+        isPlayerInRange = true;
 
         if (promptRoot != null)
         {
@@ -87,7 +87,7 @@ public class PacmanEntranceWall : MonoBehaviour
 
     public void NotifyPlayerExit()
     {
-        playerInRange = false;
+        isPlayerInRange = false;
 
         if (promptRoot != null)
         {

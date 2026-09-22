@@ -1,87 +1,72 @@
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 
+/// <summary>
+/// 테트리스 전용 세부 로직(낙하 시퀀스, 클리어 판정, 관전 카메라 허용)을 담당한다.
+/// 테트리스와 팩맨이 공유하는 플레이어/카메라/사망 팝업 자체는 SharedGameplayManager가 관리한다.
+/// </summary>
 public class TetrisGameManager : MonoBehaviour
 {
-    public static TetrisGameManager Instance { get; private set; }
-
-    [SerializeField] private GameObject deathPopupRoot;
-    [SerializeField] private PlayerController playerController;
     [SerializeField] private TetrisFallSequencer fallSequencer;
     [SerializeField] private CameraRig cameraRig;
     [SerializeField] private Camera overviewCamera;
-    [SerializeField] private Vector3 playerStartPosition;
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
-    [SerializeField] private GameSelectUI gameSelectUI;
     [SerializeField] private GameObject clearTextRoot;
 
-    private CharacterController playerCharacterController;
+    [Header("Clear Feedback")]
+    [SerializeField] private DeathFlashOverlay screenFlashOverlay;
+    [SerializeField] private Color clearFlashColor = new Color(1f, 0.95f, 0.6f, 0.55f);
+    [SerializeField] private float clearFlashDuration = 0.5f;
+    [SerializeField] private float clearShakeDuration = 0.3f;
+    [SerializeField] private float clearShakePositionAmplitude = 0.15f;
+    [SerializeField] private float clearShakeRotationAmplitude = 3f;
+    [Tooltip("CLEAR 텍스트가 작게 시작해서 커지며 나타나는 시간")]
+    [SerializeField] private float clearTextPopDuration = 0.3f;
+    [Tooltip("CLEAR 텍스트가 유지되는 시간 (팝업 애니메이션 이후, 페이드아웃 전)")]
+    [SerializeField] private float clearTextHoldDuration = 1f;
+    [Tooltip("CLEAR 텍스트가 사라질 때 페이드아웃되는 시간")]
+    [SerializeField] private float clearTextFadeOutDuration = 0.3f;
+
     private bool isCleared;
 
     public bool IsCleared => isCleared;
 
     private void Awake()
     {
-        Instance = this;
-        playerCharacterController = playerController.GetComponent<CharacterController>();
-        playerStartPosition = playerController.transform.position;
-    }
-
-    /// <summary>
-    /// 씬 오브젝트는 항상 활성 상태를 유지하고, 이 메서드로 테트리스 진행 여부만 켜고 끈다.
-    /// (테트리스 <-> 팩맨 전환 시 SetActive 대신 사용)
-    /// </summary>
-    public void SetGameActive(bool active)
-    {
-        // 1인칭 카메라는 MainUI 상태에서도 켜둔다. 꺼버리면 씬에 활성 카메라가 하나도
-        // 남지 않아 화면이 렌더링되지 않으므로(과거 SelectSceneCamera로 임시 땜빵했던 문제),
-        // 대신 playerController.enabled=false로 조작만 막아 화면은 정지된 채로 유지한다.
         overviewCamera.gameObject.SetActive(false);
-
-        playerController.enabled = active;
-        cameraRig.enabled = active;
-
-        FallingBlock.GlobalPaused = !active;
-        fallSequencer.SetPaused(!active);
-
-        if (!active)
-        {
-            deathPopupRoot.SetActive(false);
-        }
     }
 
     /// <summary>
     /// 팩맨은 아직 전용 카메라가 없어, 테트리스의 1인칭 카메라/플레이어 조작을 그대로 들고 간다.
-    /// 낙하 로직(GlobalPaused 등)만 멈추고, 카메라/조작/관전 전환 여부는 그대로 유지한다.
+    /// 낙하 로직(IsGlobalPaused 등)만 멈추고, 카메라/조작/관전 전환 여부는 그대로 유지한다.
     /// </summary>
-    public void SetTetrisGameplayPaused(bool paused)
+    public void SetTetrisGameplayPaused(bool isPaused)
     {
-        FallingBlock.GlobalPaused = paused;
-        fallSequencer.SetPaused(paused);
+        FallingBlock.IsGlobalPaused = isPaused;
+        fallSequencer.SetPaused(isPaused);
+
+        // 일시정지 순간 FallingBlock.FixedUpdate가 멈춰 비네트 값 갱신도 함께 멈추므로,
+        // 위험 상태에서 정지했을 때 그 값이 화면에 그대로 남지 않도록 즉시 초기화한다.
+        if (isPaused && TetrisDangerVignette.Instance != null)
+        {
+            TetrisDangerVignette.Instance.SetDangerRatio(0f);
+        }
     }
 
     /// <summary>
-    /// 에임 포인터(크로스헤어)는 팩맨 상태에서만 보여야 한다 (테트리스에는 조준 요소가 없음).
+    /// 관전 카메라 전환(Tab)은 테트리스 전용이다 (팩맨에는 관전 시점이 없음).
     /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출한다.
     /// </summary>
-    public void SetCrosshairAllowed(bool allowed)
+    public void SetCameraSwitchAllowed(bool isAllowed)
     {
-        cameraRig.SetCrosshairAllowed(allowed);
-    }
-
-    /// <summary>
-    /// 팩맨에는 점프 지형이 없으므로, 팩맨 상태에서는 비활성화한다.
-    /// ClimbController도 같은 Jump 액션을 구독하므로 별도 처리 없이 함께 막힌다.
-    /// MiniGameFlowManager가 팩맨 진입/이탈 시 호출한다.
-    /// </summary>
-    public void SetJumpAllowed(bool allowed)
-    {
-        playerController.SetJumpEnabled(allowed);
+        cameraRig.SetCameraSwitchAllowed(isAllowed);
     }
 
     /// <summary>
     /// MiniGameFlowManager가 페이드/카운트다운을 모두 마친 뒤 호출한다.
-    /// (재시작은 OnClickRestart, 최초 시작은 이 메서드로 나뉜다)
+    /// (재시작은 RestartFromDeath, 최초 시작은 이 메서드로 나뉜다)
     /// </summary>
     public void StartSequenceForNewGame()
     {
@@ -92,7 +77,7 @@ public class TetrisGameManager : MonoBehaviour
     /// EXIT 트리거(TetrisExitTrigger)가 플레이어 도달을 감지하면 호출한다.
     /// 별도 성공 UI 없이 CLEAR 텍스트만 짧게 보여준 뒤 조작을 해제한다.
     /// </summary>
-    public void OnExitReached()
+    public void HandleExitReached(PlayerController playerController)
     {
         if (isCleared)
         {
@@ -101,20 +86,51 @@ public class TetrisGameManager : MonoBehaviour
 
         isCleared = true;
 
-        FallingBlock.GlobalPaused = true;
+        FallingBlock.IsGlobalPaused = true;
         fallSequencer.SetPaused(true);
         playerController.SetControlsLocked(true);
 
+        // 사망 플래시(어두운 빨강)와 대비되는 밝은 색으로, 성공했다는 느낌을 즉시 전달한다.
+        if (screenFlashOverlay != null)
+        {
+            screenFlashOverlay.Flash(clearFlashColor, clearFlashDuration);
+        }
+
+        CameraShake.ShakeAll(clearShakeDuration, clearShakePositionAmplitude, clearShakeRotationAmplitude);
+
         if (clearTextRoot != null)
         {
-            StartCoroutine(ShowClearTextRoutine());
+            StartCoroutine(ShowClearTextRoutine(playerController));
         }
     }
 
-    private System.Collections.IEnumerator ShowClearTextRoutine()
+    private System.Collections.IEnumerator ShowClearTextRoutine(PlayerController playerController)
     {
+        var rectTransform = clearTextRoot.GetComponent<RectTransform>();
+        var text = clearTextRoot.GetComponent<Text>();
+
+        rectTransform.localScale = Vector3.zero;
+        if (text != null)
+        {
+            Color startColor = text.color;
+            startColor.a = 1f;
+            text.color = startColor;
+        }
+
         clearTextRoot.SetActive(true);
-        yield return new WaitForSeconds(1.5f);
+
+        yield return rectTransform
+            .DOScale(Vector3.one, clearTextPopDuration)
+            .SetEase(Ease.OutBack)
+            .WaitForCompletion();
+
+        yield return new WaitForSeconds(clearTextHoldDuration);
+
+        if (text != null)
+        {
+            yield return text.DOFade(0f, clearTextFadeOutDuration).WaitForCompletion();
+        }
+
         clearTextRoot.SetActive(false);
 
         // 클리어 후에는 문 앞까지 자유롭게 이동할 수 있어야 하므로 조작을 다시 푼다.
@@ -125,49 +141,30 @@ public class TetrisGameManager : MonoBehaviour
     /// 디버그 전용: CLEAR 연출 없이 즉시 "클리어됨" 상태로 만든다.
     /// (팩맨 진입 직전 상태부터 테스트할 때 사용)
     /// </summary>
-    public void DebugForceClearedState()
+    public void DebugForceClearedState(PlayerController playerController)
     {
         isCleared = true;
-        FallingBlock.GlobalPaused = true;
+        FallingBlock.IsGlobalPaused = true;
         fallSequencer.SetPaused(true);
         playerController.SetControlsLocked(false);
     }
 
-    public void OnPlayerPinned()
-    {
-        FallingBlock.GlobalPaused = true;
-        playerController.SetControlsLocked(true);
-        deathPopupRoot.SetActive(true);
-    }
-
     /// <summary>
-    /// 팩맨에서 목숨이 0이 되었을 때 PacmanPlayerHealth가 호출한다.
-    /// 테트리스 사망 팝업과 동일한 UI를 재사용하되, 재시작은 OnClickRestart가 상태를 보고 팩맨 쪽으로 분기한다.
+    /// 사망 팝업의 재시작 버튼이 눌렸을 때, 현재 상태가 테트리스면 SharedGameplayManager가 호출한다.
+    /// respawnPlayer는 실제 리스폰 위치 이동(SharedGameplayManager가 담당)을 위한 콜백이다.
     /// </summary>
-    public void ShowDeathPopupForPacman()
+    public void RestartFromDeath(PlayerController playerController, System.Action respawnPlayer)
     {
-        playerController.SetControlsLocked(true);
-        deathPopupRoot.SetActive(true);
-    }
-
-    /// <summary>
-    /// 사망 팝업(DeathPopup)은 테트리스/팩맨 공용이라, 재시작 버튼이 눌리면
-    /// 현재 어느 게임이 진행 중이었는지에 따라 재시작 대상을 나눈다.
-    /// </summary>
-    public void OnClickRestart()
-    {
-        deathPopupRoot.SetActive(false);
-
-        if (MiniGameFlowManager.Instance.CurrentState == MiniGameState.Pacman)
-        {
-            RestartPacmanFromDeath();
-            return;
-        }
-
         fallSequencer.ResetSequence();
-        RespawnPlayer();
+        respawnPlayer();
 
-        FallingBlock.GlobalPaused = false;
+        FallingBlock.IsGlobalPaused = false;
+
+        // 끼임 사망 시 비네트가 최대치 근처에서 멈춘 채 남아있을 수 있으므로, 재시작 시 명시적으로 초기화한다.
+        if (TetrisDangerVignette.Instance != null)
+        {
+            TetrisDangerVignette.Instance.SetDangerRatio(0f);
+        }
 
         // 카운트다운(3,2,1)이 보이는 동안에도 플레이어는 바로 움직일 수 있어야 하므로,
         // 조작 잠금은 카운트다운을 재생하기 전에 미리 풀어둔다.
@@ -177,31 +174,5 @@ public class TetrisGameManager : MonoBehaviour
         {
             fallSequencer.StartSequence();
         });
-    }
-
-    private void RestartPacmanFromDeath()
-    {
-        playerController.SetControlsLocked(false);
-        var playerHealth = playerController.GetComponent<PacmanPlayerHealth>();
-        MiniGameFlowManager.Instance.RestartPacman(playerHealth.PacmanRestartPoint, playerHealth);
-    }
-
-    private void RespawnPlayer()
-    {
-        playerCharacterController.enabled = false;
-        playerController.transform.position = playerStartPosition;
-        playerCharacterController.enabled = true;
-    }
-
-    public void OnClickShowDescription()
-    {
-        // GameSelectUI의 설명 팝업을 재사용한다.
-        gameSelectUI.OnClickDescription();
-    }
-
-    public void OnClickExitToHub()
-    {
-        // 허브 씬이 아직 없어 자리만 마련해둔다.
-        Debug.Log("[TetrisGameManager] Exit to hub requested (not implemented yet)");
     }
 }

@@ -44,20 +44,29 @@ public class GhostDefeatEffect : MonoBehaviour
         // 동시에 스케일을 축소시켜 "분해되어 사라지는" 느낌을 낸다.
         SetTransparentMode();
 
+        // 처치 순간엔 대개 발광(_EmissionColor) 중이라, 그 발광이 남아있으면 알파를
+        // 아무리 줄여도 밝게 빛나 보여 디졸브가 거의 안 보인다. 시작 시점의 발광색을
+        // 읽어와 알파와 같은 비율로 함께 줄여야 실제로 투명해지는 게 눈에 보인다.
+        Color startEmissionColor = materialInstance != null ? materialInstance.GetColor("_EmissionColor") : Color.black;
+
         float elapsed = 0f;
         while (elapsed < dissolveDuration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / dissolveDuration;
 
-            float noise = Mathf.PerlinNoise(Time.time * noiseFrequency, 0f) * noiseAmplitude;
-            float alpha = Mathf.Clamp01((1f - t) + noise * (1f - t));
+            // PerlinNoise는 0~1 범위라 그대로 곱하면 항상 양수만 더해져 알파를 위로만 밀어올린다
+            // (초반엔 Clamp01에 의해 그냥 1로 뭉개져 티가 안 남). -1~1로 중심을 맞춰야
+            // 페이드 곡선을 실제로 위아래로 흔들어 지글거리는 느낌이 난다.
+            float noise = (Mathf.PerlinNoise(Time.time * noiseFrequency, 0f) - 0.5f) * 2f * noiseAmplitude;
+            float alpha = Mathf.Clamp01((1f - t) + noise);
 
             if (materialInstance != null)
             {
                 Color c = originalColor;
                 c.a = alpha;
                 materialInstance.SetColor("_BaseColor", c);
+                materialInstance.SetColor("_EmissionColor", startEmissionColor * alpha);
             }
 
             transform.localScale = Vector3.Lerp(originalScale, originalScale * 0.6f, t);
@@ -74,6 +83,10 @@ public class GhostDefeatEffect : MonoBehaviour
         if (materialInstance != null)
         {
             materialInstance.SetColor("_BaseColor", originalColor);
+
+            // 디졸브 중 낮춰뒀던 발광을 꺼둔다. Ghost가 다시 활성화되면 UpdatePulseVisual이
+            // 매 프레임 갱신하지만, 그 전까지(비활성 상태로 대기하는 동안) 어두운 발광이 남지 않게 한다.
+            materialInstance.SetColor("_EmissionColor", Color.black);
         }
 
         transform.localScale = originalScale;

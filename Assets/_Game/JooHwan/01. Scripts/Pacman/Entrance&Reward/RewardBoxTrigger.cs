@@ -16,8 +16,8 @@ public class RewardBoxTrigger : MonoBehaviour
     [SerializeField] private PlayerController playerController;
 
     private InputAction interactAction;
-    private bool playerInRange;
-    private bool opened;
+    private bool isPlayerInRange;
+    private bool isOpened;
 
     private void Awake()
     {
@@ -37,7 +37,7 @@ public class RewardBoxTrigger : MonoBehaviour
 
     private void Update()
     {
-        if (!playerInRange || opened)
+        if (!isPlayerInRange || isOpened)
         {
             return;
         }
@@ -50,7 +50,7 @@ public class RewardBoxTrigger : MonoBehaviour
 
     private void Open()
     {
-        opened = true;
+        isOpened = true;
 
         if (promptRoot != null)
         {
@@ -77,12 +77,12 @@ public class RewardBoxTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Player") || opened)
+        if (!other.CompareTag("Player") || isOpened)
         {
             return;
         }
 
-        playerInRange = true;
+        isPlayerInRange = true;
 
         if (promptRoot != null)
         {
@@ -97,7 +97,7 @@ public class RewardBoxTrigger : MonoBehaviour
             return;
         }
 
-        playerInRange = false;
+        isPlayerInRange = false;
 
         if (promptRoot != null)
         {

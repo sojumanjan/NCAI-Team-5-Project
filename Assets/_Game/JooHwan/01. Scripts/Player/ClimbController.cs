@@ -26,8 +26,6 @@ public class ClimbController : MonoBehaviour
     [SerializeField] private float forwardSettleDistance = 0.6f;
 
     private CharacterController controller;
-    private InputAction moveAction;
-    private InputAction lookAction;
     private InputAction jumpAction;
 
     private Vector3 handLeftRestLocalPos;
@@ -40,8 +38,6 @@ public class ClimbController : MonoBehaviour
         controller = GetComponent<CharacterController>();
 
         var playerMap = inputActions.FindActionMap("Player");
-        moveAction = playerMap.FindAction("Move");
-        lookAction = playerMap.FindAction("Look");
         jumpAction = playerMap.FindAction("Jump");
 
         handLeftRestLocalPos = handLeft.localPosition;
@@ -82,15 +78,15 @@ public class ClimbController : MonoBehaviour
         Vector3 feetPosition = transform.position - new Vector3(0f, controller.height * 0.5f, 0f);
 
         Vector3 lowOrigin = feetPosition + Vector3.up * 0.1f;
-        bool blockedLow = Physics.Raycast(lowOrigin, forward, forwardCheckDistance, climbableMask);
-        if (!blockedLow)
+        bool isBlockedLow = Physics.Raycast(lowOrigin, forward, forwardCheckDistance, climbableMask);
+        if (!isBlockedLow)
         {
             return false;
         }
 
         Vector3 highOrigin = feetPosition + Vector3.up * ledgeCheckHeight;
-        bool blockedHigh = Physics.Raycast(highOrigin, forward, forwardCheckDistance, climbableMask);
-        if (blockedHigh)
+        bool isBlockedHigh = Physics.Raycast(highOrigin, forward, forwardCheckDistance, climbableMask);
+        if (isBlockedHigh)
         {
             return false;
         }
@@ -117,9 +113,7 @@ public class ClimbController : MonoBehaviour
         isClimbing = true;
 
         // CharacterController는 켜둔 채로 유지해 이동 중에도 벽 충돌 감지를 받는다.
-        playerController.enabled = false;
-        moveAction.Disable();
-        lookAction.Disable();
+        playerController.SetMovementEnabled(false);
 
         Vector3 moveStart = transform.position;
         float moveProgress = 0f;
@@ -142,9 +136,7 @@ public class ClimbController : MonoBehaviour
 
     private void EndClimb()
     {
-        playerController.enabled = true;
-        moveAction.Enable();
-        lookAction.Enable();
+        playerController.SetMovementEnabled(true);
 
         isClimbing = false;
     }

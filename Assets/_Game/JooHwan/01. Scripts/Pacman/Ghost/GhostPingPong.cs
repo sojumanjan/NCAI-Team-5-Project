@@ -17,7 +17,7 @@ public class GhostPingPong : MonoBehaviour, IGhostMovementSource
     [Tooltip("대기 중 바라볼 대상(테트리스 쪽, 플레이어가 오는 방향).")]
     [SerializeField] private Transform idleLookTarget;
 
-    private bool movingToB = true;
+    private bool isMovingToB = true;
 
     /// <summary>
     /// 팩맨 진입 전 호출: 대기 지점으로 이동시키고 지정된 방향을 바라보게 한 뒤 완전히 정지시킨다.
@@ -52,7 +52,7 @@ public class GhostPingPong : MonoBehaviour, IGhostMovementSource
         // 대기 지점에 있었더라도, 팩맨이 시작되면 원래 순찰 시작 지점으로 옮겨서 진행한다.
         agent.Warp(pointA.position);
 
-        movingToB = true;
+        isMovingToB = true;
         agent.SetDestination(pointB.position);
     }
 
@@ -65,8 +65,8 @@ public class GhostPingPong : MonoBehaviour, IGhostMovementSource
 
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
-            movingToB = !movingToB;
-            agent.SetDestination(movingToB ? pointB.position : pointA.position);
+            isMovingToB = !isMovingToB;
+            agent.SetDestination(isMovingToB ? pointB.position : pointA.position);
         }
     }
 
@@ -80,7 +80,7 @@ public class GhostPingPong : MonoBehaviour, IGhostMovementSource
         float distToA = Vector3.Distance(agent.transform.position, pointA.position);
         float distToB = Vector3.Distance(agent.transform.position, pointB.position);
 
-        movingToB = distToA < distToB;
-        agent.SetDestination(movingToB ? pointB.position : pointA.position);
+        isMovingToB = distToA < distToB;
+        agent.SetDestination(isMovingToB ? pointB.position : pointA.position);
     }
 }
