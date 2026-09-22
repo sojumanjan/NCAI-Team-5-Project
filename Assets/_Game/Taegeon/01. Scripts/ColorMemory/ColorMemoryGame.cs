@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -207,6 +207,7 @@ public sealed class ColorMemoryGame : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (HintNoteOverlay.IsAnyOpen) return;
         if (inputCamera == null || !inputCamera.isActiveAndEnabled) return;
         if (TryGetPress(out Vector2 screenPosition)) HandlePointerPress(screenPosition);
     }

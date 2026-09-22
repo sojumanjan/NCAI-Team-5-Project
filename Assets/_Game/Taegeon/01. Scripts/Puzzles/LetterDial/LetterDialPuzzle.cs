@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
@@ -58,6 +58,7 @@ public sealed class LetterDialPuzzle : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (HintNoteOverlay.IsAnyOpen) return;
         if (IsSolved || inputCamera == null || !inputCamera.isActiveAndEnabled || !ReadPress(out Vector2 position)) return;
         if (UnityEngine.EventSystems.EventSystem.current != null &&
             UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
