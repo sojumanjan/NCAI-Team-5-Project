@@ -61,6 +61,13 @@ public class OpenableDoor : MonoBehaviour, IClickTarget
     [Tooltip("잠겨 있을 때 표시할 문구.")]
     [SerializeField] private string lockedPrompt = "지금은 열 수 없음";
 
+    [Header("소리")]
+    [Tooltip("열릴 때. 비워두면 조용히 열립니다.")]
+    [SerializeField] private SoundData openSound;
+
+    [Tooltip("닫힐 때.")]
+    [SerializeField] private SoundData closeSound;
+
     [Header("움직이는 부분")]
     [Tooltip("문을 이루는 조각들. 하나의 클릭으로 전부 같이 움직입니다.")]
     [SerializeField] private DoorPart[] parts;
@@ -154,6 +161,11 @@ public class OpenableDoor : MonoBehaviour, IClickTarget
     {
         IsOpen = open;
         Play(open, instant: false);
+
+        // 문 자리에서 낸다. SO가 2D면 어차피 위치는 무시되므로, 나중에 3D로 바꿔도
+        // 코드를 고칠 일이 없다.
+        AudioManager.PlayAt(open ? openSound : closeSound, transform.position);
+
         OpenStateChanged?.Invoke(open);
     }
 

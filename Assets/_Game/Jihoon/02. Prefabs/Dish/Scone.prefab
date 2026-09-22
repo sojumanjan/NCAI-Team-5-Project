@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1743290948551531626}
   - component: {fileID: 2014985452216286021}
   - component: {fileID: 8511227690517912557}
+  - component: {fileID: 7034128146955383244}
   m_Layer: 0
   m_Name: Scone
   m_TagString: Untagged
@@ -93,6 +94,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PickableItem
+--- !u!114 &7034128146955383244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687673354554679563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1747b1180b415a74ebebec3838f3d876, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PerishableDish
+  lifeSeconds: 60
+  spoiledColor: {r: 0.05, g: 0.05, b: 0.05, a: 1}
 --- !u!1001 &7328448766142392631
 PrefabInstance:
   m_ObjectHideFlags: 0
