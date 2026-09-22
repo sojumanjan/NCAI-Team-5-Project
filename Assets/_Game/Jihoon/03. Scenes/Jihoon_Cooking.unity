@@ -7481,8 +7481,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.5145005, y: 0.86602426, z: 0.48406163}
-  m_Center: {x: -0.023957394, y: 0.44367468, z: 0.01650991}
+  m_Size: {x: 0.6862105, y: 0.86602426, z: 0.48406163}
+  m_Center: {x: -0.109812476, y: 0.44367468, z: 0.01650991}
 --- !u!114 &369122452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16933,7 +16933,7 @@ Transform:
   m_GameObject: {fileID: 812672891}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 12.93, y: 0.91, z: -2.76}
+  m_LocalPosition: {x: 12.93, y: 1.21, z: -2.76}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -31455,7 +31455,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29b35b60c60306e4a8eb9be7ea228ee2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarryHandle
-  prompt: "\uC0C1\uD638\uC791\uC6A9"
+  prompt: "\uC7AC\uB8CC\uD1B5 \uC62E\uAE30"
   holdDuration: 0
   interactable: 1
   handsFullPrompt: "\uC190\uC774 \uBE44\uC5B4\uC57C \uD569\uB2C8\uB2E4"
@@ -39284,7 +39284,7 @@ Transform:
   m_GameObject: {fileID: 2121758295}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 12.89, y: 1.016, z: -7.78}
+  m_LocalPosition: {x: 12.89, y: 1.22, z: -7.78}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
