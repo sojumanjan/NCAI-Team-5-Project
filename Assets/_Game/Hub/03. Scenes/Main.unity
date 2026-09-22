@@ -7878,6 +7878,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2650156932335507417, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 36dcd3458e255d445aef311ec42ea9ec, type: 3}
+    - target: {fileID: 3026400578000574843, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 600
+      objectReference: {fileID: 0}
+    - target: {fileID: 5756927193734188336, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7722824896441038612, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
       propertyPath: m_Name
       value: Menu Canvas
