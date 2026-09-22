@@ -13,6 +13,10 @@ public enum CookingSessionState
 {
     Ready,
     Running,
+
+    /// <summary>마감 시각은 지났지만 아직 정리 중. 새 손님만 끊기고 판은 그대로 돌아간다.</summary>
+    Closing,
+
     Ended,
 }
 
@@ -58,6 +62,12 @@ public class MiniGameSession : MonoBehaviour
 
     /// <summary>끝난 뒤의 결과. 끝나기 전에는 기본값.</summary>
     public CookingResult Result { get; private set; }
+
+    /// <summary>카운터에 손님이 아직 남아 있는지. 셔터가 닫혀도 되는지를 이걸로 본다.</summary>
+    public bool AnyCustomerAtCounter => spawner != null && spawner.CustomersAtCounter > 0;
+
+    /// <summary>마감 시각이 지나 정리만 남은 상태인지.</summary>
+    public event Action ClosingStarted;
 
     /// <summary>영업이 끝나고 승패가 정해졌을 때 한 번.</summary>
     public event Action<CookingResult> SessionEnded;
@@ -106,7 +116,31 @@ public class MiniGameSession : MonoBehaviour
         spawner.Begin();
     }
 
+    /// <summary>
+    /// 21시. 여기서 판을 덮지 않는다 — 새 손님만 끊고 정리 시간을 준다.
+    ///
+    /// 시계가 마감을 치는 순간 결과 화면을 띄우면 카운터에서 기다리던 손님이 공중에서
+    /// 사라지고, 방금 뽑아둔 커피도 낼 곳이 없어진다. 하루를 실제로 닫는 건 플레이어가
+    /// 셔터를 내리는 순간이고, 그 신호는 <see cref="EndDay"/>로 들어온다.
+    /// </summary>
     private void HandleDayEnded()
+    {
+        if (State != CookingSessionState.Running)
+        {
+            return;
+        }
+
+        State = CookingSessionState.Closing;
+
+        spawner.Pause();
+        ClosingStarted?.Invoke();
+    }
+
+    /// <summary>
+    /// 셔터가 다 내려왔다. 이제야 승패를 매긴다.
+    /// 부르는 쪽은 <see cref="ShopOpener"/> 하나뿐이다.
+    /// </summary>
+    public void EndDay()
     {
         if (State == CookingSessionState.Ended)
         {
