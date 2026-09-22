@@ -109,12 +109,8 @@ public class PlayerHealth : MonoBehaviour
             else gameOverScreen.SetActive(true);
         }
 
-        var raycaster = GetComponentInParent<Canvas>()?.GetComponent<UnityEngine.UI.GraphicRaycaster>();
-        if (raycaster != null)
-        {
-            raycaster.enabled = false;
-        }
-
+        // 캔버스 레이캐스터 자체를 끄면 결과 화면의 다시하기/메인메뉴 버튼도 같이 막혀버린다.
+        // GameOverScreen 배경 이미지가 raycastTarget=true라 뒤쪽 게임 요소는 어차피 가려진다.
         GameFlow.Instance?.ReportCurrent(new MiniGameResult(false, 0f));
 
         Time.timeScale = 0f;

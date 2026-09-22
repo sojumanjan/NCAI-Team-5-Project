@@ -290,7 +290,7 @@ public class EnemySpawner : MonoBehaviour
                 "일정 콤보에 도달하면 피버타임에 진입합니다\n피버타임에는 점수 보너스와 공격 전이가 적용됩니다!");
         }
 
-        // Wait for that pause to be dismissed, then run the "protect 이름미정" beat before
+        // Wait for that pause to be dismissed, then run the "protect 다슬이" beat before
         // forcing fever time right away (instead of waiting for a real combo streak) and
         // feeding the player enemies to click through it for however long is left in Wave 0.
         while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
@@ -320,7 +320,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.PauseForGroupHighlight(new List<RectTransform> { secondaryObject },
-                "진행 중 랜덤한 위치에 이름미정이 생성됩니다!\n적군이 접근해 부딪히면 이름미정이 피해를 입습니다\n적군을 제거해서 이름미정을 지켜주세요!");
+                "진행 중 랜덤한 위치에 다슬이가 생성됩니다!\n적군이 접근해 부딪히면 다슬이가 피해를 입습니다\n적군을 제거해서 다슬이를 지켜주세요!");
         }
 
         while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
@@ -333,7 +333,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.PauseForGroupHighlight(new List<RectTransform> { secondaryObject },
-                "이름미정을 지켜내면 보너스 점수를 얻을 수 있지만, 지키지 못하면 일정 점수를 잃습니다!");
+                "다슬이를 지켜내면 보너스 점수를 얻을 수 있지만, 지키지 못하면 일정 점수를 잃습니다!");
         }
 
         while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
@@ -344,7 +344,7 @@ public class EnemySpawner : MonoBehaviour
         var enemy = SpawnEnemy(wave0PracticeEnemyPrefab, parent, 0);
         enemy.anchoredPosition = PerimeterPointAtAngle(parent.rect, Mathf.PI);
 
-        // Ends whether the player clicks it down first or it collides with 이름미정 instead —
+        // Ends whether the player clicks it down first or it collides with 다슬이 instead —
         // either way the enemy is gone and the demo is over.
         while (enemy != null)
         {

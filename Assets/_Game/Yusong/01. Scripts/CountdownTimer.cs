@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -51,11 +52,18 @@ public class CountdownTimer : MonoBehaviour
     [Header("Game Clear")]
     [SerializeField] private GameObject gameOverScreen;
 
+    [Header("Sound")]
+    [SerializeField] private SoundData mainBgm;
+
     public event System.Action<int> WaveStarted;
     public event System.Action WaveEnding;
 
     public static bool IsWaveActive { get; private set; }
     public static bool IsTutorialWave { get; private set; } = true;
+
+    // "다시하기"로 씬을 다시 로드할 때 이 값을 true로 세팅해두면, 이번 Start()에서는
+    // 튜토리얼(0 웨이브)을 건너뛰고 바로 1 웨이브부터 시작한다. static이라 씬 리로드에도 살아남는다.
+    public static bool SkipTutorial;
 
     private TextMeshProUGUI timerText;
     private State state;
@@ -94,6 +102,19 @@ public class CountdownTimer : MonoBehaviour
 
     private void Start()
     {
+        AudioManager.PlayBGM(mainBgm);
+
+        if (SkipTutorial)
+        {
+            SkipTutorial = false;
+            currentWave = 1;
+            waitingForIntroClick = false;
+            if (tutorialSpotlight != null) tutorialSpotlight.SetActive(false);
+            Time.timeScale = 1f;
+            StartWave();
+            return;
+        }
+
         pausedForObjectHighlight = false;
         pausedForComboGaugeHighlight = false;
         highlightedObjects = null;
@@ -101,10 +122,23 @@ public class CountdownTimer : MonoBehaviour
         if (introExplainGroup != null) introExplainGroup.SetActive(true);
         if (enemyHighlightCircle != null) enemyHighlightCircle.gameObject.SetActive(false);
         if (enemyCalloutText != null) enemyCalloutText.gameObject.SetActive(false);
-        if (tutorialSpotlight != null) tutorialSpotlight.SetActive(true);
         timerText.text = Mathf.CeilToInt(wave0Seconds).ToString();
         Time.timeScale = 0f;
         waitingForIntroClick = true;
+
+        // 인트로 암전 연출이 화면을 다 보여주기 전에 튜토리얼 암전(DimOverlay)이 먼저
+        // 켜지면 페이드가 거의 안 보이게 되므로, 인트로가 끝난 뒤에 켠다.
+        StartCoroutine(ActivateTutorialSpotlightAfterIntroFade());
+    }
+
+    private IEnumerator ActivateTutorialSpotlightAfterIntroFade()
+    {
+        while (IntroFadeIn.IsPlaying)
+        {
+            yield return null;
+        }
+
+        if (tutorialSpotlight != null) tutorialSpotlight.SetActive(true);
     }
 
     private void Update()
@@ -236,11 +270,11 @@ public class CountdownTimer : MonoBehaviour
         else if (secondaryAnnounceTimer > 0f)
         {
             secondaryAnnounceTimer -= Time.deltaTime;
-            timerText.text = "이름미정이 생성되었습니다!";
+            timerText.text = "다슬이가 생성되었습니다!";
         }
         else if (secondaryEligibleWave && secondaryWarningStarted && !secondaryObjectSpawned)
         {
-            timerText.text = "잠시 후에 이름미정이 생성됩니다";
+            timerText.text = "잠시 후에 다슬이가 생성됩니다";
         }
         else
         {
@@ -566,7 +600,7 @@ public class CountdownTimer : MonoBehaviour
 
     private string GetWaveLabel(int wave)
     {
-        if (wave == 0) return "0 WAVE";
+        if (wave == 0) return "튜토리얼 WAVE";
         return wave >= totalWaves ? "Final Wave" : wave + " WAVE";
     }
 }

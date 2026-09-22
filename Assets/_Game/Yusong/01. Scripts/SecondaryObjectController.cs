@@ -28,6 +28,9 @@ public class SecondaryObjectController : MonoBehaviour
     [SerializeField] private float warningLeadTime = 3f;
     [SerializeField] private float warningBlinkInterval = 0.15f;
 
+    [Header("Sound")]
+    [SerializeField] private SoundData survivedSound;
+
     private RectTransform rt;
     private Image image;
     private Color originalColor;
@@ -44,7 +47,7 @@ public class SecondaryObjectController : MonoBehaviour
         image = GetComponent<Image>();
 
         // Sprite is intentionally left as whatever is set on the Image in the prefab —
-        // 이름미정 has its own distinct design, unlike the generic round enemies that
+        // 다슬이 has its own distinct design, unlike the generic round enemies that
         // share theme.circleSprite.
 
         originalColor = image.color;
@@ -147,6 +150,7 @@ public class SecondaryObjectController : MonoBehaviour
         }
 
         SpawnSuccessRing();
+        AudioManager.Play(survivedSound);
 
         if (flashRoutine != null) StopCoroutine(flashRoutine);
         if (warningRoutine != null) StopCoroutine(warningRoutine);

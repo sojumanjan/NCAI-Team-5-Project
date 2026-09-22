@@ -262,6 +262,7 @@ MonoBehaviour:
   successScalePunch: 1.4
   warningLeadTime: 3
   warningBlinkInterval: 0.15
+  survivedSound: {fileID: 11400000, guid: e62743ed1a826114c81f17a06fece0ee, type: 2}
 --- !u!1 &7573124279065046787
 GameObject:
   m_ObjectHideFlags: 0
