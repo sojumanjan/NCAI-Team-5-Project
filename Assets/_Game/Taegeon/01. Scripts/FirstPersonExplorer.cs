@@ -69,7 +69,8 @@ public sealed class FirstPersonExplorer : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        if (!ViewActive || viewCamera == null) return;
+        // 일시정지 중에는 UI 클릭이 커서를 다시 고정하거나 시점을 움직이지 않도록 합니다.
+        if (Time.timeScale <= 0f || !ViewActive || viewCamera == null) return;
         Vector2 movement = Vector2.zero;
         Vector2 look = Vector2.zero;
         bool run = false;
