@@ -20,6 +20,18 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float spawnOffset = 60f;
     [SerializeField] private float spawnDuration = 60f;
     [SerializeField] private float wave1SpeedReduction = 20f;
+    [SerializeField] private float wave2PlusSpeedReduction = 10f;
+
+    [Header("Wave 0 Tutorial")]
+    [SerializeField] private RectTransform wave0PracticeEnemyPrefab;
+    [SerializeField] private RectTransform wave0YellowTrianglePrefab;
+    [SerializeField] private RectTransform wave0RedTrianglePrefab;
+    [SerializeField] private RectTransform wave0BlackSquarePrefab;
+    [SerializeField] private RectTransform wave0SecondaryObjectPrefab;
+    [SerializeField] private RectTransform[] wave0FeverPrefabs;
+    [SerializeField] private int wave0FeverClusterSize = 4;
+    [SerializeField] private float wave0FeverClusterSpread = 80f;
+    [SerializeField] private float wave0FeverClusterInterval = 1.2f;
 
     [Header("Yellow Pacing")]
     [SerializeField] private int yellowPairSize = 2;
@@ -63,16 +75,15 @@ public class EnemySpawner : MonoBehaviour
 
     private void HandleWaveEnding()
     {
-        if (spawnRoutine != null)
-        {
-            StopCoroutine(spawnRoutine);
-            spawnRoutine = null;
-        }
+        // StopAllCoroutines (not just spawnRoutine) so any still-running Wave 0 tutorial
+        // routine (e.g. the fever filler loop) can't survive into the next wave.
+        StopAllCoroutines();
+        spawnRoutine = null;
 
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             var child = transform.GetChild(i);
-            if (child.GetComponent<EnemyHealth>() != null)
+            if (child.GetComponent<EnemyHealth>() != null || child.GetComponent<SecondaryObjectController>() != null)
             {
                 Destroy(child.gameObject);
             }
@@ -83,10 +94,291 @@ public class EnemySpawner : MonoBehaviour
 
     private void HandleWaveStarted(int wave)
     {
+        if (wave == 0)
+        {
+            SpawnWave0PracticeEnemy();
+            return;
+        }
+
         if (wave > lastConfiguredWave) return;
 
         if (spawnRoutine != null) StopCoroutine(spawnRoutine);
         spawnRoutine = StartCoroutine(SpawnOverTime(wave));
+    }
+
+    private void SpawnWave0PracticeEnemy()
+    {
+        if (wave0PracticeEnemyPrefab == null) return;
+
+        var parent = (RectTransform)transform;
+        Rect rect = parent.rect;
+
+        // Fixed spawn point and approach direction (straight in from the left) so the
+        // tutorial beat below can reliably tell when the enemy has fully entered view.
+        var enemy = SpawnEnemy(wave0PracticeEnemyPrefab, parent, 0);
+        enemy.anchoredPosition = PerimeterPointAtAngle(rect, Mathf.PI);
+
+        StartCoroutine(WatchWave0EnemyBecomeVisible(enemy, rect));
+    }
+
+    private IEnumerator WatchWave0EnemyBecomeVisible(RectTransform enemy, Rect rect)
+    {
+        float visibleThresholdX = rect.xMin + enemy.sizeDelta.x * 0.5f;
+
+        while (enemy != null && enemy.anchoredPosition.x < visibleThresholdX)
+        {
+            yield return null;
+        }
+
+        if (enemy == null) yield break;
+
+        if (enemy.GetComponent<ClickInviteEffect>() == null)
+        {
+            enemy.gameObject.AddComponent<ClickInviteEffect>();
+        }
+        if (countdownTimer != null) countdownTimer.PauseForEnemyHighlight(enemy);
+
+        // Wait for the player to actually destroy this enemy, then call out the combo gauge.
+        while (enemy != null)
+        {
+            yield return null;
+        }
+
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForComboGaugeHighlight("적군을 제거하면 콤보게이지를 얻을 수 있습니다!");
+        }
+
+        // Wait for that pause to be dismissed before starting the next tutorial beat.
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        SpawnWave0Group();
+    }
+
+    private void SpawnWave0Group()
+    {
+        if (wave0YellowTrianglePrefab == null || wave0RedTrianglePrefab == null) return;
+
+        var parent = (RectTransform)transform;
+        Rect rect = parent.rect;
+
+        // Fixed spawn point and approach direction (straight in from the right, mirroring the
+        // first practice enemy's left-side entry) so all four arrive together and the visibility
+        // check below is reliable. The yellow entity spawns at the center of the cluster with the
+        // three red ones arranged around it (top-left, top-right, bottom), tight enough that the
+        // whole group still fits inside the shared highlight circle once it re-appears.
+        Vector2 spawnPoint = PerimeterPointAtAngle(rect, 0f);
+
+        var group = new List<RectTransform>();
+
+        var yellow = SpawnEnemy(wave0YellowTrianglePrefab, parent, 0);
+        yellow.anchoredPosition = spawnPoint;
+        group.Add(yellow);
+
+        Vector2[] redOffsets = { new Vector2(-55f, 45f), new Vector2(55f, 45f), new Vector2(0f, -60f) };
+        foreach (var offset in redOffsets)
+        {
+            var red = SpawnEnemy(wave0RedTrianglePrefab, parent, 0);
+            red.anchoredPosition = spawnPoint + offset;
+            group.Add(red);
+        }
+
+        StartCoroutine(WatchWave0GroupBecomeVisible(group, yellow, rect));
+    }
+
+    private IEnumerator WatchWave0GroupBecomeVisible(List<RectTransform> group, RectTransform yellow, Rect rect)
+    {
+        while (true)
+        {
+            bool anyAlive = false;
+            bool allVisible = true;
+
+            foreach (var enemy in group)
+            {
+                if (enemy == null) continue;
+                anyAlive = true;
+
+                float visibleThresholdX = rect.xMax - enemy.sizeDelta.x * 0.5f;
+                if (enemy.anchoredPosition.x > visibleThresholdX) allVisible = false;
+            }
+
+            if (!anyAlive) yield break;
+            if (allVisible) break;
+
+            yield return null;
+        }
+
+        group.RemoveAll(e => e == null);
+        if (group.Count == 0) yield break;
+
+        if (yellow != null && yellow.GetComponent<ClickInviteEffect>() == null)
+        {
+            yellow.gameObject.AddComponent<ClickInviteEffect>();
+        }
+
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForGroupHighlight(group,
+                "노란 적군은 다른 적군보다 강하지만, 제거하면 자신의 주변에 데미지를 전이시킵니다\n막아내지 못하고 중앙에 도달하면 더 강력한 피해를 입으니 주의하세요!");
+        }
+
+        // Wait for that pause to be dismissed before starting the next tutorial beat.
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        // Only bring in the black square once the whole group has actually been cleared.
+        while (group.Exists(e => e != null))
+        {
+            yield return null;
+        }
+
+        SpawnWave0BlackSquare();
+    }
+
+    private void SpawnWave0BlackSquare()
+    {
+        if (wave0BlackSquarePrefab == null) return;
+
+        var parent = (RectTransform)transform;
+        Rect rect = parent.rect;
+
+        // Enters from the opposite side of the group that just arrived (left, mirroring the very
+        // first practice enemy's entry) so the tutorial keeps alternating sides.
+        var enemy = SpawnEnemy(wave0BlackSquarePrefab, parent, 0);
+        enemy.anchoredPosition = PerimeterPointAtAngle(rect, Mathf.PI);
+
+        StartCoroutine(WatchWave0BlackSquareBecomeVisible(enemy, rect));
+    }
+
+    private IEnumerator WatchWave0BlackSquareBecomeVisible(RectTransform enemy, Rect rect)
+    {
+        float visibleThresholdX = rect.xMin + enemy.sizeDelta.x * 0.5f;
+
+        while (enemy != null && enemy.anchoredPosition.x < visibleThresholdX)
+        {
+            yield return null;
+        }
+
+        if (enemy == null) yield break;
+
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForGroupHighlight(new List<RectTransform> { enemy },
+                "검은 적군은 다른 적군에 비해 유달리 민첩하지만, 점수와 콤보를 2배로 제공합니다");
+        }
+
+        // Wait for that pause to be dismissed, then for the player to actually destroy it,
+        // before calling out the fever time mechanic on the combo gauge.
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        while (enemy != null)
+        {
+            yield return null;
+        }
+
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForComboGaugeHighlight(
+                "일정 콤보에 도달하면 피버타임에 진입합니다\n피버타임에는 점수 보너스와 공격 전이가 적용됩니다!");
+        }
+
+        // Wait for that pause to be dismissed, then run the "protect 다슬이" beat before
+        // forcing fever time right away (instead of waiting for a real combo streak) and
+        // feeding the player enemies to click through it for however long is left in Wave 0.
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        yield return StartCoroutine(SpawnWave0SecondaryObjectDemo());
+
+        if (ComboManager.Instance != null) ComboManager.Instance.ForceActivateAoe();
+
+        StartCoroutine(SpawnWave0FeverFiller());
+    }
+
+    private IEnumerator SpawnWave0SecondaryObjectDemo()
+    {
+        if (wave0SecondaryObjectPrefab == null || wave0PracticeEnemyPrefab == null) yield break;
+
+        var parent = (RectTransform)transform;
+
+        // Placed directly on the left-side approach line (same line the tutorial enemy below
+        // spawns on and moves straight along toward the center) so it reliably passes right by
+        // it, demonstrating the "protect it from incoming enemies" mechanic every time.
+        var secondaryObject = Instantiate(wave0SecondaryObjectPrefab, parent);
+        secondaryObject.anchoredPosition = new Vector2(-200f, 0f);
+
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForGroupHighlight(new List<RectTransform> { secondaryObject },
+                "진행 중 랜덤한 위치에 다슬이가 생성됩니다!\n적군이 접근해 부딪히면 다슬이가 피해를 입습니다\n적군을 제거해서 다슬이를 지켜주세요!");
+        }
+
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        // A second beat on the same highlight explaining the score risk/reward before the
+        // enemy actually shows up.
+        if (countdownTimer != null)
+        {
+            countdownTimer.PauseForGroupHighlight(new List<RectTransform> { secondaryObject },
+                "다슬이를 지켜내면 보너스 점수를 얻을 수 있지만, 지키지 못하면 일정 점수를 잃습니다!");
+        }
+
+        while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)
+        {
+            yield return null;
+        }
+
+        var enemy = SpawnEnemy(wave0PracticeEnemyPrefab, parent, 0);
+        enemy.anchoredPosition = PerimeterPointAtAngle(parent.rect, Mathf.PI);
+
+        // Ends whether the player clicks it down first or it collides with 다슬이 instead —
+        // either way the enemy is gone and the demo is over.
+        while (enemy != null)
+        {
+            yield return null;
+        }
+    }
+
+    private IEnumerator SpawnWave0FeverFiller()
+    {
+        if (wave0FeverPrefabs == null || wave0FeverPrefabs.Length == 0) yield break;
+
+        var parent = (RectTransform)transform;
+
+        // Small tight clusters (well within the fever AOE radius) so a single click during
+        // fever chain-clears the whole group, the way fever time is meant to feel. Each cluster
+        // mixes shapes/colors (normal, black, yellow) instead of a single repeated enemy type.
+        // Belt-and-suspenders: HandleWaveEnding() already stops this via StopAllCoroutines()
+        // when Wave 0 ends, but this also guards against ever spawning tutorial filler into
+        // a later wave whose IsWaveActive flag happens to be true.
+        while (CountdownTimer.IsWaveActive && countdownTimer != null && countdownTimer.CurrentWave == 0)
+        {
+            Vector2 anchor = RandomPerimeterPoint(parent.rect);
+
+            for (int i = 0; i < wave0FeverClusterSize; i++)
+            {
+                var prefab = wave0FeverPrefabs[UnityEngine.Random.Range(0, wave0FeverPrefabs.Length)];
+                if (prefab == null) continue;
+
+                var enemy = SpawnEnemy(prefab, parent, 0);
+                enemy.anchoredPosition = anchor + UnityEngine.Random.insideUnitCircle * wave0FeverClusterSpread;
+            }
+
+            yield return new WaitForSeconds(wave0FeverClusterInterval);
+        }
     }
 
     private IEnumerator SpawnOverTime(int wave)
@@ -224,10 +516,11 @@ public class EnemySpawner : MonoBehaviour
     {
         var enemy = Instantiate(prefab, parent);
 
-        if (wave == 1 && wave1SpeedReduction > 0f)
+        float reduction = wave == 1 ? wave1SpeedReduction : wave2PlusSpeedReduction;
+        if (reduction > 0f)
         {
             var mover = enemy.GetComponent<EnemyMover>();
-            if (mover != null) mover.AdjustSpeed(-wave1SpeedReduction);
+            if (mover != null) mover.AdjustSpeed(-reduction);
         }
 
         return enemy;

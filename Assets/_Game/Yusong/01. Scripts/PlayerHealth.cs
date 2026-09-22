@@ -8,7 +8,9 @@ public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
     public static bool IsGameOver { get; private set; }
+    public static event System.Action Damaged;
     public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
 
     [SerializeField] private int maxHealth = 5;
     [SerializeField] private Color hitColor = new Color(0.6f, 0.1f, 0.9f, 1f);
@@ -34,8 +36,10 @@ public class PlayerHealth : MonoBehaviour
         if (theme != null)
         {
             hitColor = theme.playerHitColor;
-            if (theme.circleSprite != null) image.sprite = theme.circleSprite;
         }
+        // Sprite is intentionally left as whatever is set on the Image in the prefab —
+        // this object has its own distinct "water source" design, unlike the generic
+        // round enemies that share theme.circleSprite.
 
         originalColor = image.color;
         UpdateHpText();
@@ -51,10 +55,20 @@ public class PlayerHealth : MonoBehaviour
         if (flashRoutine != null) StopCoroutine(flashRoutine);
         flashRoutine = StartCoroutine(FlashHit());
 
-        if (currentHealth <= 0)
+        Damaged?.Invoke();
+
+        // Dying during the Wave 0 tutorial shouldn't end the run — health just clamps at 0
+        // and gets reset once the real game starts at Wave 1.
+        if (currentHealth <= 0 && !CountdownTimer.IsTutorialWave)
         {
             TriggerGameOver();
         }
+    }
+
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+        UpdateHpText();
     }
 
     private void UpdateHpText()
@@ -95,11 +109,9 @@ public class PlayerHealth : MonoBehaviour
             else gameOverScreen.SetActive(true);
         }
 
-        var raycaster = GetComponentInParent<Canvas>()?.GetComponent<UnityEngine.UI.GraphicRaycaster>();
-        if (raycaster != null)
-        {
-            raycaster.enabled = false;
-        }
+        // 캔버스 레이캐스터 자체를 끄면 결과 화면의 다시하기/메인메뉴 버튼도 같이 막혀버린다.
+        // GameOverScreen 배경 이미지가 raycastTarget=true라 뒤쪽 게임 요소는 어차피 가려진다.
+        GameFlow.Instance?.ReportCurrent(new MiniGameResult(false, 0f));
 
         Time.timeScale = 0f;
     }
