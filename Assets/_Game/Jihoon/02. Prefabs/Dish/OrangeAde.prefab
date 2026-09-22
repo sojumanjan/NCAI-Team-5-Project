@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5507781018874287923}
   - component: {fileID: 1902011703521430575}
   - component: {fileID: 201801978961928947}
+  - component: {fileID: 6884488847906013601}
   m_Layer: 0
   m_Name: OrangeAde
   m_TagString: Untagged
@@ -93,6 +94,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6288c5c1e5f06944eaf3482ea00c675f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PickableItem
+--- !u!114 &6884488847906013601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6720095854961719730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1747b1180b415a74ebebec3838f3d876, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PerishableDish
+  lifeSeconds: 60
+  spoiledColor: {r: 0.05, g: 0.05, b: 0.05, a: 1}
 --- !u!1001 &9137125958586244965
 PrefabInstance:
   m_ObjectHideFlags: 0

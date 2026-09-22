@@ -271,7 +271,7 @@ public class GameFlow : ScriptableObject
         // 결과 화면에서 시간을 멈춰두는 미니게임이 있다. 그대로 넘어가면 다음 씬이 얼어붙는다.
         Time.timeScale = 1f;
 
-        if (SceneUtility.GetBuildIndexByScenePath(sceneName) < 0)
+        if (!IsInBuild(sceneName))
         {
             Debug.LogError($"'{sceneName}' 씬이 Build Settings에 없습니다. " +
                            "File > Build Profiles 에서 추가해주세요.", this);
@@ -279,6 +279,42 @@ public class GameFlow : ScriptableObject
         }
 
         SceneManager.LoadScene(sceneName);
+    }
+
+    /// <summary>
+    /// 이 씬이 빌드 목록에 있는지.
+    ///
+    /// SceneUtility.GetBuildIndexByScenePath는 이름만으로는 못 찾는다 — 등록된 전체 경로를
+    /// 그대로 줘야 한다. 우리가 들고 있는 건 SceneAsset에서 뽑은 이름뿐이라 그대로 물으면
+    /// 목록에 멀쩡히 있는 씬도 없다고 답한다. 그래서 목록을 직접 훑어 이름으로 맞춰본다.
+    /// </summary>
+    private static bool IsInBuild(string sceneName)
+    {
+        // 전체 경로를 넣어준 경우엔 이쪽이 바로 답한다.
+        if (SceneUtility.GetBuildIndexByScenePath(sceneName) >= 0)
+        {
+            return true;
+        }
+
+        int count = SceneManager.sceneCountInBuildSettings;
+        for (int i = 0; i < count; i++)
+        {
+            string path = SceneUtility.GetScenePathByBuildIndex(i);
+            if (string.Equals(NameOf(path), sceneName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NameOf(string scenePath)
+    {
+        int start = scenePath.LastIndexOf('/') + 1;
+        int end = scenePath.LastIndexOf('.');
+
+        return end > start ? scenePath.Substring(start, end - start) : scenePath.Substring(start);
     }
 
 #if UNITY_EDITOR

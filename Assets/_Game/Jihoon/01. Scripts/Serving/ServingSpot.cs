@@ -250,6 +250,13 @@ public class ServingSpot : MonoBehaviour
             return;
         }
 
+        // 트레이가 이미 막고 있지만, 다른 경로로 들어올 수도 있으니 한 번 더 본다.
+        PerishableDish perishable = dish.GetComponent<PerishableDish>();
+        if (perishable != null && perishable.IsSpoiled)
+        {
+            return;
+        }
+
         int slot = FindUnservedSlot(dish.Item);
 
         // 판정 전에 먼저 얹어야 화면과 점수가 같은 타이밍에 움직인다.

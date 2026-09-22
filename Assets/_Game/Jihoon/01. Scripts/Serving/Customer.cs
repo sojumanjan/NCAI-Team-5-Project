@@ -51,6 +51,12 @@ public class Customer : MonoBehaviour
     [Tooltip("카운터에 도착해 주문을 말할 때 나는 소리. 비워두면 조용히 도착합니다.")]
     [SerializeField] private SoundData orderSound;
 
+    [Tooltip("주문을 제대로 받고 떠날 때.")]
+    [SerializeField] private SoundData successSound;
+
+    [Tooltip("주문이 틀렸거나 기다리다 지쳐 떠날 때.")]
+    [SerializeField] private SoundData failSound;
+
     [Header("인내심")]
     [Tooltip("스포너가 값을 주지 않았을 때 쓸 기본 인내심 (초).")]
     [SerializeField] private float defaultPatience = 30f;
@@ -149,6 +155,9 @@ public class Customer : MonoBehaviour
     public void Leave(bool angry = false)
     {
         IsAngry = IsAngry || angry;
+
+        // 손님 자리에서 난다. 레인이 셋이라 어느 쪽에서 난 소리인지 들려야 한다.
+        AudioManager.PlayAt(IsAngry ? failSound : successSound, transform.position);
 
         if (_spot == null)
         {

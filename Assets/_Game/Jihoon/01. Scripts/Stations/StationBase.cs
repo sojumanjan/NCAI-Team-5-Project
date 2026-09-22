@@ -69,6 +69,13 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     [Tooltip("흔들림 속도. 클수록 잘게 떱니다.")]
     [SerializeField] private float shakeSpeed = 40f;
 
+    [Header("소리")]
+    [Tooltip("조리하는 동안 반복될 소리. 기구마다 다른 것을 꽂으세요.")]
+    [SerializeField] private SoundData cookingLoopSound;
+
+    [Tooltip("완성됐을 때. 기구 공통입니다.")]
+    [SerializeField] private SoundData completeSound;
+
     [Header("문구")]
     [Tooltip("재료가 하나도 없을 때.")]
     [SerializeField] private string emptyPrompt = "재료를 넣으세요";
@@ -91,6 +98,9 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     private WorldItem _output;
     private bool _focused;
     private Vector3 _shakeOrigin;
+
+    private SoundHandle _loop;
+    private bool _looping;
 
     /// <summary>지금 사이클의 단계.</summary>
     public StationState State { get; private set; } = StationState.Idle;
@@ -177,6 +187,7 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
             return;
         }
 
+        StartLoop();
         SetState(StationState.Processing);
         OnProcessingStarted(_active);
     }
@@ -184,6 +195,9 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
     public override void OnHoldProgress(PlayerInteractor interactor, float normalized)
     {
         // HoldToRun만 여기 들어온다. 나머지는 HoldDuration을 0으로 보고하기 때문.
+        // 이쪽은 누르고 있는 것 자체가 조리라, 소리도 여기서 시작해야 한다.
+        StartLoop();
+
         OnProcessingProgress(normalized);
         ApplyShake(normalized);
         ProgressChanged?.Invoke(normalized);
@@ -191,6 +205,8 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
     public override void OnHoldCanceled(PlayerInteractor interactor)
     {
+        StopLoop();
+
         OnProcessingProgress(0f);
         ApplyShake(0f);
         ProgressChanged?.Invoke(0f);
@@ -272,6 +288,13 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
 
             taken.transform.SetParent(null, true);
             ItemData data = taken.Item;
+
+            // 기구에서 나오는 순간부터 상하기 시작한다. 안에 있는 동안은 세지 않는다.
+            PerishableDish perishable = taken.GetComponent<PerishableDish>();
+            if (perishable != null)
+            {
+                perishable.Begin();
+            }
 
             SetState(StationState.Idle);
             OnOutputTaken(data);
@@ -362,6 +385,9 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         _timer = 0f;
         ApplyShake(0f);
 
+        StopLoop();
+        AudioManager.PlayAt(completeSound, OutputOrigin.position);
+
         ClearIngredientObjects();
         _loaded.Clear();
         RecomputePending();
@@ -398,6 +424,39 @@ public abstract class StationBase : InteractableBase, IItemSource, IItemReceiver
         }
 
         OnCompleted(recipe);
+    }
+
+    /// <summary>
+    /// 돌아가는 소리를 켠다. 이미 울리고 있으면 아무 일도 하지 않는다 — 홀드 방식은
+    /// 매 프레임 여기로 들어오기 때문이다.
+    /// </summary>
+    private void StartLoop()
+    {
+        if (_looping || cookingLoopSound == null)
+        {
+            return;
+        }
+
+        // 기구에 붙여서 낸다. 흔들리며 움직여도 소리가 따라가고, 기구가 사라지면 같이 멎는다.
+        _loop = AudioManager.PlayAttached(cookingLoopSound, transform);
+        _looping = _loop.IsValid;
+    }
+
+    private void StopLoop()
+    {
+        if (!_looping)
+        {
+            return;
+        }
+
+        _loop.Stop();
+        _looping = false;
+    }
+
+    // 씬을 내리거나 기구를 꺼도 반복음은 매니저 쪽에 남는다. 직접 멎게 해야 한다.
+    private void OnDisable()
+    {
+        StopLoop();
     }
 
     /// <summary>
