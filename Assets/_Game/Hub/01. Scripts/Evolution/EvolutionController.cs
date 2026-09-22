@@ -1,40 +1,39 @@
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// 미니게임 클리어마다 재생되는 캐릭터 진화 연출.
-/// 화면(줌 대상 UI) 확대 → 캐릭터 화이트아웃 → 흔들림 유지 → 스케일 팝+별 흩뿌리기와 함께
-/// 다음 단계 스프라이트로 교체 → 화면 축소 순으로 진행한다.
-/// 스프라이트는 evolutionStages 배열만 교체하면 실제 아트로 바로 대체할 수 있다.
-/// Screen Space - Overlay Canvas는 카메라로 렌더링되지 않으므로, 줌인은 카메라 FOV가 아니라
-/// 화면 전체를 감싸는 zoomTarget(RectTransform)의 스케일을 키우는 방식으로 구현한다.
+/// 미니게임 클리어마다 재생되는 캐릭터 진화 연출 재생기.
+/// 캐릭터 자체(스프라이트, 진화 단계)는 CharacterEvolutionState가 들고 있고,
+/// 이 컨트롤러는 PlayEvolution에 넘겨받은 캐릭터를 대상으로 줌/화이트아웃/흔들림/스케일 팝/별 흩뿌리기만 재생한다.
+///
+/// 캐릭터(CharacterRoot)와 맵 배경(zoomTarget, 예: MainRoot)은 서로 다른 사람이 독립적으로 관리하는
+/// 별개의 좌표계이므로(부모-자식 관계로 얽어두지 않는다). 카메라가 캐릭터를 따라가며 줌인하는 것과
+/// 같은 느낌을 내기 위해, 맵/캐릭터의 확대와 "캐릭터가 있던 지점이 화면 중앙에 오도록 이동"을
+/// 하나의 진행률(0~1)로 매 프레임 동시에 반영한다. 확대와 이동을 서로 다른 트윈으로 따로 돌리면
+/// 속도가 미묘하게 어긋나 아직 덜 커진 가장자리에 빈 공간이 보일 수 있어서, 반드시 같은 t값으로
+/// 스케일과 위치를 함께 보간한다.
+///
+/// 별 흩뿌리기는 화면 중앙 고정 위치(StarBurstRoot의 원래 자리)에서 재생한다.
 /// </summary>
 public class EvolutionController : MonoBehaviour
 {
     [Header("참조")]
-    [Tooltip("줌인 시 확대할 대상. 배경+캐릭터를 모두 포함하는 최상위 RectTransform(예: MainRoot)을 연결한다.")]
+    [Tooltip("줌인 시 확대할 맵/배경 UI. 화면 전체를 덮는 stretch RectTransform(예: MainRoot)을 연결한다. " +
+        "캐릭터와는 별개의 오브젝트이므로, 연출마다 캐릭터의 현재 화면 위치를 계산해 그 지점이 " +
+        "화면 중앙에 오도록 맵을 확대하면서 동시에 이동시킨다.")]
     [SerializeField] private RectTransform zoomTarget;
-    [Tooltip("CharacterImage와 whiteFlashOverlay를 함께 감싸는 부모. 흔들림/스케일 팝을 이 RectTransform에" +
-        " 적용해 캐릭터와 흰색 오버레이가 항상 같이 움직이게 한다(따로 흔들면 서로 어긋나 보인다).")]
-    [SerializeField] private RectTransform characterRoot;
-    [SerializeField] private Image characterImage;
-    [Tooltip("캐릭터 Image와 같은 크기/위치에 겹쳐두는 흰색 Image. 알파를 올려 흰색이 덮이는 것처럼 보이게 한다. " +
-        "sprite는 반드시 비워둔다(null) — Image.color는 스프라이트 텍스처에 곱셈(multiply)되므로, " +
-        "캐릭터 스프라이트(유색)를 그대로 물려두면 흰색을 곱해도 원래 색이 그대로 나온다. " +
-        "sprite가 없으면 Image가 내장 흰색 텍스처를 사용해 진짜 흰색으로 보인다.")]
-    [SerializeField] private Image whiteFlashOverlay;
+    [Tooltip("별 흩뿌리기. 원래 배치된 자리(화면 중앙)에서 그대로 재생한다.")]
     [SerializeField] private UIStarBurst starBurst;
-
-    [Header("진화 단계 스프라이트 (0번이 현재 시작 단계)")]
-    [SerializeField] private Sprite[] evolutionStages;
-    [Tooltip("evolutionStages와 같은 순서/개수. 각 단계 스프라이트의 실루엣을 흰색으로 채운 버전(알파는 원본과 동일). " +
-        "비워두면 whiteFlashOverlay가 계속 사각형 모양으로 남는다.")]
-    [SerializeField] private Sprite[] evolutionStagesWhite;
 
     [Header("화면 줌")]
     [SerializeField] private float zoomedScale = 1.15f;
-    [SerializeField] private float zoomDuration = 0.5f;
+    [Tooltip("맵/캐릭터를 확대하면서 동시에 캐릭터 위치를 화면 중앙으로 이동시키는 총 시간. " +
+        "확대와 이동을 같은 진행률로 동시에 진행하므로 빈 공간이 보이지 않는다.")]
+    [SerializeField] private float zoomInDuration = 0.6f;
+    [Tooltip("연출이 끝나고 원래 크기/위치로 되돌아갈 때 걸리는 시간(줌인의 역순, 동시 진행).")]
+    [SerializeField] private float zoomOutDuration = 0.5f;
+    [Tooltip("별 흩뿌리기가 끝난 뒤, 원래 크기/위치로 되돌아가기 시작하기까지의 대기 시간.")]
+    [SerializeField] private float zoomOutDelayAfterBurst = 0.5f;
 
     [Header("화이트아웃")]
     [SerializeField] private float fadeToWhiteDuration = 1f;
@@ -49,65 +48,61 @@ public class EvolutionController : MonoBehaviour
     [SerializeField] private float popScaleMultiplier = 1.4f;
     [SerializeField] private float popDuration = 0.3f;
 
-    private int currentStageIndex;
     private Vector3 defaultZoomScale;
-    private Vector2 originalCharacterRootPosition;
-    private Vector3 originalCharacterRootScale;
-
-    public int CurrentStageIndex => currentStageIndex;
+    private Vector2 defaultZoomAnchoredPosition;
+    private bool isPlaying;
 
     private void Awake()
     {
         if (zoomTarget != null)
         {
             defaultZoomScale = zoomTarget.localScale;
+            defaultZoomAnchoredPosition = zoomTarget.anchoredPosition;
         }
-
-        if (characterRoot != null)
-        {
-            originalCharacterRootPosition = characterRoot.anchoredPosition;
-            originalCharacterRootScale = characterRoot.localScale;
-        }
-
-        if (characterImage != null && evolutionStages != null && evolutionStages.Length > 0)
-        {
-            characterImage.sprite = evolutionStages[0];
-        }
-
-        if (whiteFlashOverlay != null)
-        {
-            whiteFlashOverlay.sprite = GetWhiteSpriteForStage(0);
-            SetOverlayAlpha(0f);
-        }
-    }
-
-    private void SetOverlayAlpha(float alpha)
-    {
-        Color color = evolutionFlashColor;
-        color.a = alpha;
-        whiteFlashOverlay.color = color;
     }
 
     /// <summary>
-    /// 미니게임 클리어 시 외부(GameFlow 등)에서 호출한다.
-    /// 마지막 단계에 이미 도달했다면 아무 동작도 하지 않는다.
+    /// 미니게임 클리어 시 외부(GameFlow 등)에서, 진화시킬 캐릭터를 넘겨 호출한다.
+    /// 캐릭터가 이미 마지막 단계라면(CanEvolve == false) 아무 동작도 하지 않는다.
+    /// 이미 연출이 재생 중일 때 다시 호출되면(예: 버튼 연타) 무시한다.
     /// </summary>
-    public void PlayEvolution()
+    public void PlayEvolution(CharacterEvolutionState character)
     {
-        if (evolutionStages == null || currentStageIndex >= evolutionStages.Length - 1)
+        if (character == null || !character.CanEvolve || isPlaying)
         {
             return;
         }
 
-        Sequence sequence = DOTween.Sequence();
+        isPlaying = true;
 
-        // 화면 확대(줌인)는 다른 연출과 동시에 시작한다.
+        RectTransform characterRect = character.RectTransform;
+        Vector2 originalCharacterPosition = characterRect.anchoredPosition;
+        Vector3 originalCharacterScale = characterRect.localScale;
+
+        // 캐릭터와 zoomTarget은 서로 다른 부모를 가진 별개 좌표계이므로,
+        // 캐릭터의 화면(스크린) 좌표를 기준으로 맵의 로컬 좌표를 계산해 맞춘다.
+        Vector2 characterScreenPoint = RectTransformUtility.WorldToScreenPoint(null, characterRect.position);
+        Vector2 zoomTargetLocalPointAtScale1 = Vector2.zero;
         if (zoomTarget != null)
         {
-            sequence.Join(zoomTarget.DOScale(defaultZoomScale * zoomedScale, zoomDuration));
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(zoomTarget, characterScreenPoint, null, out zoomTargetLocalPointAtScale1);
         }
 
-        // 1단계: 흰색 오버레이를 캐릭터 위로 서서히 덮는다 (Image.color 곱셈 틴트로는
+        var whiteFlashOverlay = character.WhiteFlashOverlay;
+        if (whiteFlashOverlay != null)
+        {
+            whiteFlashOverlay.sprite = character.CurrentWhiteSprite;
+            SetOverlayAlpha(whiteFlashOverlay, 0f);
+        }
+
+        Sequence sequence = DOTween.Sequence();
+
+        // 1단계: 맵과 캐릭터를 "동시에, 같은 진행률로" 확대 + 캐릭터 위치를 화면 중앙으로 이동.
+        // 확대와 이동이 각각 독립된 트윈으로 따로 진행되면 속도가 미묘하게 어긋나 빈 공간이
+        // 보일 수 있으므로, 하나의 t(0~1) 트윈에서 매 프레임 둘 다 함께 갱신한다.
+        sequence.Append(CreateZoomInTween(characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1));
+
+        // 흰색 오버레이를 캐릭터 위로 서서히 덮는다 (Image.color 곱셈 틴트로는
         // 유색 스프라이트가 흰색으로 안 바뀌므로, 별도 오버레이의 알파를 올리는 방식으로 구현).
         if (whiteFlashOverlay != null)
         {
@@ -115,32 +110,34 @@ public class EvolutionController : MonoBehaviour
         }
         else
         {
-            sequence.Append(characterImage.DOColor(evolutionFlashColor, fadeToWhiteDuration));
+            sequence.Append(character.CharacterImage.DOColor(evolutionFlashColor, fadeToWhiteDuration));
         }
 
-        // 2단계: 흰색 유지 + 바들바들 떨림 (캐릭터와 흰색 오버레이를 함께 감싸는 characterRoot를 흔들어야
-        // 둘이 같이 움직여서 어긋나 보이지 않는다).
+        // 흰색 유지 + 바들바들 떨림 (캐릭터 자신을 흔들면 오버레이도 자식이라 함께 움직인다).
         sequence.AppendCallback(() =>
         {
-            characterRoot.DOShakeAnchorPos(
+            characterRect.DOShakeAnchorPos(
                 shakeHoldDuration, shakeStrength, shakeVibrato, 90f, false, true);
         });
         sequence.AppendInterval(shakeHoldDuration);
 
-        // 3단계: 흔들림이 끝난 뒤 위치를 원래대로 되돌리고, 스프라이트를 교체하며 흰색 오버레이를 걷어낸다.
+        // 흔들림이 끝난 뒤 캐릭터를 화면 중앙(흔들림 시작 전 위치)으로 되돌리고,
+        // 스프라이트를 교체하며 흰색 오버레이를 걷어낸다.
         sequence.AppendCallback(() =>
         {
-            characterRoot.anchoredPosition = originalCharacterRootPosition;
-            AdvanceStage();
+            characterRect.anchoredPosition = Vector2.zero;
+            character.AdvanceStage();
 
             if (whiteFlashOverlay != null)
             {
-                SetOverlayAlpha(0f);
+                SetOverlayAlpha(whiteFlashOverlay, 0f);
             }
         });
 
-        Tween popTween = characterRoot
-            .DOScale(originalCharacterRootScale * popScaleMultiplier, popDuration * 0.5f)
+        // 캐릭터가 줌인된 크기(originalScale * zoomedScale)에서 다시 스케일 팝을 하도록 기준을 잡는다.
+        Vector3 zoomedCharacterScale = originalCharacterScale * zoomedScale;
+        Tween popTween = characterRect
+            .DOScale(zoomedCharacterScale * popScaleMultiplier, popDuration * 0.5f)
             .SetLoops(2, LoopType.Yoyo);
         sequence.Append(popTween);
 
@@ -155,38 +152,69 @@ public class EvolutionController : MonoBehaviour
         float burstDuration = starBurst != null ? starBurst.Duration : 0f;
         sequence.AppendInterval(burstDuration);
 
-        // 4단계: 별 흩뿌리기가 끝나면 화면을 원래 크기로 되돌린다.
-        sequence.AppendCallback(() =>
-        {
-            if (zoomTarget != null)
-            {
-                zoomTarget.DOScale(defaultZoomScale, zoomDuration);
-            }
-        });
-    }
+        // 별 흩뿌리기가 다 끝난 뒤에도 잠깐 여운을 두고 나서 원래 크기/위치로 돌아간다.
+        sequence.AppendInterval(zoomOutDelayAfterBurst);
 
-    private void AdvanceStage()
-    {
-        currentStageIndex++;
-        characterImage.sprite = evolutionStages[currentStageIndex];
+        // 2단계: 줌인의 역순으로, 맵/캐릭터를 원래 크기/위치로 동시에(같은 진행률로) 되돌린다.
+        sequence.Append(CreateZoomOutTween(characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1));
 
-        if (whiteFlashOverlay != null)
-        {
-            whiteFlashOverlay.sprite = GetWhiteSpriteForStage(currentStageIndex);
-        }
+        sequence.OnComplete(() => isPlaying = false);
     }
 
     /// <summary>
-    /// 해당 단계의 흰색 실루엣 스프라이트를 반환한다. evolutionStagesWhite가 비어있거나
-    /// 개수가 안 맞으면(아직 흰색 버전을 안 만든 단계) null을 반환해 사각형 오버레이로 대체한다.
+    /// 진행률 t(0→1)에 따라 zoomTarget과 characterRect의 스케일/위치를 동시에 보간하는 트윈을 만든다.
+    /// t=0: 원래 크기, 캐릭터 원래 위치. t=1: zoomedScale배 확대, 캐릭터가 화면 중앙에 위치.
+    /// 스케일과 위치가 항상 같은 t로 함께 움직이므로 확대/이동 속도가 어긋나 생기는 빈 공간이 없다.
     /// </summary>
-    private Sprite GetWhiteSpriteForStage(int stageIndex)
+    private Tween CreateZoomInTween(RectTransform characterRect, Vector2 originalCharacterPosition,
+        Vector3 originalCharacterScale, Vector2 zoomTargetLocalPointAtScale1)
     {
-        if (evolutionStagesWhite == null || stageIndex >= evolutionStagesWhite.Length)
+        return DOTween.To(() => 0f, t =>
         {
-            return null;
+            ApplyZoomProgress(t, characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1);
+        }, 1f, zoomInDuration);
+    }
+
+    private Tween CreateZoomOutTween(RectTransform characterRect, Vector2 originalCharacterPosition,
+        Vector3 originalCharacterScale, Vector2 zoomTargetLocalPointAtScale1)
+    {
+        return DOTween.To(() => 1f, t =>
+        {
+            ApplyZoomProgress(t, characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1);
+        }, 0f, zoomOutDuration);
+    }
+
+    private void ApplyZoomProgress(float t, RectTransform characterRect, Vector2 originalCharacterPosition,
+        Vector3 originalCharacterScale, Vector2 zoomTargetLocalPointAtScale1)
+    {
+        float currentScaleMultiplier = Mathf.Lerp(1f, zoomedScale, t);
+
+        characterRect.localScale = originalCharacterScale * currentScaleMultiplier;
+        characterRect.anchoredPosition = Vector2.Lerp(originalCharacterPosition, Vector2.zero, t);
+
+        if (zoomTarget == null)
+        {
+            return;
         }
 
-        return evolutionStagesWhite[stageIndex];
+        zoomTarget.localScale = defaultZoomScale * currentScaleMultiplier;
+
+        // "캐릭터 지점이 배경 위에서 화면상 어디에 있는지"를 항상 캐릭터 자신의 이동과 똑같은 방식
+        // (원래 위치 -> 화면 중앙(0)을 t로 선형 보간)으로 목표를 잡고, 그 목표를 만족하는
+        // anchoredPosition을 역산한다. 캐릭터 지점의 화면상 위치는 (anchoredPosition + P * scale)
+        // 이므로, 목표값에서 P * scale을 뺀 값이 필요한 anchoredPosition이다.
+        // 캐릭터 쪽과 완전히 같은 Lerp(원래위치, 0, t) 형태를 쓰기 때문에, 두 좌표계의 해상도/스케일이
+        // 달라도(Canvas Scaler 등) 항상 정확히 맞아떨어진다.
+        Vector2 characterScreenOffsetAtScale1 = zoomTargetLocalPointAtScale1 + defaultZoomAnchoredPosition;
+        Vector2 desiredCharacterScreenOffset = Vector2.Lerp(characterScreenOffsetAtScale1, Vector2.zero, t);
+        Vector2 scaledLocalPoint = zoomTargetLocalPointAtScale1 * currentScaleMultiplier;
+        zoomTarget.anchoredPosition = desiredCharacterScreenOffset - scaledLocalPoint;
+    }
+
+    private static void SetOverlayAlpha(UnityEngine.UI.Image overlay, float alpha)
+    {
+        Color color = overlay.color;
+        color.a = alpha;
+        overlay.color = color;
     }
 }
