@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 226928257836eeb4dbf00dd74c70f585, type: 3}
+  m_Name: GameHelp_Cooking
+  m_EditorClassIdentifier: Assembly-CSharp::Taegeon.GameHelpData
+  gameTitle: Cook It
+  objective: "21\uC2DC\uAE4C\uC9C0 \uCE74\uD398 \uC7A5\uC0AC\uB97C \uD558\uBA70 \uD3C9\uC810
+    4.0 \uC774\uC0C1\uC744 \uB2EC\uC131\uD558\uC138\uC694."
+  controls: "WASD | \uC774\uB3D9       E  | \uC0C1\uD638\uC791\uC6A9\nSpace | \uC810\uD504   
+    Ctrl | \uC549\uAE30\n\uC88C\uD074\uB9AD | \uC9D1\uAE30/\uB193\uAE30/\uB123\uAE30\n"
+  instructions: "\uC528\uC557\uC774\uC758 \uC804\uC131\uAE30 \uC2DC\uC808 \uC694\uB9AC
+    \uC2E4\uB825\uC744 \uB418\uCC3E\uC544\uC57C \uD574\uC694.\n\uC190\uB2D8\uB4E4\uC5D0\uAC8C
+    \uC74C\uC2DD\uC744 \uD310\uB9E4\uD558\uACE0 \uD3C9\uC810\uC744 \uC62C\uB824\uBCF4\uC138\uC694."
+  helpImage: {fileID: 0}

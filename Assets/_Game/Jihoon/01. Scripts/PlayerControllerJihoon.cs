@@ -242,8 +242,27 @@ public class PlayerControllerJihoon : MonoBehaviour
         _crouch?.Dispose();
     }
 
+    /// <summary>
+    /// 일시정지 중인지. 메뉴가 Time.timeScale을 0으로 눌러두는 것을 신호로 본다.
+    ///
+    /// 공용 메뉴(MenuEscapeToggle)에 따로 플래그가 없어서 timeScale을 본다. 태건님
+    /// 컨트롤러도 같은 신호를 쓰고 있어 팀에서 이미 통하는 약속이다.
+    ///
+    /// 이동은 dt가 0이라 알아서 멈추지만 <b>시점은 안 멈춘다</b>. 마우스 델타는 프레임
+    /// 시간과 무관해서, 메뉴를 띄워둔 채 마우스를 움직이면 뒤에서 화면이 계속 돌아간다.
+    /// </summary>
+    public static bool IsPaused => Time.timeScale <= 0f;
+
     private void Update()
     {
+        if (IsPaused)
+        {
+            // 메뉴가 닫히는 순간 그동안 쌓인 델타가 한 번에 들어와 화면이 튀지 않도록 비운다.
+            _smoothedLook = Vector2.zero;
+            _lookVelocity = Vector2.zero;
+            return;
+        }
+
         float dt = Time.deltaTime;
 
         UpdateLook(dt);
