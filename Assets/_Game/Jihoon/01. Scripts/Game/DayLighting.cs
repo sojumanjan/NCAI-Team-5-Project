@@ -1,16 +1,11 @@
 using UnityEngine;
 
 /// <summary>
-/// 영업시간이 흐르는 만큼 바깥 시간도 흐르게 한다. 해를 돌리고, 색을 식히고,
-/// 어두워지는 만큼 실내등을 올린다.
+/// 영업시간이 흐르는 만큼 해를 돌리고, 저녁 한때만 노을색을 입힌다.
 ///
-/// 플레이어는 하루 내내 실내에 있어서 하늘을 거의 못 본다. 그래서 여기서 진짜 일을
-/// 하는 건 스카이박스가 아니라 <b>셔터 밖에서 들어오는 빛의 색</b>과 <b>실내등</b>이다.
-/// 특히 실내등은 연출이 아니라 안전장치다 — 20시에 바깥이 완전히 꺼져도 손이 보여야
-/// 요리를 계속할 수 있다.
-///
-/// 색과 세기를 전부 Gradient·Curve로 뺀 이유는 눈으로 보고 잡는 값이기 때문이다.
-/// 코드에 숫자로 박아두면 한 번 고칠 때마다 컴파일을 기다려야 한다.
+/// 각도를 시작과 끝으로 적지 않고 <b>아무 두 시각의 각도</b>로 받는다. 그렇게 잡는 게
+/// 실제로 하는 일이기 때문이다 — 씬 뷰에서 해를 돌려 "이쯤이 저녁"을 찾아낸 다음 그 값을
+/// 적으면, 나머지 시간대는 알아서 앞뒤로 늘어난다. 9시 각도를 손으로 역산할 일이 없다.
 /// </summary>
 public class DayLighting : MonoBehaviour
 {
@@ -18,40 +13,48 @@ public class DayLighting : MonoBehaviour
     [Tooltip("시간을 읽어올 시계. 비워두면 씬에서 찾습니다.")]
     [SerializeField] private DayClock clock;
 
-    [Tooltip("바깥 해. 비워두면 씬의 Directional Light를 찾습니다.")]
+    [Tooltip("돌릴 해. 비워두면 씬의 Directional Light를 찾습니다.")]
     [SerializeField] private Light sun;
 
-    [Tooltip("저녁에 켜질 실내등들. 원래 세기에 곱하는 방식이라 씬 값은 안 바뀝니다.")]
-    [SerializeField] private Light[] interiorLights;
+    [Header("기준 각도")]
+    [Tooltip("첫 번째로 잡아둔 시각.")]
+    [SerializeField] private float firstHour = 18f;
 
-    [Header("해의 높이")]
-    [Tooltip("영업 시작 때의 고도각. 0이 지평선, 90이 머리 위, 180이 반대쪽 지평선입니다.")]
-    [SerializeField] private float startPitch = 45f;
+    [Tooltip("그 시각의 해 각도.")]
+    [SerializeField] private Vector3 firstAngles = new Vector3(8.572f, -20.771f, -8.839f);
 
-    [Tooltip("영업 종료 때의 고도각. 180을 넘으면 해가 지평선 아래로 내려갑니다.")]
-    [SerializeField] private float endPitch = 200f;
+    [Tooltip("두 번째로 잡아둔 시각.")]
+    [SerializeField] private float secondHour = 20f;
 
-    [Header("해의 색과 세기")]
-    [Tooltip("시간에 따른 햇빛 색. 0이 아침, 1이 밤입니다.")]
-    [SerializeField] private Gradient sunColor = DefaultSunColor();
+    [Tooltip("그 시각의 해 각도.")]
+    [SerializeField] private Vector3 secondAngles = new Vector3(-19.208f, -16.373f, -9.259f);
 
-    [Tooltip("시간에 따른 햇빛 세기 배율.")]
-    [SerializeField] private AnimationCurve sunIntensity = DefaultSunIntensity();
+    [Header("노을")]
+    [Tooltip("끄면 색을 전혀 건드리지 않습니다. 씬에 잡아둔 해 색이 그대로 유지됩니다.")]
+    [SerializeField] private bool tintSunset = true;
 
-    [Tooltip("한낮 기준 햇빛 세기. 위 곡선에 곱합니다.")]
-    [SerializeField] private float sunMaxIntensity = 1f;
+    [Tooltip("노을이 가장 짙을 때의 색.")]
+    [SerializeField] private Color sunsetColor = new Color32(255, 177, 71, 255);
 
-    [Header("실내등")]
-    [Tooltip("시간에 따라 각 실내등의 원래 세기에 곱할 배율.")]
-    [SerializeField] private AnimationCurve interiorIntensity = DefaultInteriorIntensity();
+    [Tooltip("물들기 시작하는 시각.")]
+    [SerializeField] private float sunsetStartHour = 18f;
 
-    [Header("앰비언트")]
-    [Tooltip("하늘에서 실내 전체 톤을 다시 굽는 횟수 (초당). 매 프레임 하면 프레임이 떨어집니다.")]
-    [SerializeField] private float ambientUpdatesPerSecond = 4f;
+    [Tooltip("가장 짙어지는 시각.")]
+    [SerializeField] private float sunsetPeakHour = 19f;
 
-    private float[] _interiorBase;
-    private float _ambientTimer;
+    [Tooltip("원래 색으로 다 돌아오는 시각.")]
+    [SerializeField] private float sunsetEndHour = 20f;
+
+    [Header("미리보기")]
+    [Tooltip("플레이하지 않고 확인할 시각. 톱니바퀴 메뉴에서 적용합니다.")]
+    [SerializeField] private float previewHour = 9f;
+
     private bool _subscribed;
+
+    // 기준 색은 씬에서 읽는다. 코드에 흰색을 박아두면 아티스트가 해 색을 바꾼 순간
+    // 노을이 끝날 때마다 그 흰색으로 덮여버린다.
+    private Color _baseColor = Color.white;
+    private bool _baseCaptured;
 
     private void Awake()
     {
@@ -72,25 +75,15 @@ public class DayLighting : MonoBehaviour
             return;
         }
 
-        CacheInteriorBase();
+        CaptureBase();
     }
 
-    /// <summary>
-    /// 실내등의 원래 세기를 기억해둔다. 매번 배율을 곱하면 값이 계속 줄어들어
-    /// 몇 초 만에 0이 된다.
-    /// </summary>
-    private void CacheInteriorBase()
+    private void CaptureBase()
     {
-        if (interiorLights == null)
+        if (!_baseCaptured && sun != null)
         {
-            _interiorBase = new float[0];
-            return;
-        }
-
-        _interiorBase = new float[interiorLights.Length];
-        for (int i = 0; i < interiorLights.Length; i++)
-        {
-            _interiorBase[i] = interiorLights[i] != null ? interiorLights[i].intensity : 0f;
+            _baseColor = sun.color;
+            _baseCaptured = true;
         }
     }
 
@@ -98,7 +91,7 @@ public class DayLighting : MonoBehaviour
     {
         if (clock != null && !_subscribed)
         {
-            clock.Ticked += Apply;
+            clock.Ticked += ApplyProgress;
             _subscribed = true;
         }
     }
@@ -107,117 +100,118 @@ public class DayLighting : MonoBehaviour
     {
         if (clock != null && _subscribed)
         {
-            clock.Ticked -= Apply;
+            clock.Ticked -= ApplyProgress;
             _subscribed = false;
         }
     }
 
     private void Start()
     {
-        // 시계는 셔터를 올려야 흐르기 시작한다. 그 전에도 아침으로는 보여야 하니
-        // 한 번 찍어둔다.
-        Apply(clock != null ? clock.Progress01 : 0f);
-        UpdateAmbient();
+        // 시계는 셔터를 올려야 흐르기 시작한다. 그 전에도 아침 각도로는 서 있어야 한다.
+        ApplyProgress(clock != null ? clock.Progress01 : 0f);
     }
 
-    /// <summary>진행률 0~1을 조명에 반영한다. 시계가 매 프레임 부른다.</summary>
-    public void Apply(float progress01)
+    /// <summary>시계가 매 프레임 부른다.</summary>
+    private void ApplyProgress(float progress01)
     {
-        float t = Mathf.Clamp01(progress01);
+        ApplyHour(clock.CurrentHourFloat);
+    }
 
-        Vector3 angles = sun.transform.eulerAngles;
-        sun.transform.rotation = Quaternion.Euler(Mathf.Lerp(startPitch, endPitch, t), angles.y, angles.z);
-
-        sun.color = sunColor.Evaluate(t);
-        sun.intensity = Mathf.Max(0f, sunIntensity.Evaluate(t) * sunMaxIntensity);
-
-        float indoor = Mathf.Max(0f, interiorIntensity.Evaluate(t));
-        for (int i = 0; i < _interiorBase.Length; i++)
+    /// <summary>그 시각의 각도와 색으로 해를 세운다.</summary>
+    public void ApplyHour(float hour)
+    {
+        if (sun == null)
         {
-            if (interiorLights[i] != null)
-            {
-                interiorLights[i].intensity = _interiorBase[i] * indoor;
-            }
+            return;
         }
 
-        TickAmbient();
+        CaptureBase();
+
+        sun.transform.rotation = Quaternion.Euler(AnglesAt(hour));
+
+        if (tintSunset)
+        {
+            sun.color = ColorAt(hour);
+        }
     }
 
     /// <summary>
-    /// 하늘이 바뀌어도 실내에 깔리는 간접광은 따로 구워야 따라온다. 그런데 이게 무거워서
-    /// 매 프레임 부르면 눈에 띄게 느려진다. 5분에 걸친 변화라 초당 몇 번이면 계단이 안 보인다.
+    /// 그 시각의 해 색. 노을 구간 밖에서는 씬에 잡아둔 색 그대로다.
+    ///
+    /// 물들었다가 되돌아오는 산 모양으로 간다. 한 번 물든 채로 끝내지 않는 이유는,
+    /// 노을이 짙은 건 해가 지평선에 걸린 잠깐뿐이고 그 뒤로는 그냥 어두워지기 때문이다.
     /// </summary>
-    private void TickAmbient()
+    public Color ColorAt(float hour)
     {
-        if (ambientUpdatesPerSecond <= 0f)
+        if (hour <= sunsetStartHour || hour >= sunsetEndHour)
         {
-            return;
+            return _baseColor;
         }
 
-        _ambientTimer += Time.deltaTime;
-
-        float step = 1f / ambientUpdatesPerSecond;
-        if (_ambientTimer < step)
+        if (hour < sunsetPeakHour)
         {
-            return;
+            float up = Mathf.InverseLerp(sunsetStartHour, sunsetPeakHour, hour);
+            return Color.Lerp(_baseColor, sunsetColor, up);
         }
 
-        _ambientTimer = 0f;
-        UpdateAmbient();
+        float down = Mathf.InverseLerp(sunsetPeakHour, sunsetEndHour, hour);
+        return Color.Lerp(sunsetColor, _baseColor, down);
     }
 
-    private void UpdateAmbient()
+    /// <summary>
+    /// 두 기준점을 잇는 직선 위의 각도. 기준점 바깥이면 그대로 늘려 쓴다 —
+    /// 18시와 20시만 잡아줘도 9시가 나오는 건 그래서다.
+    /// </summary>
+    public Vector3 AnglesAt(float hour)
     {
-        if (RenderSettings.ambientMode == UnityEngine.Rendering.AmbientMode.Skybox)
+        float span = secondHour - firstHour;
+        if (Mathf.Approximately(span, 0f))
         {
-            DynamicGI.UpdateEnvironment();
+            return firstAngles;
         }
+
+        return firstAngles + (secondAngles - firstAngles) * ((hour - firstHour) / span);
     }
 
-    // ---------------------------------------------------------------- 기본값
-
-    private static Gradient DefaultSunColor()
+    [ContextMenu("미리보기 시각으로 해 돌리기")]
+    private void PreviewNow()
     {
-        var gradient = new Gradient();
-        gradient.SetKeys(
-            new[]
-            {
-                new GradientColorKey(new Color(1.00f, 0.95f, 0.85f), 0.00f), // 아침
-                new GradientColorKey(new Color(1.00f, 0.98f, 0.92f), 0.40f), // 한낮
-                new GradientColorKey(new Color(1.00f, 0.85f, 0.62f), 0.66f), // 늦은 오후
-                new GradientColorKey(new Color(1.00f, 0.50f, 0.20f), 0.78f), // 노을 (18시 무렵)
-                new GradientColorKey(new Color(0.32f, 0.28f, 0.48f), 0.90f), // 땅거미
-                new GradientColorKey(new Color(0.10f, 0.12f, 0.26f), 1.00f), // 밤
-            },
-            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+        if (sun == null)
+        {
+            sun = RenderSettings.sun;
+        }
 
-        return gradient;
+        ApplyHour(previewHour);
     }
 
-    private static AnimationCurve DefaultSunIntensity()
+    [ContextMenu("기준 색을 지금 해 색으로 다시 잡기")]
+    private void RecaptureBase()
     {
-        return new AnimationCurve(
-            new Keyframe(0.00f, 0.85f),
-            new Keyframe(0.40f, 1.00f),
-            new Keyframe(0.66f, 0.85f),
-            new Keyframe(0.78f, 0.55f),
-            new Keyframe(0.92f, 0.00f),
-            new Keyframe(1.00f, 0.00f));
-    }
-
-    private static AnimationCurve DefaultInteriorIntensity()
-    {
-        return new AnimationCurve(
-            new Keyframe(0.00f, 0.50f),
-            new Keyframe(0.60f, 0.55f),
-            new Keyframe(0.78f, 0.80f),
-            new Keyframe(0.92f, 1.00f),
-            new Keyframe(1.00f, 1.00f));
+        _baseCaptured = false;
+        CaptureBase();
+        Debug.Log($"{name} 기준 해 색 = #{ColorUtility.ToHtmlStringRGB(_baseColor)}", this);
     }
 
     private void OnValidate()
     {
-        sunMaxIntensity = Mathf.Max(0f, sunMaxIntensity);
-        ambientUpdatesPerSecond = Mathf.Max(0f, ambientUpdatesPerSecond);
+        sunsetPeakHour = Mathf.Max(sunsetStartHour, sunsetPeakHour);
+        sunsetEndHour = Mathf.Max(sunsetPeakHour, sunsetEndHour);
+    }
+
+    [ContextMenu("시간대별 각도 찍어보기")]
+    private void LogAngles()
+    {
+        var text = new System.Text.StringBuilder();
+        text.AppendLine($"{name} 시간대별 해 각도");
+
+        for (float h = 9f; h <= 21f; h += 1f)
+        {
+            Vector3 angles = AnglesAt(h);
+            Vector3 forward = Quaternion.Euler(angles) * Vector3.forward;
+            Color c = ColorAt(h);
+            text.AppendLine($"{h:00}:00  {angles:F2}  높이 {-forward.y:F2}  색 #{ColorUtility.ToHtmlStringRGB(c)}{(forward.y >= 0f ? "  지평선 아래" : string.Empty)}");
+        }
+
+        Debug.Log(text.ToString(), this);
     }
 }
