@@ -28,7 +28,25 @@ public class ServingTray : MonoBehaviour, IItemReceiver, IPlacementTarget
 
     public bool CanReceive(ItemData item, PlayerHands hands)
     {
+        // 상한 접시는 아예 올리지 못한다. 여기서 막아야 리졸버가 Put 대신 내려놓기로 넘기고
+        // 프롬프트도 같이 사라져서, 낼 수 있는 것처럼 보였다가 감점당하는 일이 없다.
+        if (IsSpoiled(hands))
+        {
+            return false;
+        }
+
         return _spot != null && _spot.CanReceiveDish(item);
+    }
+
+    private static bool IsSpoiled(PlayerHands hands)
+    {
+        if (hands == null || hands.HeldObject == null)
+        {
+            return false;
+        }
+
+        PerishableDish perishable = hands.HeldObject.GetComponent<PerishableDish>();
+        return perishable != null && perishable.IsSpoiled;
     }
 
     public void Receive(WorldItem item, PlayerHands hands)

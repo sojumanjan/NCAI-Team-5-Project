@@ -51,8 +51,14 @@ public class PauseUI : MonoBehaviour
 
     private void Pause()
     {
-        // 이미 사망 팝업 등 다른 패널이 떠 있는 상태(조작이 잠긴 상태)에서는 일시정지를 겹쳐 열지 않는다.
         if (MiniGameFlowManager.Instance.CurrentState == MiniGameState.MainUI)
+        {
+            return;
+        }
+
+        // 이미 사망 팝업 등 다른 패널이 떠 있는 상태(조작이 잠긴 상태)에서는 일시정지를 겹쳐 열지 않는다.
+        // 겹쳐 열리면 나중에 계속하기를 눌렀을 때 그 팝업이 잠가둔 조작/일시정지 상태를 강제로 풀어버린다.
+        if (playerController.AreControlsLocked)
         {
             return;
         }

@@ -150,7 +150,7 @@
                 {
                     "name": "",
                     "id": "8f637540-29b5-475f-58a0-f46f7081920a",
-                    "path": "<Keyboard>/tab",
+                    "path": "<Mouse>/leftButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",

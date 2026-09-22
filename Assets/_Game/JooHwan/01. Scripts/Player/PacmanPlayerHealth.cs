@@ -8,7 +8,7 @@ public class PacmanPlayerHealth : MonoBehaviour
 {
     [SerializeField] private int maxLives = 3;
     [SerializeField] private HeartUI heartUI;
-    [Tooltip("사망 시 팩맨을 재시작할 위치 (팩맨 입구 안쪽 진입 지점과 동일)")]
+    [Tooltip("사망 시 팩맨을 재시작할 위치 (맵 중앙의 PacmanEntryPoint)")]
     [SerializeField] private Transform pacmanRestartPoint;
     [Tooltip("피격 후 연속으로 목숨을 잃지 않도록 잠시 무적이 되는 시간")]
     [SerializeField] private float invincibleDuration = 1.5f;
@@ -51,7 +51,11 @@ public class PacmanPlayerHealth : MonoBehaviour
 
         if (currentLives <= 0)
         {
-            TetrisGameManager.Instance.ShowDeathPopupForPacman();
+            PacmanGameManager.Instance.ShowDeathPopupForPacman();
+        }
+        else
+        {
+            PacmanGameManager.Instance.OnPlayerHit();
         }
     }
 }

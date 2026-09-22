@@ -1018,6 +1018,8 @@ MonoBehaviour:
   cornerLookAhead: 1.5
   groundOffset: 1
   orderSound: {fileID: 11400000, guid: 420b6f178fdd5a446abbcbb6d413a9eb, type: 2}
+  successSound: {fileID: 11400000, guid: bfddb825c641fb14a968dfc7d8fdd9f7, type: 2}
+  failSound: {fileID: 11400000, guid: 60658ed819e86b941ba98919ce5387e9, type: 2}
   defaultPatience: 30
   angryPauseSeconds: 2
   happyPauseSeconds: 2

@@ -8,13 +8,22 @@ using UnityEngine;
 /// 개다. 그래야 "재료 보관 위치"가 코드가 아니라 오브젝트 배치 문제로 남는다.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class IngredientDispenser : MonoBehaviour, IItemSource
+public class IngredientDispenser : MonoBehaviour, IItemSource, IItemReceiver, IReceiverPrompt
 {
     [Header("보관 재료")]
     [Tooltip("여기서 꺼낼 재료.")]
     [SerializeField] private ItemData item;
 
+    [Header("되돌려 넣기")]
+    [Tooltip("같은 재료를 들고 조준했을 때 뜰 말.")]
+    [SerializeField] private string returnPrompt = "다시 넣기";
+
+    [Tooltip("되돌려 넣을 때 나는 소리. (선택)")]
+    [SerializeField] private SoundData returnSound;
+
     public ItemData ProvidedItem => item;
+
+    public string ReceivePrompt => returnPrompt;
 
     private void Awake()
     {
@@ -29,6 +38,24 @@ public class IngredientDispenser : MonoBehaviour, IItemSource
     }
 
     public bool CanProvide(PlayerHands hands) => item != null && item.WorldPrefab != null;
+
+    /// <summary>
+    /// 자기가 담당하는 재료만 되돌려 받는다. 다른 것을 들고 조준하면 거짓을 돌려주므로
+    /// 리졸버가 지금처럼 바닥에 내려놓기로 넘긴다 — 통 위에 물건을 쌓아둘 수 있어야 한다.
+    /// </summary>
+    public bool CanReceive(ItemData candidate, PlayerHands hands) => item != null && candidate == item;
+
+    public void Receive(WorldItem taken, PlayerHands hands)
+    {
+        if (taken == null)
+        {
+            return;
+        }
+
+        // 통은 무한히 내주므로 돌려받은 것을 보관할 이유가 없다. 그냥 없앤다.
+        AudioManager.PlayAt(returnSound, transform.position);
+        Destroy(taken.gameObject);
+    }
 
     public GameObject Provide(PlayerHands hands)
     {

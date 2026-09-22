@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 480587266094811684}
   - component: {fileID: 800020390227009007}
   - component: {fileID: 3086686282949340733}
+  - component: {fileID: 4496716006170576996}
   m_Layer: 0
   m_Name: Coffee
   m_TagString: Untagged
@@ -93,6 +94,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.3588638, y: 1.5285864, z: 1.2795624}
   m_Center: {x: -0.010873833, y: 0.65947825, z: -0.03330323}
+--- !u!114 &4496716006170576996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5719083757837828265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1747b1180b415a74ebebec3838f3d876, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PerishableDish
+  lifeSeconds: 60
+  spoiledColor: {r: 0.05, g: 0.05, b: 0.05, a: 1}
 --- !u!1001 &8120565748311061786
 PrefabInstance:
   m_ObjectHideFlags: 0

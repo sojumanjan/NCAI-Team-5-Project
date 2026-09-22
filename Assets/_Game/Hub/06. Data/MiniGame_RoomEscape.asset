@@ -15,4 +15,4 @@ MonoBehaviour:
   displayName: "\uBC29\uD0C8\uCD9C"
   icon: {fileID: 0}
   scene: {fileID: 102900000, guid: 0f28bfcfe26c74e4c99fb92063d5a0da, type: 3}
-  sceneName: EscapeRoom_Design
+  sceneName: EscapeRoom

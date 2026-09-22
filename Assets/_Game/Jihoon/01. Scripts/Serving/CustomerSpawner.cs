@@ -108,6 +108,12 @@ public class CustomerSpawner : MonoBehaviour
     /// <summary>False while paused, or once the day's quota has been sent.</summary>
     public bool IsSpawning { get; private set; }
 
+    /// <summary>
+    /// 카운터에 아직 붙어 있는 손님 수. 리액션을 끝내고 걸어 나가기 시작한 손님은
+    /// 자리를 이미 비웠으므로 세지 않는다 — 셔터를 언제 내릴 수 있는지가 이 숫자로 갈린다.
+    /// </summary>
+    public int CustomersAtCounter => OccupiedCount();
+
     /// <summary>True when the quota is used up and no customers remain at the counter.</summary>
     public bool IsFinished =>
         totalCustomers > 0 && SpawnedCount >= totalCustomers && OccupiedCount() == 0;

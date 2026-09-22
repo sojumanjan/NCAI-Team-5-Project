@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   station: 4
   inputs:
+  - {fileID: 11400000, guid: a4a6fc0b6cd7f1e4cbc396b5f124a14d, type: 2}
   - {fileID: 11400000, guid: 80a0cb64d7fc3a545ab3363397638a8c, type: 2}
   - {fileID: 11400000, guid: 6a792e318c7a4034189029b2cb85602a, type: 2}
-  - {fileID: 11400000, guid: a4a6fc0b6cd7f1e4cbc396b5f124a14d, type: 2}
   duration: 3
   output: {fileID: 11400000, guid: aa6febabe1068914daed02668a081055, type: 2}
   orderWeight: 1
