@@ -1070,6 +1070,141 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 106687157}
   m_CullTransparentMesh: 1
+--- !u!1001 &110683999
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7722824896441038612, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_Name
+      value: Menu Canvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 8589942137365705428, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: helpData
+      value: 
+      objectReference: {fileID: 11400000, guid: 337bcdb514bfb0546830ba476f834827, type: 2}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8717772123398536364, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7722824896441038612, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 110684003}
+  m_SourcePrefab: {fileID: 100100000, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+--- !u!1 &110684000 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7722824896441038612, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+  m_PrefabInstance: {fileID: 110683999}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &110684001 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 836684050527318884, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+  m_PrefabInstance: {fileID: 110683999}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &110684002 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5756927193734188336, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+  m_PrefabInstance: {fileID: 110683999}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &110684003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110684000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0647c92b173185948a7fc82839f4c118, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuEscapeBridge
+  pauseRoot: {fileID: 110684002}
+  menuRoot: {fileID: 110684001}
+  tetrisGameManager: {fileID: 165953424}
+  playerController: {fileID: 768756561}
 --- !u!1001 &137695405
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8594,7 +8729,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1614026529}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PauseUI, Assembly-CSharp
         m_MethodName: OnClickResume
         m_Mode: 0
@@ -17897,7 +18032,6 @@ GameObject:
   - component: {fileID: 1614026527}
   - component: {fileID: 1614026526}
   - component: {fileID: 1614026528}
-  - component: {fileID: 1614026529}
   m_Layer: 0
   m_Name: MiniGameFlowManager
   m_TagString: Untagged
@@ -17936,7 +18070,7 @@ MonoBehaviour:
   rewardBox: {fileID: 1991334664}
   isDebugStartInPacman: 0
   debugPacmanStartPoint: {fileID: 1831296196}
-  isDebugStartAtTetrisClear: 0
+  isDebugStartAtTetrisClear: 1
   debugExitTrigger: {fileID: 1374962738}
   debugClearPlatformWallMargin: 0.5
 --- !u!4 &1614026527
@@ -17969,23 +18103,6 @@ MonoBehaviour:
   root: {fileID: 1304179231}
   countdownText: {fileID: 1488691411}
   secondsPerCount: 1
---- !u!114 &1614026529
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1614026525}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60b3a1b7cede14d4e84904ec88647aa1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PauseUI
-  inputActions: {fileID: -944628639613478452, guid: 2ad6ac0a73e595a4da9250c3f0eb7460, type: 3}
-  root: {fileID: 1791194612}
-  tetrisGameManager: {fileID: 165953424}
-  playerController: {fileID: 768756561}
-  countdownUI: {fileID: 1614026528}
 --- !u!1 &1623578534
 GameObject:
   m_ObjectHideFlags: 0
@@ -23673,3 +23790,4 @@ SceneRoots:
   - {fileID: 1820081511}
   - {fileID: 5527193}
   - {fileID: 669224419}
+  - {fileID: 110683999}
