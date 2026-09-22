@@ -67,7 +67,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: d81141710e03761488b3769fbaabbc3d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -134,8 +134,8 @@ MonoBehaviour:
   bossDeathPunchScale: 1.6
   bossDeathFadeDuration: 0.35
   damageStateSprites:
-  - {fileID: 21300000, guid: 7443ea97a4bdc1f448de8f59a01f464c, type: 3}
-  - {fileID: 21300000, guid: 345a8831b1dad984c9d3620cd73d0793, type: 3}
+  - {fileID: 21300000, guid: d81141710e03761488b3769fbaabbc3d, type: 3}
+  - {fileID: 21300000, guid: d81141710e03761488b3769fbaabbc3d, type: 3}
   shatterOnDeath: 0
   shatterDuration: 0.2
   shatterScalePunch: 1.3

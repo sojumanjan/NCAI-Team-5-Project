@@ -335,6 +335,7 @@ MonoBehaviour:
   comboEmphasisColor: {r: 1, g: 0.55, b: 0, a: 1}
   gaugePunchScale: 1.3
   gaugePunchDuration: 0.25
+  feverStartSound: {fileID: 11400000, guid: 32e6ccde8d2f4a2786e266a22353d0da, type: 2}
 --- !u!1 &1573404318057038319
 GameObject:
   m_ObjectHideFlags: 0
@@ -2425,7 +2426,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1300, y: 1068}
+  m_SizeDelta: {x: 1217, y: 1000}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7110739097753233977
 CanvasRenderer:
