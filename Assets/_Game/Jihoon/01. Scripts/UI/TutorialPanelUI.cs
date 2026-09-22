@@ -34,6 +34,12 @@ public class TutorialPanelUI : MonoBehaviour
 
         /// <summary>셔터를 올리면 끝. 다 올라갈 때까지 기다리지 않는다.</summary>
         ShopOpened,
+
+        /// <summary>마감 시각이 지나 새 손님이 끊기면 끝.</summary>
+        ShopClosing,
+
+        /// <summary>셔터를 내리면 끝. 다 내려갈 때까지 기다리지 않는다.</summary>
+        ShopClosed,
     }
 
     [Serializable]
@@ -63,9 +69,13 @@ public class TutorialPanelUI : MonoBehaviour
     }
 
     [Header("참조")]
-    [Tooltip("켜고 끌 패널. 이 오브젝트 자신을 넣으면 안 됩니다 — 꺼지는 순간 " +
+    [Tooltip("펼쳤을 때 보일 것. 이 오브젝트 자신을 넣으면 안 됩니다 — 꺼지는 순간 " +
              "Update가 멈춰 다시 켤 수 없습니다.")]
-    [SerializeField] private GameObject panelRoot;
+    [SerializeField] private GameObject openView;
+
+    [Tooltip("접었을 때 보일 것. 보통 [P]로 다시 열 수 있다고 알려주는 작은 조각입니다. " +
+             "비워두면 접었을 때 아무것도 안 보입니다.")]
+    [SerializeField] private GameObject closedView;
 
     [Tooltip("차례를 그릴 글자.")]
     [SerializeField] private TMP_Text bodyText;
@@ -107,6 +117,7 @@ public class TutorialPanelUI : MonoBehaviour
     private readonly List<StationBase> _stations = new();
 
     private ShopOpener _shopOpener;
+    private MiniGameSession _session;
 
     private int _sequence;
     private int _step;
@@ -114,17 +125,17 @@ public class TutorialPanelUI : MonoBehaviour
 
     private void Awake()
     {
-        if (panelRoot == null || bodyText == null)
+        if (openView == null || bodyText == null)
         {
-            Debug.LogError($"{nameof(TutorialPanelUI)} on '{name}': 패널과 글자가 모두 필요합니다.", this);
+            Debug.LogError($"{nameof(TutorialPanelUI)} on '{name}': 펼친 패널과 글자가 모두 필요합니다.", this);
             enabled = false;
             return;
         }
 
-        if (panelRoot == gameObject)
+        if (openView == gameObject || closedView == gameObject)
         {
-            Debug.LogError($"{nameof(TutorialPanelUI)} on '{name}': Panel Root에 이 오브젝트를 " +
-                           "넣으면 꺼진 뒤 다시 켤 수 없습니다. 자식 오브젝트를 넣으세요.", this);
+            Debug.LogError($"{nameof(TutorialPanelUI)} on '{name}': 이 오브젝트 자신을 넣으면 " +
+                           "꺼진 뒤 다시 켤 수 없습니다. 자식 오브젝트를 넣으세요.", this);
             enabled = false;
             return;
         }
@@ -136,10 +147,11 @@ public class TutorialPanelUI : MonoBehaviour
 
         _stations.AddRange(FindObjectsByType<StationBase>(FindObjectsSortMode.None));
         _shopOpener = FindFirstObjectByType<ShopOpener>();
+        _session = FindFirstObjectByType<MiniGameSession>();
 
         SkipEmpty();
         Redraw();
-        panelRoot.SetActive(openOnStart);
+        SetOpen(openOnStart);
     }
 
     private void Update()
@@ -167,8 +179,28 @@ public class TutorialPanelUI : MonoBehaviour
         }
     }
 
+    /// <summary>지금 펼쳐져 있는지.</summary>
+    public bool IsOpen => openView != null && openView.activeSelf;
+
     /// <summary>펼쳐져 있으면 접고, 접혀 있으면 편다.</summary>
-    public void Toggle() => panelRoot.SetActive(!panelRoot.activeSelf);
+    public void Toggle() => SetOpen(!IsOpen);
+
+    /// <summary>
+    /// 펼치거나 접는다. 패널을 통째로 지우지 않고 <b>둘 중 하나만</b> 켠다 —
+    /// 접힌 쪽이 "P로 다시 열 수 있다"를 계속 알려줘야, 한 번 접은 사람이 방법을 잊지 않는다.
+    /// </summary>
+    public void SetOpen(bool open)
+    {
+        if (openView != null)
+        {
+            openView.SetActive(open);
+        }
+
+        if (closedView != null)
+        {
+            closedView.SetActive(!open);
+        }
+    }
 
     // ---------------------------------------------------------------- 진행
 
@@ -224,9 +256,9 @@ public class TutorialPanelUI : MonoBehaviour
 
         _finished = true;
 
-        if (hideWhenDone && panelRoot != null)
+        if (hideWhenDone)
         {
-            panelRoot.SetActive(false);
+            SetOpen(false);
         }
     }
 
@@ -250,6 +282,16 @@ public class TutorialPanelUI : MonoBehaviour
 
             case StepGoal.ShopOpened:
                 return _shopOpener != null && _shopOpener.HasOpened;
+
+            case StepGoal.ShopClosing:
+                // Ended까지 통과로 보는 이유: 이 줄을 건너뛴 채 하루가 끝나버리면
+                // 영영 안 끝나는 줄 하나가 남는다.
+                return _session != null
+                       && (_session.State == CookingSessionState.Closing
+                           || _session.State == CookingSessionState.Ended);
+
+            case StepGoal.ShopClosed:
+                return _shopOpener != null && _shopOpener.HasClosed;
 
             default:
                 return false;
