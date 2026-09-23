@@ -71,6 +71,9 @@ public class SeedIntro : MonoBehaviour
     [Tooltip("숨 들이쉴 때의 배율.")]
     [SerializeField] private float breathScale = 1.1f;
 
+    [Tooltip("숨 들이쉬기 시작할 때마다 한 번씩 나는 코 고는 소리.")]
+    [SerializeField] private SoundData sleepSound;
+
     [Header("깨어남 (뽀잉)")]
     [SerializeField] private Vector2 wakeStretch = new Vector2(0.9f, 1.15f);
     [SerializeField] private Vector2 wakeSquash = new Vector2(1.12f, 0.88f);
@@ -94,7 +97,10 @@ public class SeedIntro : MonoBehaviour
     [SerializeField] private float surprisePop = 1.3f;
 
     [Tooltip("놀란 얼굴을 유지하는 시간 (초).")]
-    [SerializeField] private float surpriseHold = 3f;
+    [SerializeField] private float surpriseHold = 2.5f;
+
+    [Tooltip("놀라며 느낌표가 튀어나오는 순간 나는 소리.")]
+    [SerializeField] private SoundData surpriseSound;
 
     [Header("비장함")]
     [Tooltip("비장한 얼굴을 유지한 뒤 툴팁이 뜰 때까지 (초).")]
@@ -233,6 +239,15 @@ public class SeedIntro : MonoBehaviour
 
         for (int i = 0; i < breathCount; i++)
         {
+            // 코 고는 소리는 부풀기 시작하는 순간에. 소리와 몸이 같이 부풀어야 숨소리로 들린다.
+            breathing.AppendCallback(() =>
+            {
+                if (sleepSound != null)
+                {
+                    AudioManager.Play(sleepSound);
+                }
+            });
+
             // 들숨과 날숨이 느리게 이어져야 잠든 것처럼 보인다. 딱딱 끊기면 맥박처럼 보인다.
             breathing.Append(DOVirtual.Float(1f, breathScale, half, s => Apply(s, s, 0f)).SetEase(Ease.InOutSine));
             breathing.Append(DOVirtual.Float(breathScale, 1f, half, s => Apply(s, s, 0f)).SetEase(Ease.InOutSine));
@@ -277,6 +292,12 @@ public class SeedIntro : MonoBehaviour
 
         character.ShowSprite(surprisedSprite);
         ShowExclamation();
+
+        // 느낌표와 같은 프레임에. 느낌표 그림이 아직 없어도 놀라는 순간은 소리로 짚어준다.
+        if (surpriseSound != null)
+        {
+            AudioManager.Play(surpriseSound);
+        }
 
         yield return DOTween.Sequence()
                             .Append(DOVirtual.Float(1f, surprisePop, 0.12f, s => Apply(s, s, 0f)).SetEase(Ease.OutQuad))

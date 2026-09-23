@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41e937a7a69af584f8099e8e0205811d, type: 3}
-  m_Name: Sfx_SeedAngry
+  m_Name: Sfx_SeedWakeUp
   m_EditorClassIdentifier: Assembly-CSharp::SoundData
   clips:
-  - {fileID: 8300000, guid: b808baa7978eb40448a25ddff60239f6, type: 3}
+  - {fileID: 8300000, guid: 8ae046ddcf8e48a4aabfe6f5fa14f3ff, type: 3}
   category: 1
   volume: 1
   pitchRange: {x: 1, y: 1}
