@@ -334,7 +334,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.PauseForGroupHighlight(new List<RectTransform> { secondaryObject },
-                "다슬이를 지켜내면 보너스 점수를 얻을 수 있지만, 지키지 못하면 일정 점수를 잃습니다!");
+                "다슬이를 지켜내면 수원 체력 1 회복과 보너스 점수를 얻을 수 있지만, 지키지 못하면 일정 점수를 잃습니다!");
         }
 
         while (countdownTimer != null && countdownTimer.IsWaitingForIntroClick)

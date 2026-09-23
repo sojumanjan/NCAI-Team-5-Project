@@ -26,6 +26,7 @@ public class UITheme : ScriptableObject
 
     [Header("Player")]
     public Color playerHitColor = new Color(0.6f, 0.1f, 0.9f, 1f);
+    public Color playerHealColor = new Color(0.45f, 1f, 0.55f, 1f);
 
     [Header("Combo / Fever")]
     public Color comboGaugeNormalColor = new Color(0.2f, 0.9f, 1f, 1f);
@@ -37,8 +38,8 @@ public class UITheme : ScriptableObject
     public Color scoreLossColor = new Color(1f, 0.3f, 0.3f, 1f);
 
     [Header("Explosion / AOE")]
-    public Color aoeRingColor = new Color(1f, 0.1f, 0.6f, 0.35f);
-    public Color explosionRingColor = new Color(1f, 0.9f, 0.1f, 0.4f);
+    public Color aoeRingColor = new Color(0.45f, 0.92f, 1f, 0.9f);
+    public Color explosionRingColor = new Color(1f, 0.78f, 0.22f, 0.95f);
 
     [Header("Secondary Object")]
     public Color secondarySuccessColor = new Color(0.55f, 1f, 0.35f, 1f);
@@ -49,6 +50,7 @@ public class UITheme : ScriptableObject
     public Color hpPipOffColor = new Color(1f, 1f, 1f, 0.25f);
     public Color bossHealthBarColor = new Color(0.75f, 0.2f, 0.85f, 1f);
     public Color bossIndicatorColor = new Color(1f, 0.55f, 0f, 1f);
+    public Color bossAlertTextColor = new Color(0.9f, 0.1f, 0.08f, 1f);
 
     [Header("Game Over")]
     public Color gameOverTextColor = new Color(1f, 0.15f, 0.15f, 1f);
