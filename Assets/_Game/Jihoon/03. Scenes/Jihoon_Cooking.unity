@@ -665,6 +665,8 @@ MonoBehaviour:
   ratingFormat: "\uD3C9\uC810  {0:0.0} / {1:0.0}"
   countText: {fileID: 143605919}
   countFormat: "\uC131\uACF5\uD55C \uC8FC\uBB38  {0} / {1}"
+  clearSound: {fileID: 11400000, guid: eaad62e7c4e5d7a42b342e8edd121dc6, type: 2}
+  failSound: {fileID: 11400000, guid: 06077f7a28d6ec749a9f3466dc98fc89, type: 2}
   retryButton: {fileID: 1164106385}
   hubButton: {fileID: 1609833664}
 --- !u!114 &46091813
@@ -1020,7 +1022,8 @@ MonoBehaviour:
   ease: 4
   resultDelay: 1
   shutterSound: {fileID: 11400000, guid: 47edb8a478107454d994c594ad1b0053, type: 2}
-  closeSound: {fileID: 0}
+  closeSound: {fileID: 11400000, guid: 47edb8a478107454d994c594ad1b0053, type: 2}
+  soundPoint: {fileID: 0}
   readyPrompt: "\uC7A5\uC0AC \uC2DC\uC791\uD558\uAE30"
   openingPrompt: "\uC154\uD130 \uC5EC\uB294 \uC911..."
   busyPrompt: "\uC544\uC9C1 \uC601\uC5C5\uC774 \uB05D\uB098\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4"
@@ -14468,8 +14471,8 @@ Transform:
   m_GameObject: {fileID: 713481171}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: -0.7071068}
-  m_LocalPosition: {x: 0.87, y: -5.1658, z: 0.58}
-  m_LocalScale: {x: 16.390524, y: 10.299484, z: 1.6745713}
+  m_LocalPosition: {x: 0.87, y: -5.0103, z: 0.58}
+  m_LocalScale: {x: 16.390524, y: 9.987952, z: 1.6745713}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1102180666}
@@ -20971,6 +20974,7 @@ MonoBehaviour:
   - {fileID: 2064529885}
   - {fileID: 2064529886}
   player: {fileID: 2064529881}
+  hubFadeOutSeconds: 1.2
   startOnPlay: 0
 --- !u!114 &1003455715
 MonoBehaviour:
@@ -22650,7 +22654,7 @@ Transform:
   m_GameObject: {fileID: 1102180665}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 14.2, y: 11.12, z: -8.061}
+  m_LocalPosition: {x: 14.2, y: 11.2, z: -8.061}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
