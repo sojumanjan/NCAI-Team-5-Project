@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
@@ -16,6 +16,8 @@ public sealed class LetterDialPuzzle : MonoBehaviour
     [SerializeField] private Text statusText;
     [SerializeField] private Camera inputCamera;
     [SerializeField] private float turnSeconds = 0.25f;
+    [SerializeField] private SoundData stoneRollSound;
+    private readonly SoundHandle[] rollingSounds = new SoundHandle[3];
     private readonly int[] steps = new int[3];
     private readonly int[] answer = { 2, 1, 1 };
     private readonly bool[] turning = new bool[3];
@@ -88,6 +90,7 @@ public sealed class LetterDialPuzzle : MonoBehaviour
     private IEnumerator Turn(int i)
     {
         turning[i] = true;
+        if (stoneRollSound != null) rollingSounds[i] = AudioManager.PlayAttached(stoneRollSound, rings[i]);
         int next = steps[i] + 1;
         float from = steps[i] * 90f, to = next * 90f, elapsed = 0f;
         while (elapsed < turnSeconds)
@@ -100,6 +103,7 @@ public sealed class LetterDialPuzzle : MonoBehaviour
         steps[i] = next % 4;
         SetAngle(i, steps[i] * 90f);
         turning[i] = false;
+        rollingSounds[i].Stop();
         RefreshStatus();
     }
 
@@ -139,6 +143,7 @@ public sealed class LetterDialPuzzle : MonoBehaviour
     public void ResetPuzzle()
     {
         StopAllCoroutines();
+        foreach (var sound in rollingSounds) sound.Stop();
         for (int i = 0; i < 3; i++) { steps[i] = 0; turning[i] = false; SetAngle(i, 0); }
         IsSolved = false;
         RefreshStatus();
@@ -150,6 +155,7 @@ public sealed class LetterDialPuzzle : MonoBehaviour
     private void OnDisable()
     {
         StopAllCoroutines();
+        foreach (var sound in rollingSounds) sound.Stop();
         if (initialRotations == null) return;
         for (int i = 0; i < 3; i++) { turning[i] = false; SetAngle(i, steps[i] * 90f); }
     }

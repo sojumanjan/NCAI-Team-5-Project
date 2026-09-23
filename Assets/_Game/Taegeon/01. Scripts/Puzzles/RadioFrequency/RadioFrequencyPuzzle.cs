@@ -23,6 +23,9 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
     public int TargetFrequency { get; private set; }
     public int TargetAmplitude { get; private set; }
     private float matchingTime;
+    [SerializeField] private SoundData tuningSound;
+    private SoundHandle tuningHandle = SoundHandle.None;
+    private float tuningStopTime;
 
     #endregion
 
@@ -33,8 +36,8 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
     /// </summary>
     private void Awake()
     {
-        frequencySlider.onValueChanged.AddListener(OnSliderChanged);
-        amplitudeSlider.onValueChanged.AddListener(OnSliderChanged);
+        frequencySlider.onValueChanged.AddListener(OnTuningChanged);
+        amplitudeSlider.onValueChanged.AddListener(OnTuningChanged);
         resetButton.onClick.AddListener(ResetPuzzle);
         ResetPuzzle();
     }
@@ -43,6 +46,7 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
     /// </summary>
     public void ResetPuzzle()
     {
+        tuningHandle.Stop();
         IsSolved = false; matchingTime = 0;
         TargetFrequency = Random.Range(3, 9);
         TargetAmplitude = Random.Range(4, 10);
@@ -60,6 +64,16 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
     /// <summary>
     /// 슬라이더 변경에 맞춰 신호와 일치 시간을 갱신합니다.
     /// </summary>
+    private void OnTuningChanged(float value)
+    {
+        OnSliderChanged(value);
+        if (!isActiveAndEnabled || IsSolved || tuningSound == null) return;
+        tuningStopTime = Time.unscaledTime + .15f;
+        if (!tuningHandle.IsPlaying) tuningHandle = AudioManager.PlayAttached(tuningSound, transform);
+    }
+
+    private void OnDisable() { tuningHandle.Stop(); }
+
     private void OnSliderChanged(float value) { matchingTime = 0; RefreshSignals(); }
     /// <summary>
     /// 현재 주파수와 진폭이 목표 신호와 같은지 확인합니다.
@@ -90,11 +104,13 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (Time.unscaledTime >= tuningStopTime) tuningHandle.Stop();
         if (IsSolved) return;
         if (!Matches()) { matchingTime = 0; return; }
         matchingTime += Time.unscaledDeltaTime;
         if (matchingTime < .8f) return;
         IsSolved = true;
+        tuningHandle.Stop();
         frequencySlider.interactable = amplitudeSlider.interactable = false;
         lockLight.color = new Color(.35f, 1f, .55f);
         playerWave.color = new Color(.35f, 1f, .65f);
@@ -107,8 +123,8 @@ public sealed class RadioFrequencyPuzzle : MonoBehaviour
     /// </summary>
     private void OnDestroy()
     {
-        if (frequencySlider != null) frequencySlider.onValueChanged.RemoveListener(OnSliderChanged);
-        if (amplitudeSlider != null) amplitudeSlider.onValueChanged.RemoveListener(OnSliderChanged);
+        if (frequencySlider != null) frequencySlider.onValueChanged.RemoveListener(OnTuningChanged);
+        if (amplitudeSlider != null) amplitudeSlider.onValueChanged.RemoveListener(OnTuningChanged);
         if (resetButton != null) resetButton.onClick.RemoveListener(ResetPuzzle);
     }
     #endregion

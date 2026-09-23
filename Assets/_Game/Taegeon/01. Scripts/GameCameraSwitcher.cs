@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -71,7 +71,7 @@ public sealed class GameCameraSwitcher : MonoBehaviour
     /// <summary>
     /// 플레이어가 해당 게임의 접근 영역에 있는지 확인합니다.
     /// </summary>
-    private bool IsInEntryZone(int index)
+    public bool IsInEntryZone(int index)
     {
         if (explorer == null) return true;
         if (entryZones == null) return false;
