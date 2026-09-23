@@ -3037,7 +3037,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58613930e4bb58946b407d3f5c087428, type: 2}
+  - {fileID: 2100000, guid: 249a39ed597fb8040a43c5e2b6c1a4a4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5867,7 +5867,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 4d2baed63d0fd634ba0d7343ce91a8b3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6685,7 +6685,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7371854622726385106, guid: 4e1190af132ecc94dab05a4aa5fc5819, type: 3}
       propertyPath: detectRange
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 7371854622726385106, guid: 4e1190af132ecc94dab05a4aa5fc5819, type: 3}
       propertyPath: patrolSpeed
@@ -11682,7 +11682,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58613930e4bb58946b407d3f5c087428, type: 2}
+  - {fileID: 2100000, guid: 249a39ed597fb8040a43c5e2b6c1a4a4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -12815,7 +12815,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2941536295638636596, guid: 5f8400263167acc4299ea1111bc317f4, type: 3}
       propertyPath: detectRange
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 2941536295638636596, guid: 5f8400263167acc4299ea1111bc317f4, type: 3}
       propertyPath: patrolSpeed
@@ -15077,7 +15077,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58613930e4bb58946b407d3f5c087428, type: 2}
+  - {fileID: 2100000, guid: 84cddaf07ab7c1540846bac6395aa3ed, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -15998,7 +15998,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58613930e4bb58946b407d3f5c087428, type: 2}
+  - {fileID: 2100000, guid: d93658d377dcaf7468fa201baac307f2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -20206,7 +20206,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8638015400700718545, guid: ed8b4f06336adaa40b2235410000e1d7, type: 3}
       propertyPath: detectRange
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8638015400700718545, guid: ed8b4f06336adaa40b2235410000e1d7, type: 3}
       propertyPath: patrolSpeed
@@ -20590,7 +20590,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58613930e4bb58946b407d3f5c087428, type: 2}
+  - {fileID: 2100000, guid: 84cddaf07ab7c1540846bac6395aa3ed, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -21207,7 +21207,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58613930e4bb58946b407d3f5c087428, type: 2}
+  - {fileID: 2100000, guid: 84cddaf07ab7c1540846bac6395aa3ed, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -23958,7 +23958,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1400272194204054522, guid: 800ceee48c367d14fab51260f734fd9f, type: 3}
       propertyPath: detectRange
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1400272194204054522, guid: 800ceee48c367d14fab51260f734fd9f, type: 3}
       propertyPath: patrolSpeed
@@ -24866,7 +24866,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58613930e4bb58946b407d3f5c087428, type: 2}
+  - {fileID: 2100000, guid: 84cddaf07ab7c1540846bac6395aa3ed, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

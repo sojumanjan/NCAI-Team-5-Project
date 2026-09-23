@@ -293,3 +293,50 @@ md 기획서(`미니게임파티_기획.md`)를 기반으로 3개 미니게임(�
 - 비네트 세로 방향 텍스처 이음새가 완벽하지 않은 부분 존재 — 사용자 판단으로 우선 진행, 필요시 추후 재작업
 - `isDebugStartInPacman`, `isDebugStartAtTetrisClear` 디버그 옵션 — 최종 완성 전 반드시 해제
 - CLAUDE.md 위반사항 팀장 공유 — 아직 미해결
+
+---
+
+## 13. 세션 6 — 재시작/설명 UI, 사망 팝업 정리, 팩맨 벽·바닥·천장 아트 적용
+
+### 재시작 전 설명 UI (`PreGameDescriptionUI` 신규)
+- 요구사항: 재시작(ESC "처음부터" + 사망 시 재시작) 시 카운트다운 전에 게임 설명 UI를 먼저 보여주고, 확인 버튼을 눌러야 카운트다운이 시작되도록 함. 테트리스/팩맨 각각 별도 UI(`TetrisDescriptionPopup`/`PacmanDescriptionPopup`)로 분리
+- `MiniGameFlowManager.PlayCountdownWithDescription()`, `TetrisGameManager.RestartFromDeath()` 양쪽에 동일 패턴 적용 — 대상 게임에 맞는 설명 UI를 먼저 `Show()`하고, 확인 콜백에서 카운트다운 재생
+- **트러블슈팅 다수**:
+  - `PreGameDescriptionUI.Awake()`에서 `root.SetActive(false)`를 호출해, 비활성 상태로 시작한 UI가 `Show()`로 처음 활성화되는 순간 `Awake`가 뒤늦게 실행되며 스스로 다시 꺼버리는 버그 → `Awake`에서 비활성화 로직 제거
+  - 설명 UI가 뜬 동안 커서가 안 보여 확인 버튼을 클릭할 수 없던 문제 → 처음엔 `Cursor.lockState/visible` 직접 제어로 해결 시도했으나, 근본 원인은 `Throw`/`CameraSwitch` 액션이 둘 다 좌클릭에 바인딩돼 있어 확인 버튼 클릭이 `CameraRig.ToggleCamera()`도 함께 발동시켜 관전 카메라로 튕기던 것 → `PreGameDescriptionUI`가 `PlayerController.SetControlsLocked(true/false)`를 직접 걸고 풀어, 기존 "조작 잠금 중 좌클릭 무시" 가드를 재사용하도록 수정
+  - ESC로 일시정지를 열었다 닫으면 설명 UI가 떠 있는데도 조작 잠금이 풀려버리는 문제 → `MenuEscapeBridge.ApplyResume()`에 `PreGameDescriptionUI.IsVisible` 체크 추가, 사망 팝업(`DeathPopup`)이 떠 있는 경우도 동일하게 가드 추가
+  - 설명 UI~카운트다운 구간에 ESC를 열었다 닫으면 카운트다운 종료 후에도 테트리스 낙하가 계속 멈춰있는 문제 → 원인은 `MenuEscapeBridge.ApplyResume()`이 "카운트다운 중"이면 `SetTetrisGameplayPaused(false)` 호출을 건너뛰는데, 카운트다운이 실제로 끝나는 시점에 이를 다시 풀어주는 코드가 없었던 것 → `TetrisGameManager.StartSequenceForNewGame()`/`RestartFromDeath()`의 카운트다운 완료 콜백에서 `SetTetrisGameplayPaused(false)`를 명시적으로 재호출하도록 수정
+- 테트리스 사망 재시작(`RestartFromDeath`)도 팩맨 재시작과 동일하게 페이드 아웃/인을 거치도록 변경 (기존엔 페이드 없이 즉시 재시작되어 팩맨과 불일치했음)
+
+### 사망 팝업/UI 정리
+- `DeathPopup` 배경을 `ui_3` 스프라이트로, 재시작 버튼 배경을 `Button` 스프라이트로 변경, "게임설명"/"허브로 나가기" 버튼 제거(재시작 버튼만 유지)
+- 미사용 오브젝트 정리: `MainMenuUI`(IntroUI 포함, 실행 흐름상 켜질 방법이 없던 죽은 UI), `PausePopup`(코드에서 전혀 참조되지 않던 오브젝트), `DescriptionPopup`(원본, `GameSelectUI` 컴포넌트가 씬 어디에도 없어 고아 상태) 모두 확인 후 삭제 — 연쇄로 `MiniGameFlowManager.gameSelectUIRoot`/`ShowGameSelect()`, `SharedGameplayManager.gameSelectUI`/`OnClickShowDescription()`, `GameSelectUI.cs` 스크립트까지 함께 정리
+- `GameFlow.Instance.ReportCurrent(...)`/`ReturnToMain()` 연동 상태 재확인 — `SharedGameplayManager.OnClickExitToHub()`에 이미 정확히 구현되어 있고 `RewardResultPopup`의 "메인 허브로" 버튼과도 정상 연결됨을 확인
+
+### 설명 UI 콘텐츠 제작
+- `TetrisDescriptionPopup`: 배경 `ui_3`, WASD 아이콘+"이동" / space 아이콘+"점프" / space+"+"+space 아이콘+"올라가기" 3행 구성. IconGroup 폭(260px)을 모든 행에서 통일해 아이콘 열/텍스트 열이 세로로 정렬되도록 배치, 텍스트는 전부 검은색
+- `PacmanDescriptionPopup`: 배경 `ui_3`, WASD+"이동" / mouseLeftClick+"던지기" 2행 + 안내 문구("콩을 먹고 무당벌레가 빛날 때 던져야 죽일 수 있습니다!") 텍스트 행
+- 두 팝업의 확인 버튼(`Button_Confirm`) 배경도 `Button` 스프라이트로 통일
+
+### 팩맨 아트 텍스처 적용
+- 사용자가 varco3d image로 시임리스 나뭇잎덤불 텍스처를 여러 차례 시안 제작 — "가장자리까지 꽉 채워 타일링되게" 프롬프트 반복 조정(no background/border/vignette, edge-to-edge fill 등 명시)을 거쳐 최종안(`Green Bush Texture`) 확정
+- 팩맨 벽 전체(`Mat_PacmanWall_Pastel`)에 적용. 이후 미로를 감싸는 바깥 테두리 벽 7개(길이 18/21/45유닛으로 제각각)는 같은 텍스처를 쓰되 Tiling이 안 맞는 문제가 있어, 길이별로 전용 머티리얼 3종(`Mat_PacmanWall_Border_L18/L21/L45`)을 분리 생성해 각각 연결
+- 천장: 기존에 전용 머티리얼 없이 URP 기본 `Lit.mat`을 그대로 쓰고 있던 것을 발견 → `Mat_PacmanCeiling_Pastel` 신규 생성, 벽과 동일한 Green Bush 텍스처 적용(Tiling 3,3)
+- 바닥: 기존 단색 파스텔 크림색에서 갈색 흙길 톤(0.55, 0.4, 0.28)으로 변경 — 벽/천장이 전부 잎으로 덮이면서 바닥까지 같으면 공간 구분이 안 될 것을 우려해, 바닥만 다른 색으로 분리하기로 결정
+
+### 기타
+- `PowerPellet`/`ThrownPellet`/`HeldPelletVisual` 프리팹의 메시를 `pea_ammo` 모델로 교체, 메시-콜라이더 비율 문제로 메시를 별도 자식 오브젝트로 분리(콜라이더는 루트 유지)
+- 바닥에 놓인 `PowerPellet`(손에 들거나 던질 때는 제외)에 Y축 자동 회전 추가
+- `PlayerController.mouseSensitivity`를 다른 스크립트(옵션 UI 등)에서 참조할 수 있도록 `public`으로 변경(사용자 직접 작업)
+
+## 14. 세션 6 종료 시점 남은 작업
+
+- 사운드 작업 — 미착수
+- 난이도 조절 — 미착수
+- 블록 텍스쳐 — 미착수
+- 테트리스 시퀀스 2개 추가(랜덤 구조 작성) — 미착수
+- ESC 메뉴에 게임 설명 적기 — 미착수
+- 목숨 하트 스프라이트 추가 — 미착수 (세션 3부터 임시 단색 원형 유지 중)
+- `isDebugStartInPacman`, `isDebugStartAtTetrisClear` 디버그 옵션 — 최종 완성 전 반드시 해제
+- 임시로 만들었던 `Mat_PacmanWall_Border_Pastel.mat`(길이 구분 없는 버전, 미사용) — 에디터에서 삭제 필요
+- CLAUDE.md 위반사항 팀장 공유 — 아직 미해결
