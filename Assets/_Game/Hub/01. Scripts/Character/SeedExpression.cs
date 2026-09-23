@@ -4,7 +4,7 @@ using UnityEngine;
 /// 방을 돌아다니는 씨앗이 가끔 >< 표정(신난 얼굴)을 지었다가 돌아온다. CharacterRoot에 붙인다.
 /// 계속 같은 얼굴로 걷기만 하면 금방 배경처럼 보여서, 가끔 표정이 바뀌어 살아 있는 느낌을 준다.
 ///
-/// 진화나 엔딩이 도는 동안은 손을 뗀다. 그쪽이 표정을 직접 쥐고 있어서, 여기서 타이머가 끝났다고
+/// 진화·엔딩·인트로가 도는 동안은 손을 뗀다. 그쪽이 표정을 직접 쥐고 있어서, 여기서 타이머가 끝났다고
 /// 기본 얼굴로 되돌리면 진화 직후의 웃는 얼굴을 덮어버린다. 진화 시작 때 기본 얼굴로 돌려놓는 건
 /// EvolutionController가 한다 — 그래야 이 컴포넌트가 없어도 진화는 늘 기본 얼굴에서 시작한다.
 /// </summary>
@@ -19,6 +19,9 @@ public class SeedExpression : MonoBehaviour
 
     [Tooltip("엔딩 중엔 손을 뗍니다. 비워두면 씬에서 찾습니다.")]
     [SerializeField] private HubEnding ending;
+
+    [Tooltip("잠에서 깨는 인트로 중엔 손을 뗍니다. 비워두면 씬에서 찾습니다.")]
+    [SerializeField] private SeedIntro intro;
 
     [Header("타이밍")]
     [Tooltip("다음 표정 변화까지 기다리는 시간 범위 (초). 매번 이 안에서 무작위로 고릅니다.")]
@@ -41,6 +44,11 @@ public class SeedExpression : MonoBehaviour
         if (ending == null)
         {
             ending = FindAnyObjectByType<HubEnding>();
+        }
+
+        if (intro == null)
+        {
+            intro = FindAnyObjectByType<SeedIntro>();
         }
     }
 
@@ -88,6 +96,11 @@ public class SeedExpression : MonoBehaviour
     {
         EvolutionController controller = evolution != null ? evolution : EvolutionController.Instance;
         if (controller != null && controller.IsPlaying)
+        {
+            return true;
+        }
+
+        if (intro != null && intro.IsPlaying)
         {
             return true;
         }

@@ -118,10 +118,8 @@ public class HubClearReveal : MonoBehaviour
     [Tooltip("플레이 중 톱니바퀴 메뉴로 연출만 틀어볼 오브젝트.")]
     [SerializeField] private MiniGameEntry previewEntry;
 
-    // 막 순서는 옵션 창(21)보다 아래, 방 UI(0)와 진화 이펙트(10)보다 위. 옵션 창까지 막으면 연출 중 ESC 메뉴를 못 쓴다.
-    private const int BLOCKER_SORTING_ORDER = 20;
-
     private readonly List<GameObject> _spawned = new();
+    private SeedIntro _intro;
     private GameObject _blocker;
     private Sprite _cloudSprite;
     private Sprite _sparkleSprite;
@@ -143,6 +141,8 @@ public class HubClearReveal : MonoBehaviour
         {
             character = FindAnyObjectByType<CharacterEvolutionState>();
         }
+
+        _intro = FindAnyObjectByType<SeedIntro>();
 
         _cloudSprite = UIProceduralSprite.Cloud();
         _sparkleSprite = UIProceduralSprite.Sparkle();
@@ -210,6 +210,9 @@ public class HubClearReveal : MonoBehaviour
             // 편집하다 페이드 캔버스를 꺼둔 채 플레이하면 페이드가 아예 안 돈다. 그때 기다리면 영원히 멈춘다.
             yield return new WaitUntil(() => fade == null || fade.IsDone || !fade.isActiveAndEnabled);
         }
+
+        // 씨앗이 잠에서 깨는 인트로가 돌고 있으면 끝날 때까지 기다린다. 둘이 겹치면 씨앗 얼굴과 크기를 서로 뺏는다.
+        yield return new WaitWhile(() => _intro != null && _intro.IsPlaying);
 
         // 게임 시간으로 잰다. 연출 중 옵션 창을 열어 시간이 멈추면 연출도 같이 멈춰 있어야 한다.
         if (startDelay > 0f)
@@ -279,13 +282,16 @@ public class HubClearReveal : MonoBehaviour
         target.localRotation = baseRotation;
         ClearSpawned();
 
+        // 마지막 게임을 깬 판이면 엔딩으로. 모든 게임을 처음 깨는 순간은 한 번뿐이라 엔딩도 한 번만 나온다.
+        // 진화 전에 미리 판단해 둔다 — 마지막 진화는 줌아웃 없이 확대된 채로 끝나 엔딩이 곧장 이어받는다.
+        bool finale = ending != null && HubEnding.AllCleared();
+
         if (evolveCharacter)
         {
-            yield return Evolve();
+            yield return Evolve(finale);
         }
 
-        // 마지막 게임을 깬 판이면 엔딩으로. 모든 게임을 처음 깨는 순간은 한 번뿐이라 엔딩도 한 번만 나온다.
-        if (ending != null && HubEnding.AllCleared())
+        if (finale)
         {
             yield return ending.Play();
         }
@@ -427,7 +433,7 @@ public class HubClearReveal : MonoBehaviour
         image.color = color;
     }
 
-    private IEnumerator Evolve()
+    private IEnumerator Evolve(bool holdZoom)
     {
         EvolutionController controller = EvolutionController.Instance;
         if (controller == null || character == null)
@@ -442,7 +448,7 @@ public class HubClearReveal : MonoBehaviour
         }
 
         // 마지막 단계면 PlayEvolution이 조용히 무시하고 IsPlaying도 안 켜진다. 그대로 흘려보내면 된다.
-        controller.PlayEvolution(character);
+        controller.PlayEvolution(character, holdZoom);
         yield return new WaitWhile(() => controller != null && controller.IsPlaying);
     }
 
@@ -455,39 +461,10 @@ public class HubClearReveal : MonoBehaviour
                 return;
             }
 
-            _blocker = CreateBlocker();
+            _blocker = ScreenInputBlocker.Create(transform, "ClearRevealBlocker");
         }
 
         _blocker.SetActive(on);
-    }
-
-    /// <summary>
-    /// 화면 전체를 덮는 투명 막을 자기 캔버스째 만든다. 씬에 미리 두지 않는 이유는, 편집하느라
-    /// 덮개 캔버스를 꺼두면 막까지 같이 꺼져 연출 도중 클릭이 새기 때문이다.
-    /// </summary>
-    private GameObject CreateBlocker()
-    {
-        var go = new GameObject("ClearRevealBlocker", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
-        go.transform.SetParent(transform, false);
-
-        var canvas = go.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = BLOCKER_SORTING_ORDER;
-
-        var cover = new GameObject("Cover", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var rect = (RectTransform)cover.transform;
-        rect.SetParent(go.transform, false);
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-
-        // 알파 0이어도 레이캐스트는 받는다. 보이지 않게 클릭만 삼킨다.
-        var image = cover.GetComponent<Image>();
-        image.color = Color.clear;
-        image.raycastTarget = true;
-
-        return go;
     }
 
     private static MiniGameEntry FindEntry(MiniGameDefinition game)

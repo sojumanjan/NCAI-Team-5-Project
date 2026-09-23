@@ -2,7 +2,6 @@ using System.Collections;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -87,6 +86,13 @@ public class HubEnding : MonoBehaviour
 
     [SerializeField] private Color enterColor = Color.white;
 
+    [Header("마지막 진화에서 곧장 이어받을 때")]
+    [Tooltip("진화 연출이 확대된 채로 끝난 뒤, 눈을 감고 머무는 시간 (초).")]
+    [SerializeField] private float heldLingerDuration = 1.5f;
+
+    [Tooltip("이미 확대된 화면에서 흰빛이 다 찰 때까지 더 다가가는 배율. 이미 크게 당겨져 있어 평소보다 작게 둔다.")]
+    [SerializeField] private float heldZoomScale = 1.5f;
+
     [Header("크레딧")]
     [Tooltip("글이 떠오르는 시간 (초).")]
     [SerializeField] private float textFadeIn = 0.9f;
@@ -164,18 +170,33 @@ public class HubEnding : MonoBehaviour
         return flow != null && flow.MiniGames.Count > 0 && flow.ClearedCount >= flow.MiniGames.Count;
     }
 
-    /// <summary>엔딩을 처음부터 끝까지 돌린다. 방으로 돌아와 화면이 걷힐 때 끝난다.</summary>
+    /// <summary>
+    /// 엔딩을 처음부터 끝까지 돌린다. 방으로 돌아와 화면이 걷힐 때 끝난다.
+    ///
+    /// 마지막 진화가 줌아웃 없이 확대된 채로 끝났으면 그 자리에서 곧장 이어받는다: 눈을 감고 잠깐 머문 뒤,
+    /// 기다림 없이 더 다가가며 하얘진다. 한 번 물러났다 다시 다가가면 "다 자랐다 → 잠든다"의 흐름이 끊긴다.
+    /// </summary>
     public IEnumerator Play()
     {
+        EvolutionController evolution = EvolutionController.Instance;
+
         if (_playing || endingCanvas == null || transitionCover == null)
         {
+            // 엔딩을 못 틀 때 확대된 채로 남겨두면 방이 계속 당겨진 채다.
+            if (!_playing && evolution != null)
+            {
+                evolution.RestoreHeldZoom();
+            }
+
             yield break;
         }
 
         _playing = true;
 
-        yield return Linger();
-        yield return EnterEnding();
+        bool fromHeldZoom = evolution != null && evolution.HasHeldZoom;
+
+        yield return Linger(fromHeldZoom ? heldLingerDuration : lingerDuration);
+        yield return EnterEnding(fromHeldZoom);
         yield return ShowCredits();
         yield return ReturnToRoom();
 
@@ -184,7 +205,7 @@ public class HubEnding : MonoBehaviour
 
     // ---------------------------------------------------------------- 1. 여운
 
-    private IEnumerator Linger()
+    private IEnumerator Linger(float duration)
     {
         if (wanderer != null)
         {
@@ -210,34 +231,43 @@ public class HubEnding : MonoBehaviour
         }
 
         // 여운이 끝날 때 방 음악이 다 사그라져 있어야, 엔딩 음악이 조용한 데서 시작한다.
-        AudioManager.StopBGM(lingerDuration);
+        AudioManager.StopBGM(duration);
 
-        yield return new WaitForSeconds(lingerDuration);
+        yield return new WaitForSeconds(duration);
     }
 
     // ---------------------------------------------------------------- 2. 전환
 
-    private IEnumerator EnterEnding()
+    private IEnumerator EnterEnding(bool fromHeldZoom)
     {
         // 잠든 씨앗에게 다가가기 시작하고, 조금 늦게 흰빛이 따라 차오른다. 다가가는 건 흰빛이 다 찰 때까지
         // 멈추지 않는다 — 도중에 멈추면 흰빛 속에서 화면이 얼어붙은 것처럼 보인다.
         // 흰빛을 살짝 늦추는 건 "다가간다"를 먼저 눈에 담게 하려는 것. 동시에 시작하면 다가가는 게 흰빛에 묻힌다.
+        // 이미 확대된 채로 이어받았으면 다가가는 건 충분히 봤으니 흰빛을 기다리지 않는다.
         ZoomState zoom = BeginZoom();
         ShowCover(enterColor, 0f);
 
-        float zoomDuration = whiteStartDelay + whiteInDuration;
+        float whiteDelay = fromHeldZoom ? 0f : whiteStartDelay;
+        float scale = fromHeldZoom ? heldZoomScale : zoomScale;
+        float zoomDuration = whiteDelay + whiteInDuration;
 
         yield return DOTween.Sequence()
-                            .Insert(0f, DOVirtual.Float(0f, 1f, zoomDuration, t => zoom.Apply(Mathf.Lerp(1f, zoomScale, t))).SetEase(Ease.InQuad))
+                            .Insert(0f, DOVirtual.Float(0f, 1f, zoomDuration, t => zoom.Apply(Mathf.Lerp(1f, scale, t))).SetEase(Ease.InQuad))
 
                             // 엔딩 음악은 흰빛이 차오르기 시작하는 순간에. 화면과 소리가 같은 박자에 넘어가야 한다.
-                            .InsertCallback(whiteStartDelay, () => AudioManager.PlayBGM(endingBgm))
-                            .Insert(whiteStartDelay, transitionCover.DOFade(1f, whiteInDuration).SetEase(Ease.InQuad))
+                            .InsertCallback(whiteDelay, () => AudioManager.PlayBGM(endingBgm))
+                            .Insert(whiteDelay, transitionCover.DOFade(1f, whiteInDuration).SetEase(Ease.InQuad))
                             .SetLink(gameObject)
                             .WaitForCompletion();
 
         // 하얀 화면 뒤에서 방을 원래대로 돌려놓는다. 돌아왔을 때 확대된 채면 어색하다.
+        // 순서가 중요하다: 엔딩이 더 당긴 것을 먼저 풀고, 그다음 진화가 당겨둔 것을 푼다.
         zoom.Restore();
+
+        if (fromHeldZoom && EvolutionController.Instance != null)
+        {
+            EvolutionController.Instance.RestoreHeldZoom();
+        }
 
         endingCanvas.SetActive(true);
         PrepareText();
@@ -256,107 +286,10 @@ public class HubEnding : MonoBehaviour
 
     private IEnumerator ShowCredits()
     {
-        if (creditText == null || pages == null)
-        {
-            yield break;
-        }
-
-        foreach (string page in pages)
-        {
-            creditText.text = page;
-            RectTransform rect = creditText.rectTransform;
-            rect.anchoredPosition = _textRestPosition - new Vector2(0f, textRise);
-
-            yield return DOTween.Sequence()
-                                .Append(creditText.DOFade(1f, textFadeIn).SetEase(Ease.OutQuad))
-                                .Join(rect.DOAnchorPos(_textRestPosition, textFadeIn).SetEase(Ease.OutCubic))
-                                .SetLink(creditText.gameObject)
-                                .WaitForCompletion();
-
-            // 다 떠오른 뒤에야 넘길 수 있다. 떠오르는 도중에 눌러 넘기면 글을 못 읽고 지나간다.
-            ShowIndicator(true);
-            yield return WaitForAdvance();
-            ShowIndicator(false);
-
-            yield return creditText.DOFade(0f, textFadeOut).SetEase(Ease.InQuad).SetLink(creditText.gameObject).WaitForCompletion();
-        }
+        yield return PagedText.Play(creditText, nextIndicator, pages, _textRestPosition, textFadeIn, textFadeOut, textRise);
     }
 
-    /// <summary>
-    /// 화면 아무 데나 누르면 넘어간다. 스페이스·엔터도 받는다.
-    /// 옵션 창이 열려 시간이 멈춘 동안은 받지 않는다 — 옵션 창 버튼을 누른 게 크레딧까지 넘기면 안 된다.
-    /// </summary>
-    private static IEnumerator WaitForAdvance()
-    {
-        // 앞 장을 넘긴 그 클릭이 이번 장까지 넘기지 않도록 한 프레임 쉰다.
-        yield return null;
-
-        while (true)
-        {
-            if (Time.timeScale > 0f && AdvancePressed())
-            {
-                yield break;
-            }
-
-            yield return null;
-        }
-    }
-
-    private static bool AdvancePressed()
-    {
-        Mouse mouse = Mouse.current;
-        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
-        {
-            return true;
-        }
-
-        Keyboard keyboard = Keyboard.current;
-        return keyboard != null && (keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame);
-    }
-
-    private void PrepareText()
-    {
-        if (creditText != null)
-        {
-            creditText.text = string.Empty;
-            Color color = creditText.color;
-            color.a = 0f;
-            creditText.color = color;
-            creditText.rectTransform.anchoredPosition = _textRestPosition;
-        }
-
-        ShowIndicator(false);
-    }
-
-    private void ShowIndicator(bool on)
-    {
-        if (nextIndicator == null)
-        {
-            return;
-        }
-
-        RectTransform rect = nextIndicator.rectTransform;
-        rect.DOKill();
-        nextIndicator.DOKill();
-
-        if (!on)
-        {
-            nextIndicator.gameObject.SetActive(false);
-            return;
-        }
-
-        nextIndicator.gameObject.SetActive(true);
-        Color color = nextIndicator.color;
-        color.a = 0f;
-        nextIndicator.color = color;
-        nextIndicator.DOFade(1f, 0.25f).SetLink(nextIndicator.gameObject);
-
-        // 위아래로 까딱여야 "눌러도 된다"로 읽힌다. 가만히 있으면 장식처럼 보인다.
-        Vector2 rest = rect.anchoredPosition;
-        rect.DOAnchorPosY(rest.y - 10f, 0.5f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo)
-            .SetLink(nextIndicator.gameObject)
-            .OnKill(() => { if (rect != null) rect.anchoredPosition = rest; });
-    }
+    private void PrepareText() => PagedText.Prepare(creditText, nextIndicator, _textRestPosition);
 
     // ---------------------------------------------------------------- 4. 복귀
 
@@ -480,6 +413,8 @@ public class HubEnding : MonoBehaviour
         whiteInDuration = Mathf.Max(0.01f, whiteInDuration);
         whiteOutDuration = Mathf.Max(0.01f, whiteOutDuration);
         zoomScale = Mathf.Max(1f, zoomScale);
+        heldLingerDuration = Mathf.Max(0f, heldLingerDuration);
+        heldZoomScale = Mathf.Max(1f, heldZoomScale);
         textFadeIn = Mathf.Max(0.01f, textFadeIn);
         textFadeOut = Mathf.Max(0.01f, textFadeOut);
         imageDrift = Mathf.Max(1f, imageDrift);
