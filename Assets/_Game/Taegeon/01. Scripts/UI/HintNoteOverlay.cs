@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -154,7 +154,7 @@ namespace Taegeon
                 Box("Ruled line " + i, paper, new Vector2(0, 270 - i * 23), new Vector2(604, 1), new Color(.43f, .48f, .38f, .3f));
             Label("Note title", paper, "발견한 단서", new Vector2(0, 365), new Vector2(530, 54), 30, TextAnchor.MiddleCenter);
             Label("Note instruction", paper, "글씨 위에서 왼쪽 버튼을 누른 채 움직여 보세요", new Vector2(0, 305), new Vector2(580, 32), 17, TextAnchor.MiddleCenter);
-            body = Label("Handwritten clues", paper, "", new Vector2(22, -28), new Vector2(525, 584), 18, TextAnchor.UpperLeft);
+            body = Label("Handwritten clues", paper, "", new Vector2(22, -28), new Vector2(525, 584), 18f * 1.3f, TextAnchor.UpperLeft);
             body.lineSpacing = 1.05f;
             Label("Footer", paper, "마우스를 떼면 축소  ·  H / Esc 닫기", new Vector2(0, -390), new Vector2(580, 28), 16, TextAnchor.MiddleCenter);
             closeArea = Label("Close note", paper, "×", new Vector2(287, 379), new Vector2(58, 58), 34, TextAnchor.MiddleCenter).rectTransform;
@@ -198,7 +198,7 @@ namespace Taegeon
         }
 
         /// <summary>종이에 쓸 작은 글씨를 생성합니다.</summary>
-        private Text Label(string name, Transform parent, string value, Vector2 position, Vector2 size, int fontSize, TextAnchor alignment)
+        private Text Label(string name, Transform parent, string value, Vector2 position, Vector2 size, float fontSize, TextAnchor alignment)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Text));
             var rect = go.GetComponent<RectTransform>();rect.SetParent(parent, false);
@@ -208,7 +208,7 @@ namespace Taegeon
             rect.anchoredPosition = position; rect.sizeDelta = size * textResolution;
             rect.localScale = Vector3.one / textResolution;
             var text = go.GetComponent<Text>(); text.font = noteFont; text.text = value;
-            text.fontSize = fontSize * textResolution; text.alignment = alignment; text.color = new Color(.10f, .075f, .04f);
+            text.fontSize = Mathf.RoundToInt(fontSize * textResolution); text.alignment = alignment; text.color = new Color(.10f, .075f, .04f);
             text.raycastTarget = false; text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             return text;

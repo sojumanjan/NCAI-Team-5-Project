@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41e937a7a69af584f8099e8e0205811d, type: 3}
+  m_Name: Sound_MinigameClear
+  m_EditorClassIdentifier: Assembly-CSharp::SoundData
+  clips:
+  - {fileID: 8300000, guid: e18ef4490bb0a2543ab28a8101252d21, type: 3}
+  category: 1
+  volume: 0.6
+  pitchRange: {x: 1, y: 1}
+  loop: 0
+  spatialBlend: 0
+  maxDistance: 20
+  minInterval: 0

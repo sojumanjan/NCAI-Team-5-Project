@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -28,6 +28,8 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
     [SerializeField] private Transform resetButton;
     [SerializeField] private float cellSize = 0.85f;
     [SerializeField] private float slideSeconds = 0.22f;
+    [SerializeField] private SoundData slideSound;
+    private SoundHandle slideSoundHandle = SoundHandle.None;
     [SerializeField] private UnityEvent onKeyRecovered = new UnityEvent();
     public bool HasKey { get; private set; }
     public bool IsMoving { get; private set; }
@@ -58,6 +60,7 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
     {
         if (positions == null) return;
         StopAllCoroutines();
+        slideSoundHandle.Stop();
         HasKey = false; IsMoving = false; MoveCount = 0; selected = -1; dragging = false;
         for (int i = 0; i < blocks.Length; i++)
         {
@@ -133,6 +136,8 @@ public sealed class SlidingKeyPuzzle : MonoBehaviour
     private IEnumerator Slide(int index, int delta)
     {
         IsMoving = true;
+        slideSoundHandle.Stop();
+        if (slideSound != null) slideSoundHandle = AudioManager.PlayAttached(slideSound, blocks[index].visual);
         Vector3 from = blocks[index].visual.localPosition;
         positions[index] += delta;
         Vector3 to = BlockPosition(index);
