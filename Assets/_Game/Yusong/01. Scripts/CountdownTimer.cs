@@ -270,11 +270,11 @@ public class CountdownTimer : MonoBehaviour
         else if (secondaryAnnounceTimer > 0f)
         {
             secondaryAnnounceTimer -= Time.deltaTime;
-            timerText.text = "다슬이가 생성되었습니다!";
+            timerText.text = "다슬이가 나타났습니다!";
         }
         else if (secondaryEligibleWave && secondaryWarningStarted && !secondaryObjectSpawned)
         {
-            timerText.text = "잠시 후에 다슬이가 생성됩니다";
+            timerText.text = "잠시 후 다슬이가 정화를 돕기 위해 나타납니다..";
         }
         else
         {
@@ -349,11 +349,8 @@ public class CountdownTimer : MonoBehaviour
             else gameOverScreen.SetActive(true);
         }
 
-        var raycaster = GetComponentInParent<Canvas>()?.GetComponent<UnityEngine.UI.GraphicRaycaster>();
-        if (raycaster != null)
-        {
-            raycaster.enabled = false;
-        }
+        // 캔버스 레이캐스터 자체를 끄면 결과 화면의 다시하기/메인메뉴 버튼도 같이 막혀버린다.
+        // GameOverScreen 배경 이미지가 raycastTarget=true라 뒤쪽 게임 요소는 어차피 가려진다.
 
         if (PlayerHealth.Instance != null)
         {

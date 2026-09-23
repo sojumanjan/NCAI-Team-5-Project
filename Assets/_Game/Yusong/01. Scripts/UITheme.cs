@@ -55,6 +55,6 @@ public class UITheme : ScriptableObject
     public Color gameOverBackgroundColor = new Color(0f, 0f, 0f, 0.75f);
     public Color clearTextColor = new Color(1f, 0.85f, 0.1f, 1f);
     public Color victoryTextColor = new Color(0.2f, 0.85f, 0.35f, 1f);
-    public Color defeatHeadlineColor = new Color(1f, 1f, 1f, 1f);
+    public Color defeatHeadlineColor = new Color(0.33f, 0.37f, 0.43f, 1f);
 }
 }

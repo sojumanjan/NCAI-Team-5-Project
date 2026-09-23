@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5784322089954046644}
   - component: {fileID: 1931739910762290020}
   - component: {fileID: 3141828158326169989}
+  - component: {fileID: 4756844506393128168}
   m_Layer: 0
   m_Name: EnemyTriangleYellow
   m_TagString: Untagged
@@ -60,14 +61,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.85, b: 0.1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 57144e0a08ab3674d87084aad2a07bb3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 03ed1d1859dd2fa41bba1f5db57d8146, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -133,3 +134,24 @@ MonoBehaviour:
   bossBurstSparkSpeed: 700
   bossDeathPunchScale: 1.6
   bossDeathFadeDuration: 0.35
+  damageStateSprites:
+  - {fileID: 21300000, guid: 03ed1d1859dd2fa41bba1f5db57d8146, type: 3}
+  shatterOnDeath: 0
+  shatterDuration: 0.2
+  shatterScalePunch: 1.3
+--- !u!114 &4756844506393128168
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292714553911450812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dfd471951c2e034c9dd07369ce7c0a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Yusong.EnemyTypeBadge
+  badgeType: 0
+  overrideSprite: {fileID: 0}
+  sizeRatio: 0.45
+  anchorPoint: {x: 0.88, y: 0.88}
