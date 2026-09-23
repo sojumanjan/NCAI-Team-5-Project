@@ -57,6 +57,25 @@ public sealed class GameCameraSwitcher : MonoBehaviour
 
     #endregion
 
+    /// <summary>
+    /// F키로 현재 게임에서 복귀하거나, 접근 영역 안의 입장 가능한 게임을 시작합니다.
+    /// </summary>
+    public void ToggleNearbyGame()
+    {
+        if (Time.timeScale <= 0f || explorer == null) return;
+        if (CurrentIndex >= 0)
+        {
+            ReturnToPlayer();
+            return;
+        }
+        for (int i = 0; i < gameCameras.Length; i++)
+        {
+            if (gameCameras[i] == null || !CanEnterGame(i)) continue;
+            SwitchTo(i);
+            return;
+        }
+    }
+
     #region 게임 접근 조건
 
     /// <summary>
@@ -94,11 +113,11 @@ public sealed class GameCameraSwitcher : MonoBehaviour
         for (int i=0;i<4;i++)
         {
             if (!IsInEntryZone(i)) continue;
-            hint += CanEnterGame(i) ? "["+(i+1)+"] "+names[i]+" 시작   "
+            hint += CanEnterGame(i) ? "[F] "+names[i]+" 시작   "
                 : names[i]+" · "+(progression != null ? progression.GetRepairHint(i) : "부품을 확인하세요")+"   ";
         }
         if (hint.Length == 0) hint = "게임 앞 원 안으로 이동하세요";
-        cameraLabel.text = hint+"\nWASD 이동 · 마우스 시점 · E 상호작용 · H 단서 · 0 이동 시점";
+        cameraLabel.text = hint+"\nWASD 이동 · 마우스 시점 · E 상호작용 · H 단서 · F 게임 진입/복귀";
     }
 
     /// <summary>
@@ -123,9 +142,9 @@ public sealed class GameCameraSwitcher : MonoBehaviour
         nearbyMask = -1;
         if (cameraLabel != null)
             cameraLabel.text = explorer != null
-                ? "0 이동 시점으로 돌아가기 · 게임 앞 원 안에서 해당 번호로 시작\n"
+                ? "F 이동 시점으로 돌아가기 · 게임 앞 원 안에서 F로 시작\n"
                     + (index < 0 ? "WASD 이동 · 마우스 시점 · Shift 달리기 · Esc 커서 해제" : "현재: " + names[index])
-                : "1 주크박스  |  2 룬 원판  |  3 슬라이딩 퍼즐  |  4 라디오\n현재: " + names[index];
+                : "게임 화면\n현재: " + names[index];
     }
 
     #endregion
@@ -133,25 +152,16 @@ public sealed class GameCameraSwitcher : MonoBehaviour
     #region 키 입력 및 오디오
 
     /// <summary>
-    /// 숫자 키로 요청한 카메라 전환을 처리합니다.
+    /// F키로 게임 진입과 이동 시점 복귀를 처리합니다.
     /// </summary>
     private void Update()
     {
         UpdateNearbyHint();
 #if ENABLE_INPUT_SYSTEM
         var k = Keyboard.current;
-        if (k == null) return;
-        if (k.digit0Key.wasPressedThisFrame || k.numpad0Key.wasPressedThisFrame) ReturnToPlayer();
-        else if (k.digit1Key.wasPressedThisFrame || k.numpad1Key.wasPressedThisFrame) SwitchTo(0);
-        else if (k.digit2Key.wasPressedThisFrame || k.numpad2Key.wasPressedThisFrame) SwitchTo(1);
-        else if (k.digit3Key.wasPressedThisFrame || k.numpad3Key.wasPressedThisFrame) SwitchTo(2);
-        else if (k.digit4Key.wasPressedThisFrame || k.numpad4Key.wasPressedThisFrame) SwitchTo(3);
+        if (k != null && k.fKey.wasPressedThisFrame) ToggleNearbyGame();
 #else
-        if (Input.GetKeyDown(KeyCode.Alpha0) || Input.GetKeyDown(KeyCode.Keypad0)) ReturnToPlayer();
-        else if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) SwitchTo(0);
-        else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) SwitchTo(1);
-        else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) SwitchTo(2);
-        else if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) SwitchTo(3);
+        if (Input.GetKeyDown(KeyCode.F)) ToggleNearbyGame();
 #endif
     }
 

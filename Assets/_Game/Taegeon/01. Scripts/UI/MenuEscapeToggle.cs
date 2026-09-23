@@ -99,11 +99,22 @@ namespace Taegeon
             if (menuRoot == null) return;
             BeginPause();
             if (pauseRoot != null) pauseRoot.SetActive(false);
-            var panel = menuRoot.transform.Find("Option/Setting Panel");
-            var otherPanel = menuRoot.transform.Find("Option/Tooltip Panel");
-            if (otherPanel != null) otherPanel.gameObject.SetActive(false);
-            if (panel != null) panel.gameObject.SetActive(true);
             menuRoot.SetActive(true);
+
+            // 시작 시 닫힌 내부 옵션 창도 열고, 탭 상태를 컨트롤러와 맞춥니다.
+            var options = GetComponent<OptionsMenuController>();
+            if (options != null)
+            {
+                options.ShowGraphics();
+                options.Open();
+            }
+            else
+            {
+                var panel = menuRoot.transform.Find("Option/Setting Panel");
+                var otherPanel = menuRoot.transform.Find("Option/Tooltip Panel");
+                if (otherPanel != null) otherPanel.gameObject.SetActive(false);
+                if (panel != null) panel.gameObject.SetActive(true);
+            }
         }
 
         /// <summary>설정 창을 닫고 일시정지 화면으로 돌아갑니다.</summary>

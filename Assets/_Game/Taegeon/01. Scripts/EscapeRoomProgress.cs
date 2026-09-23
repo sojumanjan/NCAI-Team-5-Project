@@ -436,7 +436,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             if (usePartProgression && i < 3) repairParts[i + 1].pickupVisual.SetActive(true);
             ColorKey(worldKeys[i],i);
             RefreshHintText();
-            ShowNotice(names[i]+" 클리어!  0번으로 돌아가 보상을 바라보고 E · 노란 쪽지 [H]");
+            ShowNotice(names[i]+" 클리어!  F로 돌아가 보상을 바라보고 E · 노란 쪽지 [H]");
         }
     }
 
@@ -566,7 +566,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             repairParts[index].installedVisual.SetActive(true);
             repairParts[index].emptySocket.SetActive(false);
             ApplyGameLocks();
-            ShowNotice(repairParts[index].displayName+" 장착 완료! 주변 원 안에서 ["+(index+1)+"]로 플레이하세요.");
+            ShowNotice(repairParts[index].displayName+" 장착 완료! 주변 원 안에서 [F]로 플레이하세요.");
         }
         else if(kind==4)
         {
