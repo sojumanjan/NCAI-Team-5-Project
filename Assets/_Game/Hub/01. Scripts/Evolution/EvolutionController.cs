@@ -65,12 +65,6 @@ public class EvolutionController : MonoBehaviour
     private Vector2 defaultZoomAnchoredPosition;
     private bool isPlaying;
 
-    // 줌아웃 없이 끝낸 진화(마지막 진화)를 나중에 원래 크기로 되돌릴 방법. 엔딩이 흰 화면 뒤에서 부른다.
-    private System.Action heldZoomRestore;
-
-    /// <summary>줌아웃하지 않고 확대된 채로 끝난 진화가 있는지.</summary>
-    public bool HasHeldZoom => heldZoomRestore != null;
-
     // 캐릭터를 따로 움직이는 스크립트(SeedWanderer 등)가 연출과 싸우지 않도록 비켜설 때 본다.
     public bool IsPlaying => isPlaying;
 
@@ -89,14 +83,7 @@ public class EvolutionController : MonoBehaviour
     /// 캐릭터가 이미 마지막 단계라면(CanEvolve == false) 아무 동작도 하지 않는다.
     /// 이미 연출이 재생 중일 때 다시 호출되면(예: 버튼 연타) 무시한다.
     /// </summary>
-    public void PlayEvolution(CharacterEvolutionState character) => PlayEvolution(character, false);
-
-    /// <summary>
-    /// <paramref name="holdZoom"/>이 true면 줌아웃하지 않고 확대된 채로 끝낸다. 마지막 진화에서 엔딩이
-    /// 그 자리에서 곧장 더 다가가며 이어받게 하려는 것 — 한 번 물러났다 다시 다가가면 흐름이 끊긴다.
-    /// 확대된 채로 끝났으면 <see cref="RestoreHeldZoom"/>으로 원래 크기로 되돌려야 한다.
-    /// </summary>
-    public void PlayEvolution(CharacterEvolutionState character, bool holdZoom)
+    public void PlayEvolution(CharacterEvolutionState character)
     {
         if (character == null || !character.CanEvolve || isPlaying)
         {
@@ -228,15 +215,6 @@ public class EvolutionController : MonoBehaviour
         // 별 흩뿌리기가 다 끝난 뒤에도 잠깐 여운을 두고 나서 원래 크기/위치로 돌아간다.
         sequence.AppendInterval(zoomOutDelayAfterBurst);
 
-        if (holdZoom)
-        {
-            // 확대된 채로, 웃는 얼굴 그대로 넘긴다. 얼굴과 되돌리기는 이어받는 쪽(엔딩)이 맡는다.
-            heldZoomRestore = () =>
-                ApplyZoomProgress(0f, characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1);
-            sequence.OnComplete(() => isPlaying = false);
-            return;
-        }
-
         // 2단계: 줌인의 역순으로, 맵/캐릭터를 원래 크기/위치로 동시에(같은 진행률로) 되돌린다.
         sequence.Append(CreateZoomOutTween(characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1));
 
@@ -245,13 +223,6 @@ public class EvolutionController : MonoBehaviour
         sequence.AppendCallback(character.ShowNormal);
 
         sequence.OnComplete(() => isPlaying = false);
-    }
-
-    /// <summary>줌아웃 없이 끝낸 진화를 한 번에 원래 크기/위치로 되돌린다. 화면이 가려져 있을 때 부른다.</summary>
-    public void RestoreHeldZoom()
-    {
-        heldZoomRestore?.Invoke();
-        heldZoomRestore = null;
     }
 
     /// <summary>

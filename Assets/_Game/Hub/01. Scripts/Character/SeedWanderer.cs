@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -83,10 +84,19 @@ public class SeedWanderer : MonoBehaviour
     // 이 오브젝트 기준점에서 본 발밑 위치. 기준점이 그림 한가운데라 그냥 돌리면 팽이처럼 돈다.
     private Vector2 _feet;
 
+    // 다른 연출이 걸음을 쥔 동안(집으로 돌아가기 등)은 도착한 뒤에도 새 목적지를 고르지 않는다.
+    private bool _holding;
+
+    /// <summary>씬이 열렸을 때 씨앗이 서 있던 자리. 엔딩 전에 이 자리로 돌아온다.</summary>
+    public Vector2 HomePosition { get; private set; }
+
     private void Awake()
     {
         _rect = (RectTransform)transform;
         _parent = _rect.parent as RectTransform;
+
+        // 다른 스크립트가 옮기기 전, 씬에 놓인 그대로의 자리를 기억한다.
+        HomePosition = _rect.anchoredPosition;
 
         if (body == null)
         {
@@ -114,6 +124,9 @@ public class SeedWanderer : MonoBehaviour
         BeginIdle();
     }
 
+    // 꺼졌다 다시 켜지면(엔딩에서 돌아옴 등) 다시 제멋대로 돌아다닌다.
+    private void OnEnable() => _holding = false;
+
     private void Update()
     {
         if (IsEvolutionPlaying())
@@ -138,6 +151,11 @@ public class SeedWanderer : MonoBehaviour
 
         if (_state == State.Idle)
         {
+            if (_holding)
+            {
+                return;
+            }
+
             if (Time.time >= _idleUntil)
             {
                 TryBeginWalk();
@@ -170,6 +188,44 @@ public class SeedWanderer : MonoBehaviour
             return;
         }
 
+        BeginWalk(destination);
+    }
+
+    /// <summary>
+    /// 정해준 자리까지 평소처럼 통통 뒤뚱거리며 걸어간다. 도착하면 끝나고, 그 자리에 머문다.
+    /// 다음에 이 컴포넌트가 꺼졌다 켜질 때까지 새 목적지를 고르지 않는다.
+    /// </summary>
+    public IEnumerator WalkTo(Vector2 destination)
+    {
+        _holding = true;
+
+        // 걷던 중이면 발을 땅에 붙이고 거기서 새로 출발한다. 튀던 높이와 기울기가 남으면 출발점이 튄다.
+        if (_state == State.Walking)
+        {
+            _rect.localRotation = Quaternion.identity;
+            _rect.anchoredPosition = _ground;
+        }
+        else
+        {
+            _ground = _rect.anchoredPosition;
+        }
+
+        if ((destination - _ground).sqrMagnitude < 1f)
+        {
+            _state = State.Idle;
+            yield break;
+        }
+
+        BeginWalk(destination);
+
+        while (enabled && _state == State.Walking)
+        {
+            yield return null;
+        }
+    }
+
+    private void BeginWalk(Vector2 destination)
+    {
         _from = _ground;
         _to = destination;
         _walkTime = 0f;

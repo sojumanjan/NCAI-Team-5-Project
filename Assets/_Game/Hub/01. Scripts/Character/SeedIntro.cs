@@ -75,6 +75,9 @@ public class SeedIntro : MonoBehaviour
     [SerializeField] private SoundData sleepSound;
 
     [Header("깨어남 (뽀잉)")]
+    [Tooltip("뽀잉 깨어나는 순간 나는 소리.")]
+    [SerializeField] private SoundData wakeSound;
+
     [SerializeField] private Vector2 wakeStretch = new Vector2(0.9f, 1.15f);
     [SerializeField] private Vector2 wakeSquash = new Vector2(1.12f, 0.88f);
     [SerializeField] private float wakeHop = 18f;
@@ -267,6 +270,11 @@ public class SeedIntro : MonoBehaviour
         else
         {
             character.ShowNormal();
+        }
+
+        if (wakeSound != null)
+        {
+            AudioManager.Play(wakeSound);
         }
 
         yield return Boing(wakeStretch, wakeSquash, wakeHop).WaitForCompletion();

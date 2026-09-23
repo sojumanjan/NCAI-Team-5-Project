@@ -283,12 +283,11 @@ public class HubClearReveal : MonoBehaviour
         ClearSpawned();
 
         // 마지막 게임을 깬 판이면 엔딩으로. 모든 게임을 처음 깨는 순간은 한 번뿐이라 엔딩도 한 번만 나온다.
-        // 진화 전에 미리 판단해 둔다 — 마지막 진화는 줌아웃 없이 확대된 채로 끝나 엔딩이 곧장 이어받는다.
         bool finale = ending != null && HubEnding.AllCleared();
 
         if (evolveCharacter)
         {
-            yield return Evolve(finale);
+            yield return Evolve();
         }
 
         if (finale)
@@ -433,7 +432,7 @@ public class HubClearReveal : MonoBehaviour
         image.color = color;
     }
 
-    private IEnumerator Evolve(bool holdZoom)
+    private IEnumerator Evolve()
     {
         EvolutionController controller = EvolutionController.Instance;
         if (controller == null || character == null)
@@ -448,7 +447,7 @@ public class HubClearReveal : MonoBehaviour
         }
 
         // 마지막 단계면 PlayEvolution이 조용히 무시하고 IsPlaying도 안 켜진다. 그대로 흘려보내면 된다.
-        controller.PlayEvolution(character, holdZoom);
+        controller.PlayEvolution(character);
         yield return new WaitWhile(() => controller != null && controller.IsPlaying);
     }
 

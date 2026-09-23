@@ -9,6 +9,8 @@ using UnityEngine.UI;
 /// 씬을 옮기지 않으니 클리어 기록과 씨앗 모습이 그대로 남고, 돌아와서 미니게임을 다시 할 수 있다.
 ///
 /// 흐름
+///  0. 방 되살리기 : 흰빛으로 덮였다 걷히면 엉망이던 방이 깨끗해져 있고, 방 곳곳이 반짝인다.
+///                  씨앗은 처음 서 있던 자리로 걸어 돌아간다.
 ///  1. 여운    : 씨앗이 멈춰 눈을 감고, 꽃잎이 흩날리고, 방 음악이 잦아든다.
 ///  2. 전환    : 씨앗 쪽으로 다가가기 시작하고, 0.3초 뒤부터 흰빛이 따라 차오른다. 흰빛과 함께 엔딩 음악이 시작된다.
 ///  3. 크레딧  : 흰빛이 걷히면 엔딩 그림. 글이 한 장씩 떠오르고, 다 떠오르면 삼각형이 나와 클릭을 기다린다.
@@ -46,6 +48,25 @@ public class HubEnding : MonoBehaviour
         "씨앗이 꽃을 피웠습니다.",
         "플레이해주셔서 감사합니다.",
     };
+
+    [Header("방 되살리기")]
+    [Tooltip("방 배경 그림. 엔딩 시작 때 깨끗한 그림으로 바뀝니다.")]
+    [SerializeField] private Image roomBackground;
+
+    [Tooltip("깨끗해진 방 그림.")]
+    [SerializeField] private Sprite cleanBackground;
+
+    [Tooltip("방이 흰빛으로 덮이는 시간 (초).")]
+    [SerializeField] private float cleanWhiteIn = 0.8f;
+
+    [Tooltip("흰빛이 걷히며 깨끗한 방이 드러나는 시간 (초).")]
+    [SerializeField] private float cleanWhiteOut = 0.8f;
+
+    [Tooltip("방 곳곳의 반짝임. 깨끗해진 순간부터 엔딩으로 넘어갈 때까지.")]
+    [SerializeField] private MapTwinkle twinkles;
+
+    [Tooltip("흰빛 뒤에서 방이 깨끗한 그림으로 바뀌는 순간 나는 소리.")]
+    [SerializeField] private SoundData roomCleanSound;
 
     [Header("방 (여운·전환에서 다가갈 대상)")]
     [Tooltip("방 배경. 전환 때 씨앗 쪽으로 확대됩니다.")]
@@ -86,13 +107,6 @@ public class HubEnding : MonoBehaviour
 
     [SerializeField] private Color enterColor = Color.white;
 
-    [Header("마지막 진화에서 곧장 이어받을 때")]
-    [Tooltip("진화 연출이 확대된 채로 끝난 뒤, 눈을 감고 머무는 시간 (초).")]
-    [SerializeField] private float heldLingerDuration = 1.5f;
-
-    [Tooltip("이미 확대된 화면에서 흰빛이 다 찰 때까지 더 다가가는 배율. 이미 크게 당겨져 있어 평소보다 작게 둔다.")]
-    [SerializeField] private float heldZoomScale = 1.5f;
-
     [Header("크레딧")]
     [Tooltip("글이 떠오르는 시간 (초).")]
     [SerializeField] private float textFadeIn = 0.9f;
@@ -118,11 +132,48 @@ public class HubEnding : MonoBehaviour
     private Vector2 _textRestPosition;
     private bool _playing;
 
+    // 한 번 되찾은 방은 미니게임을 다시 하러 갔다 와도 깨끗해야 한다. 허브 씬은 매번 새로 불리므로
+    // 씬 오브젝트가 아닌 정적 값으로 들고 있는다.
+    private static bool _roomCleaned;
+
+    private Sprite _decayBackground;
+
     /// <summary>엔딩이 도는 중인지.</summary>
     public bool IsPlaying => _playing;
 
+    // 도메인 리로드를 꺼둔 에디터에서 지난 판의 깨끗한 방이 따라오지 않게 플레이마다 지운다.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetOnPlay() => _roomCleaned = false;
+
+    /// <summary>방 배경을 깨끗한 그림(true) 또는 엉망인 원래 그림(false)으로 바꾼다.</summary>
+    public void SetRoomClean(bool clean)
+    {
+        _roomCleaned = clean;
+
+        if (roomBackground == null)
+        {
+            return;
+        }
+
+        Sprite target = clean ? cleanBackground : _decayBackground;
+        if (target != null)
+        {
+            roomBackground.sprite = target;
+        }
+    }
+
     private void Awake()
     {
+        if (roomBackground != null)
+        {
+            _decayBackground = roomBackground.sprite;
+        }
+
+        if (_roomCleaned)
+        {
+            SetRoomClean(true);
+        }
+
         if (character == null)
         {
             character = FindAnyObjectByType<CharacterEvolutionState>();
@@ -170,37 +221,65 @@ public class HubEnding : MonoBehaviour
         return flow != null && flow.MiniGames.Count > 0 && flow.ClearedCount >= flow.MiniGames.Count;
     }
 
-    /// <summary>
-    /// 엔딩을 처음부터 끝까지 돌린다. 방으로 돌아와 화면이 걷힐 때 끝난다.
-    ///
-    /// 마지막 진화가 줌아웃 없이 확대된 채로 끝났으면 그 자리에서 곧장 이어받는다: 눈을 감고 잠깐 머문 뒤,
-    /// 기다림 없이 더 다가가며 하얘진다. 한 번 물러났다 다시 다가가면 "다 자랐다 → 잠든다"의 흐름이 끊긴다.
-    /// </summary>
+    /// <summary>엔딩을 처음부터 끝까지 돌린다. 방으로 돌아와 화면이 걷힐 때 끝난다.</summary>
     public IEnumerator Play()
     {
-        EvolutionController evolution = EvolutionController.Instance;
-
         if (_playing || endingCanvas == null || transitionCover == null)
         {
-            // 엔딩을 못 틀 때 확대된 채로 남겨두면 방이 계속 당겨진 채다.
-            if (!_playing && evolution != null)
-            {
-                evolution.RestoreHeldZoom();
-            }
-
             yield break;
         }
 
         _playing = true;
 
-        bool fromHeldZoom = evolution != null && evolution.HasHeldZoom;
-
-        yield return Linger(fromHeldZoom ? heldLingerDuration : lingerDuration);
-        yield return EnterEnding(fromHeldZoom);
+        yield return CleanRoom();
+        yield return Linger(lingerDuration);
+        yield return EnterEnding();
         yield return ShowCredits();
         yield return ReturnToRoom();
 
         _playing = false;
+    }
+
+    // ---------------------------------------------------------------- 0. 방 되살리기
+
+    /// <summary>
+    /// 흰빛 뒤에서 엉망이던 방을 깨끗한 방으로 바꾼다. 네 곳을 다 되찾은 결과를 방 전체로 보여주는 순간이라,
+    /// 사물 하나하나가 바뀌던 것과 달리 화면 전체를 한 번에 덮었다 걷는다.
+    /// </summary>
+    private IEnumerator CleanRoom()
+    {
+        if (roomBackground != null && cleanBackground != null && roomBackground.sprite != cleanBackground)
+        {
+            ShowCover(enterColor, 0f);
+            yield return transitionCover.DOFade(1f, cleanWhiteIn).SetEase(Ease.InQuad).SetLink(gameObject).WaitForCompletion();
+
+            SetRoomClean(true);
+
+            // 바뀌는 순간(흰빛이 걷히기 시작할 때) 소리가 나야, 흰빛이 걷히며 드러나는 방과 소리가 한 박자로 묶인다.
+            if (roomCleanSound != null)
+            {
+                AudioManager.Play(roomCleanSound);
+            }
+
+            // 걷히는 순간 이미 반짝이고 있어야 "되살아났다"가 한눈에 들어온다.
+            if (twinkles != null)
+            {
+                twinkles.StartTwinkle();
+            }
+
+            yield return transitionCover.DOFade(0f, cleanWhiteOut).SetEase(Ease.OutQuad).SetLink(gameObject).WaitForCompletion();
+            transitionCover.gameObject.SetActive(false);
+        }
+        else if (twinkles != null)
+        {
+            twinkles.StartTwinkle();
+        }
+
+        // 씨앗은 처음 서 있던 자리로 걸어 돌아간다. 이야기가 시작된 그 자리에서 눈을 감아야 한 바퀴가 닫힌다.
+        if (wanderer != null && wanderer.isActiveAndEnabled)
+        {
+            yield return wanderer.WalkTo(wanderer.HomePosition);
+        }
     }
 
     // ---------------------------------------------------------------- 1. 여운
@@ -238,35 +317,32 @@ public class HubEnding : MonoBehaviour
 
     // ---------------------------------------------------------------- 2. 전환
 
-    private IEnumerator EnterEnding(bool fromHeldZoom)
+    private IEnumerator EnterEnding()
     {
         // 잠든 씨앗에게 다가가기 시작하고, 조금 늦게 흰빛이 따라 차오른다. 다가가는 건 흰빛이 다 찰 때까지
         // 멈추지 않는다 — 도중에 멈추면 흰빛 속에서 화면이 얼어붙은 것처럼 보인다.
         // 흰빛을 살짝 늦추는 건 "다가간다"를 먼저 눈에 담게 하려는 것. 동시에 시작하면 다가가는 게 흰빛에 묻힌다.
-        // 이미 확대된 채로 이어받았으면 다가가는 건 충분히 봤으니 흰빛을 기다리지 않는다.
         ZoomState zoom = BeginZoom();
         ShowCover(enterColor, 0f);
 
-        float whiteDelay = fromHeldZoom ? 0f : whiteStartDelay;
-        float scale = fromHeldZoom ? heldZoomScale : zoomScale;
-        float zoomDuration = whiteDelay + whiteInDuration;
+        float zoomDuration = whiteStartDelay + whiteInDuration;
 
         yield return DOTween.Sequence()
-                            .Insert(0f, DOVirtual.Float(0f, 1f, zoomDuration, t => zoom.Apply(Mathf.Lerp(1f, scale, t))).SetEase(Ease.InQuad))
+                            .Insert(0f, DOVirtual.Float(0f, 1f, zoomDuration, t => zoom.Apply(Mathf.Lerp(1f, zoomScale, t))).SetEase(Ease.InQuad))
 
                             // 엔딩 음악은 흰빛이 차오르기 시작하는 순간에. 화면과 소리가 같은 박자에 넘어가야 한다.
-                            .InsertCallback(whiteDelay, () => AudioManager.PlayBGM(endingBgm))
-                            .Insert(whiteDelay, transitionCover.DOFade(1f, whiteInDuration).SetEase(Ease.InQuad))
+                            .InsertCallback(whiteStartDelay, () => AudioManager.PlayBGM(endingBgm))
+                            .Insert(whiteStartDelay, transitionCover.DOFade(1f, whiteInDuration).SetEase(Ease.InQuad))
                             .SetLink(gameObject)
                             .WaitForCompletion();
 
         // 하얀 화면 뒤에서 방을 원래대로 돌려놓는다. 돌아왔을 때 확대된 채면 어색하다.
-        // 순서가 중요하다: 엔딩이 더 당긴 것을 먼저 풀고, 그다음 진화가 당겨둔 것을 푼다.
         zoom.Restore();
 
-        if (fromHeldZoom && EvolutionController.Instance != null)
+        // 엔딩 그림 위로 방의 반짝임이 비치면 안 된다.
+        if (twinkles != null)
         {
-            EvolutionController.Instance.RestoreHeldZoom();
+            twinkles.Clear();
         }
 
         endingCanvas.SetActive(true);
@@ -413,8 +489,8 @@ public class HubEnding : MonoBehaviour
         whiteInDuration = Mathf.Max(0.01f, whiteInDuration);
         whiteOutDuration = Mathf.Max(0.01f, whiteOutDuration);
         zoomScale = Mathf.Max(1f, zoomScale);
-        heldLingerDuration = Mathf.Max(0f, heldLingerDuration);
-        heldZoomScale = Mathf.Max(1f, heldZoomScale);
+        cleanWhiteIn = Mathf.Max(0.01f, cleanWhiteIn);
+        cleanWhiteOut = Mathf.Max(0.01f, cleanWhiteOut);
         textFadeIn = Mathf.Max(0.01f, textFadeIn);
         textFadeOut = Mathf.Max(0.01f, textFadeOut);
         imageDrift = Mathf.Max(1f, imageDrift);

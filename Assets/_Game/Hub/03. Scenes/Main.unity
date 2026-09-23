@@ -747,6 +747,12 @@ MonoBehaviour:
   - "\uC55E\uC73C\uB85C\uB3C4 \uD3C9\uD654\uB86D\uAC8C \uC0B4 \uC218 \uC788\uB3C4\uB85D
     \uC5FC\uC6D0\uD574\uC8FC\uC138\uC694."
   - "\uD50C\uB808\uC774\uD574\uC8FC\uC154\uC11C \uAC10\uC0AC\uD569\uB2C8\uB2E4."
+  roomBackground: {fileID: 1927793086}
+  cleanBackground: {fileID: 21300000, guid: cbc89a8f760069945af892d19aa1a758, type: 3}
+  cleanWhiteIn: 0.8
+  cleanWhiteOut: 0.8
+  twinkles: {fileID: 665071754}
+  roomCleanSound: {fileID: 11400000, guid: a9c46b56b362ee54497d22132852e1ea, type: 2}
   roomRoot: {fileID: 763833132}
   character: {fileID: 356218681}
   wanderer: {fileID: 1337686778}
@@ -754,13 +760,11 @@ MonoBehaviour:
   hubBgm: {fileID: 11400000, guid: 7ecec1ea14cbcab40962ce6dc1224995, type: 2}
   lingerDuration: 2
   lingerSprite: {fileID: 21300000, guid: c19beba1c145ecd4a959acbab0526380, type: 3}
-  whiteStartDelay: 0.1
+  whiteStartDelay: 0.3
   whiteInDuration: 1.5
   whiteOutDuration: 1.5
   zoomScale: 5
   enterColor: {r: 1, g: 1, b: 1, a: 1}
-  heldLingerDuration: 1.5
-  heldZoomScale: 2
   textFadeIn: 0.9
   textFadeOut: 0.5
   textRise: 24
@@ -2762,7 +2766,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -4077,6 +4081,64 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 642722229181430934, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
   m_PrefabInstance: {fileID: 356218680}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &665071753
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 665071755}
+  - component: {fileID: 665071754}
+  m_Layer: 0
+  m_Name: Twinkles
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &665071754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 665071753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0d05e3f9101f014a84382d5f156feb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapTwinkle
+  twinklesPerSecond: 9
+  burstCount: 18
+  sizeRange: {x: 20, y: 46}
+  lifetime: {x: 0.6, y: 1.2}
+  spin: 90
+  edgeMargin: 40
+  colors:
+  - {r: 1, g: 0.98, b: 0.85, a: 1}
+  - {r: 1, g: 0.93, b: 0.65, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+--- !u!224 &665071755
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 665071753}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1975884578}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &728971619
 GameObject:
   m_ObjectHideFlags: 0
@@ -4656,7 +4718,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &819955940
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4766,7 +4828,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SceneFadeIn
   duration: 1.5
-  delay: 0
+  delay: 0.5
   group: {fileID: 831833924}
 --- !u!225 &831833924
 CanvasGroup:
@@ -9192,7 +9254,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 665071755}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -9980,6 +10043,7 @@ MonoBehaviour:
   breathCount: 2
   breathScale: 1.1
   sleepSound: {fileID: 11400000, guid: 11db31b3a4553c04694089894af5acd2, type: 2}
+  wakeSound: {fileID: 11400000, guid: cb38cb15032c19c43a83d517dc1c547c, type: 2}
   wakeStretch: {x: 0.9, y: 1.15}
   wakeSquash: {x: 1.12, y: 0.88}
   wakeHop: 18
@@ -10383,9 +10447,9 @@ SceneRoots:
   - {fileID: 1349317750}
   - {fileID: 1237507816}
   - {fileID: 1006374966}
-  - {fileID: 527344530}
   - {fileID: 2133041492}
+  - {fileID: 184509966}
+  - {fileID: 527344530}
   - {fileID: 1975884578}
   - {fileID: 2017729401}
-  - {fileID: 184509966}
   - {fileID: 2111978779}

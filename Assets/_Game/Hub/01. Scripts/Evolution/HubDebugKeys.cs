@@ -173,7 +173,13 @@ public class HubDebugKeys : MonoBehaviour
             character.ResetStage();
         }
 
-        Debug.Log("[HubDebug] F3: 전체 클리어 초기화 + 씨앗 첫 단계", this);
+        // 엔딩을 한 번 봤으면 방이 깨끗해져 있다. 처음부터 다시 보려면 엉망인 방으로 돌려놔야 한다.
+        if (ending != null)
+        {
+            ending.SetRoomClean(false);
+        }
+
+        Debug.Log("[HubDebug] F3: 전체 클리어 초기화 + 씨앗 첫 단계 + 엉망인 방", this);
     }
 
     private void SimulateClearReturn(int index)
