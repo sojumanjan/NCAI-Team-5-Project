@@ -9,12 +9,12 @@ public sealed class OptionsMenuController : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button menuButton;
     [SerializeField] private Button graphicsButton;
-    [SerializeField] private Button audioButton;
+    [SerializeField] private Button tooltipButton;
 
     [Header("Windows")]
     [SerializeField] private GameObject optionWindow;
     [SerializeField] private GameObject graphicsPanel;
-    [SerializeField] private GameObject audioPanel;
+    [SerializeField] private GameObject tooltipPanel;
 
     private bool audioSelected;
 
@@ -37,7 +37,7 @@ public sealed class OptionsMenuController : MonoBehaviour
     {
         if (menuButton != null) menuButton.onClick.AddListener(Toggle);
         if (graphicsButton != null) graphicsButton.onClick.AddListener(ShowGraphics);
-        if (audioButton != null) audioButton.onClick.AddListener(ShowAudio);
+        if (tooltipButton != null) tooltipButton.onClick.AddListener(ShowAudio);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public sealed class OptionsMenuController : MonoBehaviour
     {
         if (menuButton != null) menuButton.onClick.RemoveListener(Toggle);
         if (graphicsButton != null) graphicsButton.onClick.RemoveListener(ShowGraphics);
-        if (audioButton != null) audioButton.onClick.RemoveListener(ShowAudio);
+        if (tooltipButton != null) tooltipButton.onClick.RemoveListener(ShowAudio);
         Close();
     }
 
@@ -81,7 +81,7 @@ public sealed class OptionsMenuController : MonoBehaviour
     public void Close()
     {
         if (graphicsPanel != null) graphicsPanel.SetActive(false);
-        if (audioPanel != null) audioPanel.SetActive(false);
+        if (tooltipPanel != null) tooltipPanel.SetActive(false);
         if (optionWindow != null) optionWindow.SetActive(false);
     }
 
@@ -116,11 +116,11 @@ public sealed class OptionsMenuController : MonoBehaviour
         if (audioSelected)
         {
             if (graphicsPanel != null) graphicsPanel.SetActive(false);
-            if (audioPanel != null) audioPanel.SetActive(true);
+            if (tooltipPanel != null) tooltipPanel.SetActive(true);
         }
         else
         {
-            if (audioPanel != null) audioPanel.SetActive(false);
+            if (tooltipPanel != null) tooltipPanel.SetActive(false);
             if (graphicsPanel != null) graphicsPanel.SetActive(true);
         }
     }
