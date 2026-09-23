@@ -56,6 +56,11 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
     [SerializeField] private float shatterDuration = 0.2f;
     [SerializeField] private float shatterScalePunch = 1.3f;
 
+    [Header("Sound")]
+    [SerializeField] private SoundData killSound;
+    [SerializeField] private SoundData hitSound;
+    [SerializeField] private SoundData explosionSound;
+
     private Image image;
     private RectTransform rt;
     private Color originalColor;
@@ -156,6 +161,7 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         float radius = ComboManager.IsAoeActive ? explosionRadius * feverExplosionRadiusMultiplier : explosionRadius;
 
         SpawnExplosionRing(center, radius);
+        AudioManager.Play(explosionSound);
 
         var targets = new List<EnemyHealth>();
         foreach (Transform child in parent)
@@ -208,6 +214,7 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
         if (hitsTaken >= hitsToDestroy)
         {
             isDestroyed = true;
+            AudioManager.Play(killSound);
 
             bool bonusActive = ComboManager.IsAoeActive;
 
@@ -243,6 +250,8 @@ public class EnemyHealth : MonoBehaviour, IPointerClickHandler
 
             return;
         }
+
+        AudioManager.Play(hitSound);
 
         if (hitRoutine != null) StopCoroutine(hitRoutine);
         hitRoutine = StartCoroutine(HitFeedback());

@@ -11,6 +11,7 @@ public class SecondaryObjectController : MonoBehaviour
     [SerializeField] private int hitsToDestroy = 3;
     [SerializeField] private int destroyedPenalty = 2000;
     [SerializeField] private int survivedBonusPerHp = 1000;
+    [SerializeField] private int survivedHealAmount = 1;
     [SerializeField] private Color hitColor = new Color(0.6f, 0.1f, 0.9f, 1f);
     [SerializeField] private float flashInterval = 0.08f;
     [SerializeField] private int flashBlinks = 2;
@@ -30,6 +31,7 @@ public class SecondaryObjectController : MonoBehaviour
 
     [Header("Sound")]
     [SerializeField] private SoundData survivedSound;
+    [SerializeField] private SoundData hitSound;
 
     private RectTransform rt;
     private Image image;
@@ -97,6 +99,7 @@ public class SecondaryObjectController : MonoBehaviour
     {
         hitsTaken++;
         UpdateHpText();
+        AudioManager.Play(hitSound);
 
         if (hitsTaken >= hitsToDestroy)
         {
@@ -151,6 +154,8 @@ public class SecondaryObjectController : MonoBehaviour
 
         SpawnSuccessRing();
         AudioManager.Play(survivedSound);
+
+        if (PlayerHealth.Instance != null) PlayerHealth.Instance.Heal(survivedHealAmount);
 
         if (flashRoutine != null) StopCoroutine(flashRoutine);
         if (warningRoutine != null) StopCoroutine(warningRoutine);

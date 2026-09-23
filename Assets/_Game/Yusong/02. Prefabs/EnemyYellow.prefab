@@ -139,6 +139,9 @@ MonoBehaviour:
   shatterOnDeath: 0
   shatterDuration: 0.2
   shatterScalePunch: 1.3
+  killSound: {fileID: 11400000, guid: 4d673155c86519e43b27f919df2e4cd2, type: 2}
+  hitSound: {fileID: 11400000, guid: de18e265d8778154f8094dadfc33108c, type: 2}
+  explosionSound: {fileID: 11400000, guid: e9fbc22b3d210d748844003596663aec, type: 2}
 --- !u!114 &5905792717299738671
 MonoBehaviour:
   m_ObjectHideFlags: 0

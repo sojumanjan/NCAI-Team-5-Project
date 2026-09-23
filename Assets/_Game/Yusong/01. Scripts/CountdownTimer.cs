@@ -48,15 +48,20 @@ public class CountdownTimer : MonoBehaviour
     [SerializeField] private float bossWarningLeadTime = 5f;
     [SerializeField] private float bossAnnounceDuration = 2f;
     [SerializeField] private float bossSpawnOffset = 60f;
+    [SerializeField] private float bossMarkerCornerInset = 120f;
 
     [Header("Game Clear")]
     [SerializeField] private GameObject gameOverScreen;
 
     [Header("Sound")]
     [SerializeField] private SoundData mainBgm;
+    [SerializeField] private SoundData waveStartSound;
+    [SerializeField] private SoundData bossAppearSound;
+    [SerializeField] private SoundData secondaryAppearSound;
 
     public event System.Action<int> WaveStarted;
     public event System.Action WaveEnding;
+    public static event System.Action GameCleared;
 
     public static bool IsWaveActive { get; private set; }
     public static bool IsTutorialWave { get; private set; } = true;
@@ -66,6 +71,13 @@ public class CountdownTimer : MonoBehaviour
     public static bool SkipTutorial;
 
     private TextMeshProUGUI timerText;
+    private Color normalTextColor;
+
+    private Taegeon.MenuEscapeToggle sharedMenu;
+    private GameObject sharedMenuPauseRoot;
+    private GameObject sharedMenuSettingsRoot;
+    private int nextSharedMenuSearchFrame;
+    private int lastSharedMenuOpenFrame = -10;
     private State state;
     private float remaining;
     private float preNextWaveRemaining;
@@ -79,6 +91,7 @@ public class CountdownTimer : MonoBehaviour
     private bool bossWarningStarted;
     private bool bossSpawned;
     private Vector2 pendingBossPosition;
+    private Vector2 pendingBossMarkerPosition;
     private RectTransform activeBossMarker;
     private float bossAnnounceTimer;
     private bool waitingForIntroClick;
@@ -93,6 +106,7 @@ public class CountdownTimer : MonoBehaviour
     private void Awake()
     {
         timerText = GetComponent<TextMeshProUGUI>();
+        normalTextColor = timerText.color;
 
         if (theme != null && theme.primaryFont != null)
         {
@@ -111,6 +125,8 @@ public class CountdownTimer : MonoBehaviour
             waitingForIntroClick = false;
             if (tutorialSpotlight != null) tutorialSpotlight.SetActive(false);
             Time.timeScale = 1f;
+            // 다시하기 경로는 "WAVE 시작!" 안내 없이 바로 시작하므로 여기서 따로 울려준다.
+            AudioManager.Play(waveStartSound);
             StartWave();
             return;
         }
@@ -145,8 +161,13 @@ public class CountdownTimer : MonoBehaviour
     {
         if (waitingForIntroClick)
         {
-            bool clicked = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-            if (!clicked && Touchscreen.current != null) clicked = Touchscreen.current.primaryTouch.press.wasPressedThisFrame;
+            // ESC 공용 메뉴가 열려 있을 때(또는 방금 닫힌 프레임)의 클릭은 메뉴 버튼을 누른 것이라 튜토리얼 진행으로 치지 않는다.
+            // 안 막으면 메뉴 뒤에서 튜토리얼이 넘어가 버리고, 재개 시 메뉴가 timeScale을 0으로 되돌려 게임이 멈춘 채 남는다.
+            if (IsSharedMenuOpen()) lastSharedMenuOpenFrame = Time.frameCount;
+            bool blockedByMenu = Time.frameCount - lastSharedMenuOpenFrame <= 1;
+
+            bool clicked = !blockedByMenu && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+            if (!clicked && !blockedByMenu && Touchscreen.current != null) clicked = Touchscreen.current.primaryTouch.press.wasPressedThisFrame;
 
             if (clicked)
             {
@@ -229,12 +250,13 @@ public class CountdownTimer : MonoBehaviour
         {
             bossWarningStarted = true;
             pendingBossPosition = RollBossPosition();
-            SpawnBossPositionMarker(pendingBossPosition);
+            SpawnBossPositionMarker(pendingBossMarkerPosition);
         }
 
         if (isFinalWave && !bossSpawned && remaining <= bossSpawnAtRemaining)
         {
             SpawnBoss(pendingBossPosition);
+            AudioManager.Play(bossAppearSound);
             bossSpawned = true;
             DestroyBossPositionMarker();
             bossAnnounceTimer = bossAnnounceDuration;
@@ -253,15 +275,20 @@ public class CountdownTimer : MonoBehaviour
         if (secondaryEligibleWave && !secondaryObjectSpawned && remaining <= secondaryObjectSpawnAtRemaining)
         {
             SpawnSecondaryObject(pendingSecondaryPosition);
+            AudioManager.Play(secondaryAppearSound);
             secondaryObjectSpawned = true;
             DestroyPositionMarker();
             secondaryAnnounceTimer = secondaryAnnounceDuration;
         }
 
+        bool bossAlert = bossAnnounceTimer > 0f || (isFinalWave && bossWarningStarted && !bossSpawned);
+        // 평소 안내와 같은 색이면 보스 경고를 그냥 흘려보기 쉬워서, 보스 문구가 떠 있는 동안만 경고색으로 바꾼다.
+        timerText.color = bossAlert ? BossAlertColor : normalTextColor;
+
         if (bossAnnounceTimer > 0f)
         {
             bossAnnounceTimer -= Time.deltaTime;
-            timerText.text = "파이널 보스 등장!";
+            timerText.text = "보스 등장!";
         }
         else if (isFinalWave && bossWarningStarted && !bossSpawned)
         {
@@ -283,6 +310,7 @@ public class CountdownTimer : MonoBehaviour
 
         if (remaining <= 0f)
         {
+            timerText.color = normalTextColor;
             state = State.ShowingWaveEnd;
             stateTimer = waveEndMessageDuration;
             timerText.text = GetWaveLabel(currentWave) + " 종료!";
@@ -290,24 +318,46 @@ public class CountdownTimer : MonoBehaviour
         }
     }
 
+    // 수원(필드 중앙)에서 가장 먼 곳이 네 꼭짓점이라, 그중 한 곳에서만 등장시켜 보스가 다가오는 시간을 최대로 확보한다.
+    // 공용 메뉴는 씬이 뜬 뒤 자동으로 생성되므로 필요할 때 찾는다. 없는 씬이면 매 프레임 찾지 않도록 간격을 둔다.
+    private bool IsSharedMenuOpen()
+    {
+        if (sharedMenu == null)
+        {
+            if (Time.frameCount < nextSharedMenuSearchFrame) return false;
+            nextSharedMenuSearchFrame = Time.frameCount + 30;
+
+            sharedMenu = FindFirstObjectByType<Taegeon.MenuEscapeToggle>(FindObjectsInactive.Include);
+            if (sharedMenu == null) return false;
+
+            Transform pause = sharedMenu.transform.Find("Pause Root");
+            Transform settings = sharedMenu.transform.Find("MenuRoot");
+            sharedMenuPauseRoot = pause != null ? pause.gameObject : null;
+            sharedMenuSettingsRoot = settings != null ? settings.gameObject : null;
+        }
+
+        return (sharedMenuPauseRoot != null && sharedMenuPauseRoot.activeInHierarchy)
+            || (sharedMenuSettingsRoot != null && sharedMenuSettingsRoot.activeInHierarchy);
+    }
+
+    private Color BossAlertColor =>theme != null ? theme.bossAlertTextColor : new Color(0.9f, 0.1f, 0.08f, 1f);
+
     private Vector2 RollBossPosition()
     {
         var rectTransform = secondaryObjectParent as RectTransform;
         if (rectTransform == null) return Vector2.zero;
 
         Rect rect = rectTransform.rect;
-        float halfWidth = rect.width * 0.5f;
-        float halfHeight = rect.height * 0.5f;
+        float sx = Random.value < 0.5f ? -1f : 1f;
+        float sy = Random.value < 0.5f ? -1f : 1f;
 
-        float angle = Random.Range(0f, Mathf.PI * 2f);
-        float cos = Mathf.Cos(angle);
-        float sin = Mathf.Sin(angle);
+        Vector2 corner = rect.center + new Vector2(sx * rect.width * 0.5f, sy * rect.height * 0.5f);
+        Vector2 outward = (corner - rect.center).normalized;
 
-        float tx = Mathf.Approximately(cos, 0f) ? float.MaxValue : halfWidth / Mathf.Abs(cos);
-        float ty = Mathf.Approximately(sin, 0f) ? float.MaxValue : halfHeight / Mathf.Abs(sin);
-        float t = Mathf.Min(tx, ty) + bossSpawnOffset;
+        // 경고 마커는 필드 밖(실제 등장 지점)에 두면 마스크에 잘려 안 보이므로, 같은 꼭짓점의 필드 안쪽에 둔다.
+        pendingBossMarkerPosition = corner - new Vector2(sx, sy) * bossMarkerCornerInset;
 
-        return new Vector2(cos * t, sin * t);
+        return corner + outward * bossSpawnOffset;
     }
 
     private void SpawnBossPositionMarker(Vector2 position)
@@ -363,6 +413,7 @@ public class CountdownTimer : MonoBehaviour
         }
 
         Time.timeScale = 0f;
+        GameCleared?.Invoke();
     }
 
     private Vector2 RollSecondaryPosition()
@@ -425,6 +476,7 @@ public class CountdownTimer : MonoBehaviour
             state = State.ShowingWaveStart;
             stateTimer = waveStartMessageDuration;
             timerText.text = GetWaveLabel(currentWave) + " 시작!";
+            AudioManager.Play(waveStartSound);
         }
     }
 
