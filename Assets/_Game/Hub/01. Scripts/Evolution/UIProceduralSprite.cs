@@ -75,6 +75,43 @@ public static class UIProceduralSprite
             return Mathf.Max(body, core);
         });
 
+    /// <summary>꽃잎. 양 끝이 뾰족한 렌즈 모양이라 돌면서 떨어질 때 납작해졌다 넓어졌다 하며 꽃잎처럼 보인다.</summary>
+    public static Sprite Petal(int size = 64) =>
+        Create(size, (x, y) =>
+        {
+            float halfWidth = 0.55f * Mathf.Pow(Mathf.Max(0f, 1f - y * y), 0.7f);
+            float edge = Mathf.InverseLerp(halfWidth, halfWidth - 0.12f, Mathf.Abs(x));
+
+            // 한쪽 끝을 살짝 옅게 해서 꽃받침 쪽과 끝 쪽이 구분되게 한다.
+            float tint = Mathf.Lerp(0.75f, 1f, (y + 1f) * 0.5f);
+            return edge * tint;
+        });
+
+    /// <summary>아래를 가리키는 작은 삼각형. "눌러서 넘기기" 표시용.</summary>
+    public static Sprite TriangleDown(int size = 64)
+    {
+        Vector2 a = new Vector2(-0.8f, 0.55f);
+        Vector2 b = new Vector2(0.8f, 0.55f);
+        Vector2 c = new Vector2(0f, -0.7f);
+
+        return Create(size, (x, y) =>
+        {
+            var p = new Vector2(x, y);
+
+            // 세 변 안쪽으로 얼마나 들어와 있는지. 가장 가까운 변 기준으로 가장자리를 부드럽게 깎는다.
+            float inside = Mathf.Min(EdgeDistance(p, a, b), Mathf.Min(EdgeDistance(p, b, c), EdgeDistance(p, c, a)));
+            return Mathf.InverseLerp(0f, 0.08f, inside);
+        });
+    }
+
+    /// <summary>선분 from→to의 오른쪽(시계 방향 안쪽)으로 떨어진 거리. 바깥이면 음수.</summary>
+    private static float EdgeDistance(Vector2 p, Vector2 from, Vector2 to)
+    {
+        Vector2 edge = to - from;
+        Vector2 inward = new Vector2(edge.y, -edge.x).normalized;
+        return Vector2.Dot(p - from, inward);
+    }
+
     /// <summary>만든 스프라이트와 텍스처를 지운다.</summary>
     public static void Release(Sprite sprite)
     {

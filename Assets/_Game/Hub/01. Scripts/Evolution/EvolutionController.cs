@@ -28,6 +28,8 @@ public class EvolutionController : MonoBehaviour
     [SerializeField] private UIStarBurst starBurst;
     [Tooltip("빛 모으기·플래시·충격파 고리. 비워두면 이펙트 없이 진행한다.")]
     [SerializeField] private EvolutionEffects effects;
+    [Tooltip("흔들림이 끝나고 새 모습으로 바뀌는 순간 나는 소리.")]
+    [SerializeField] private SoundData evolutionSound;
 
     [Header("화면 줌")]
     [SerializeField] private float zoomedScale = 1.15f;
@@ -86,6 +88,9 @@ public class EvolutionController : MonoBehaviour
         }
 
         isPlaying = true;
+
+        // 돌아다니다 >< 표정을 짓던 중일 수 있다. 흰 덮개는 기본 얼굴 실루엣이라 얼굴이 다르면 삐져나온다.
+        character.ShowNormal();
 
         RectTransform characterRect = character.RectTransform;
         Vector2 originalCharacterPosition = characterRect.anchoredPosition;
@@ -152,6 +157,12 @@ public class EvolutionController : MonoBehaviour
             if (effects != null)
             {
                 effects.PlayBurst(effectTarget);
+            }
+
+            // 소리는 모습이 바뀌는 바로 그 프레임에. 흔들림 도중에 나면 무엇이 일어났는지 귀가 먼저 알아버린다.
+            if (evolutionSound != null)
+            {
+                AudioManager.Play(evolutionSound);
             }
 
             character.AdvanceStage();

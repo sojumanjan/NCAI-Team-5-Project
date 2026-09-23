@@ -102,16 +102,24 @@ public class HubClearReveal : MonoBehaviour
     [Tooltip("진화시킬 씨앗. 비워두면 씬에서 찾습니다.")]
     [SerializeField] private CharacterEvolutionState character;
 
+    [Header("소리")]
+    [Tooltip("먼지가 터지는 순간 나는 소리.")]
+    [SerializeField] private SoundData objectChangeSound;
+
+    [Header("엔딩")]
+    [Tooltip("모든 미니게임을 깬 뒤 진화가 끝나면 이어서 틉니다. 비워두면 엔딩 없이 끝납니다.")]
+    [SerializeField] private HubEnding ending;
+
     [Header("다음 연출")]
-    [Tooltip("변신과 진화가 모두 끝났을 때.")]
+    [Tooltip("변신·진화(·엔딩)가 모두 끝났을 때.")]
     [SerializeField] private UnityEvent onFinished;
 
     [Header("미리보기")]
     [Tooltip("플레이 중 톱니바퀴 메뉴로 연출만 틀어볼 오브젝트.")]
     [SerializeField] private MiniGameEntry previewEntry;
 
-    // 막 순서는 옵션 창(21)보다 아래, 방 UI보다 위. 옵션 창까지 막으면 연출 중 ESC 메뉴를 못 쓴다.
-    private const int BLOCKER_SORTING_ORDER = 50;
+    // 막 순서는 옵션 창(21)보다 아래, 방 UI(0)와 진화 이펙트(10)보다 위. 옵션 창까지 막으면 연출 중 ESC 메뉴를 못 쓴다.
+    private const int BLOCKER_SORTING_ORDER = 20;
 
     private readonly List<GameObject> _spawned = new();
     private GameObject _blocker;
@@ -233,6 +241,14 @@ public class HubClearReveal : MonoBehaviour
             sequence.Insert(growAt, puff.DOFade(puffColor.a, puffGrowDuration * 0.4f));
         }
 
+        sequence.InsertCallback(growAt, () =>
+        {
+            if (objectChangeSound != null)
+            {
+                AudioManager.Play(objectChangeSound);
+            }
+        });
+
         // 3. 먼지 뒤에서 바꿔치기하고, 4. 그 순간 곧바로 튀어 오른다.
         //    한 박자라도 멈췄다 튀면 뒤늦게 놀란 것처럼 어색하다.
         sequence.InsertCallback(swapAt, () =>
@@ -266,6 +282,12 @@ public class HubClearReveal : MonoBehaviour
         if (evolveCharacter)
         {
             yield return Evolve();
+        }
+
+        // 마지막 게임을 깬 판이면 엔딩으로. 모든 게임을 처음 깨는 순간은 한 번뿐이라 엔딩도 한 번만 나온다.
+        if (ending != null && HubEnding.AllCleared())
+        {
+            yield return ending.Play();
         }
 
         // 막은 진화까지 끝난 뒤에 푼다. 진화 도중 사물을 눌러 씬을 떠나면 씨앗이 덜 자란 채로 남는다.

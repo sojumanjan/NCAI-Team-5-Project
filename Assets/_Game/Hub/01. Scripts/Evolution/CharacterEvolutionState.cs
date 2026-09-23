@@ -70,6 +70,18 @@ public class CharacterEvolutionState : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 단계와 상관없는 특별한 표정(엔딩의 잠든 얼굴 등)을 잠깐 입힌다. 단계는 그대로라
+    /// <see cref="ShowNormal"/>로 언제든 원래 얼굴로 돌아온다.
+    /// </summary>
+    public void ShowSprite(Sprite sprite)
+    {
+        if (characterImage != null && sprite != null)
+        {
+            characterImage.sprite = sprite;
+        }
+    }
+
     /// <summary>지금 단계의 기본 표정으로 되돌린다.</summary>
     public void ShowNormal()
     {
