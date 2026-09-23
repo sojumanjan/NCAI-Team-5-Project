@@ -44,6 +44,13 @@ public class ResultUI : MonoBehaviour
 
     [SerializeField] private string countFormat = "성공한 주문  {0} / {1}";
 
+    [Header("소리")]
+    [Tooltip("결과 화면이 뜰 때, 클리어했으면.")]
+    [SerializeField] private SoundData clearSound;
+
+    [Tooltip("결과 화면이 뜰 때, 실패했으면.")]
+    [SerializeField] private SoundData failSound;
+
     [Header("버튼")]
     [Tooltip("다시 하기. 씬을 새로 엽니다.")]
     [SerializeField] private Button retryButton;
@@ -93,6 +100,12 @@ public class ResultUI : MonoBehaviour
         if (panel != null)
         {
             panel.SetActive(true);
+        }
+
+        SoundData sound = result.Cleared ? clearSound : failSound;
+        if (sound != null)
+        {
+            AudioManager.Play(sound);
         }
 
         if (titleText != null)
