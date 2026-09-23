@@ -7,22 +7,57 @@ using UnityEngine;
 /// </summary>
 public class GhostDefeatEffect : MonoBehaviour
 {
+    [Tooltip("파티클 발생 위치와 파티클 색상 기준으로만 쓰인다(단일 대표 렌더러). " +
+        "실제 디졸브(투명화)는 아래 dissolveRenderers 전부에 적용된다.")]
     [SerializeField] private Renderer bodyRenderer;
+    [Tooltip("처치 시 디졸브(알파 감소) 효과를 적용할 렌더러 전부. 비워두면 자식의 모든 Renderer를 자동으로 사용한다 " +
+        "(예: ladybug처럼 몸통/다리/머리가 서로 다른 서브메시로 나뉜 모델).")]
+    [SerializeField] private Renderer[] dissolveRenderers;
     [SerializeField] private GameObject particlePrefab;
     [SerializeField] private float dissolveDuration = 0.9f;
     [SerializeField] private float noiseFrequency = 18f;
     [SerializeField] private float noiseAmplitude = 0.35f;
 
-    private Material materialInstance;
+    private Material[] materialInstances;
+    private Color[] originalColors;
+    private Material materialInstance; // 파티클 색상 산출 등 대표 색이 필요한 곳에서 사용
     private Color originalColor;
     private Vector3 originalScale;
 
     private void Awake()
     {
+        if (dissolveRenderers == null || dissolveRenderers.Length == 0)
+        {
+            // MeshRenderer만 대상으로 한다. GetComponentsInChildren<Renderer>는
+            // GlowAura의 ParticleSystemRenderer까지 잡아버려, 디졸브 중 발광 오라
+            // 파티클의 렌더 모드/색상까지 같이 흔들려버리는 부작용이 있었다.
+            dissolveRenderers = GetComponentsInChildren<MeshRenderer>(true);
+        }
+
+        materialInstances = new Material[dissolveRenderers.Length];
+        originalColors = new Color[dissolveRenderers.Length];
+
+        for (int i = 0; i < dissolveRenderers.Length; i++)
+        {
+            if (dissolveRenderers[i] == null)
+            {
+                continue;
+            }
+
+            materialInstances[i] = dissolveRenderers[i].material;
+            originalColors[i] = materialInstances[i].GetColor("_BaseColor");
+        }
+
         if (bodyRenderer != null)
         {
             materialInstance = bodyRenderer.material;
             originalColor = materialInstance.GetColor("_BaseColor");
+        }
+        else if (materialInstances.Length > 0 && materialInstances[0] != null)
+        {
+            // 대표 렌더러가 따로 지정되지 않았다면 첫 번째 디졸브 렌더러 색을 파티클 색 기준으로 쓴다.
+            materialInstance = materialInstances[0];
+            originalColor = originalColors[0];
         }
 
         originalScale = transform.localScale;
@@ -47,7 +82,14 @@ public class GhostDefeatEffect : MonoBehaviour
         // 처치 순간엔 대개 발광(_EmissionColor) 중이라, 그 발광이 남아있으면 알파를
         // 아무리 줄여도 밝게 빛나 보여 디졸브가 거의 안 보인다. 시작 시점의 발광색을
         // 읽어와 알파와 같은 비율로 함께 줄여야 실제로 투명해지는 게 눈에 보인다.
-        Color startEmissionColor = materialInstance != null ? materialInstance.GetColor("_EmissionColor") : Color.black;
+        // (서브메시마다 발광 색이 다를 수 있으므로 렌더러별로 각자 시작 발광색을 읽어둔다)
+        var startEmissionColors = new Color[materialInstances.Length];
+        for (int i = 0; i < materialInstances.Length; i++)
+        {
+            startEmissionColors[i] = materialInstances[i] != null
+                ? materialInstances[i].GetColor("_EmissionColor")
+                : Color.black;
+        }
 
         float elapsed = 0f;
         while (elapsed < dissolveDuration)
@@ -61,12 +103,17 @@ public class GhostDefeatEffect : MonoBehaviour
             float noise = (Mathf.PerlinNoise(Time.time * noiseFrequency, 0f) - 0.5f) * 2f * noiseAmplitude;
             float alpha = Mathf.Clamp01((1f - t) + noise);
 
-            if (materialInstance != null)
+            for (int i = 0; i < materialInstances.Length; i++)
             {
-                Color c = originalColor;
+                if (materialInstances[i] == null)
+                {
+                    continue;
+                }
+
+                Color c = originalColors[i];
                 c.a = alpha;
-                materialInstance.SetColor("_BaseColor", c);
-                materialInstance.SetColor("_EmissionColor", startEmissionColor * alpha);
+                materialInstances[i].SetColor("_BaseColor", c);
+                materialInstances[i].SetColor("_EmissionColor", startEmissionColors[i] * alpha);
             }
 
             transform.localScale = Vector3.Lerp(originalScale, originalScale * 0.6f, t);
@@ -80,13 +127,18 @@ public class GhostDefeatEffect : MonoBehaviour
     /// <summary>재시작으로 되살아날 때 원래 외형(불투명, 원래 크기)으로 되돌린다.</summary>
     public void ResetVisual()
     {
-        if (materialInstance != null)
+        for (int i = 0; i < materialInstances.Length; i++)
         {
-            materialInstance.SetColor("_BaseColor", originalColor);
+            if (materialInstances[i] == null)
+            {
+                continue;
+            }
+
+            materialInstances[i].SetColor("_BaseColor", originalColors[i]);
 
             // 디졸브 중 낮춰뒀던 발광을 꺼둔다. Ghost가 다시 활성화되면 UpdatePulseVisual이
             // 매 프레임 갱신하지만, 그 전까지(비활성 상태로 대기하는 동안) 어두운 발광이 남지 않게 한다.
-            materialInstance.SetColor("_EmissionColor", Color.black);
+            materialInstances[i].SetColor("_EmissionColor", Color.black);
         }
 
         transform.localScale = originalScale;
@@ -127,38 +179,46 @@ public class GhostDefeatEffect : MonoBehaviour
 
     private void SetTransparentMode()
     {
-        if (materialInstance == null)
+        for (int i = 0; i < materialInstances.Length; i++)
         {
-            return;
-        }
+            Material m = materialInstances[i];
+            if (m == null)
+            {
+                continue;
+            }
 
-        materialInstance.SetFloat("_Surface", 1f);
-        materialInstance.SetFloat("_Blend", 0f);
-        materialInstance.SetOverrideTag("RenderType", "Transparent");
-        materialInstance.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        materialInstance.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        materialInstance.SetInt("_ZWrite", 0);
-        materialInstance.DisableKeyword("_ALPHATEST_ON");
-        materialInstance.EnableKeyword("_ALPHABLEND_ON");
-        materialInstance.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        materialInstance.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", 0f);
+            m.SetOverrideTag("RenderType", "Transparent");
+            m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            m.SetInt("_ZWrite", 0);
+            m.DisableKeyword("_ALPHATEST_ON");
+            m.EnableKeyword("_ALPHABLEND_ON");
+            m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+        }
     }
 
     private void SetOpaqueMode()
     {
-        if (materialInstance == null)
+        for (int i = 0; i < materialInstances.Length; i++)
         {
-            return;
-        }
+            Material m = materialInstances[i];
+            if (m == null)
+            {
+                continue;
+            }
 
-        materialInstance.SetFloat("_Surface", 0f);
-        materialInstance.SetOverrideTag("RenderType", "Opaque");
-        materialInstance.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-        materialInstance.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
-        materialInstance.SetInt("_ZWrite", 1);
-        materialInstance.DisableKeyword("_ALPHATEST_ON");
-        materialInstance.DisableKeyword("_ALPHABLEND_ON");
-        materialInstance.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        materialInstance.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
+            m.SetFloat("_Surface", 0f);
+            m.SetOverrideTag("RenderType", "Opaque");
+            m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+            m.SetInt("_ZWrite", 1);
+            m.DisableKeyword("_ALPHATEST_ON");
+            m.DisableKeyword("_ALPHABLEND_ON");
+            m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
+        }
     }
 }

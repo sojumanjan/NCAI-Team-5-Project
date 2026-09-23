@@ -15,7 +15,6 @@ public class SharedGameplayManager : MonoBehaviour
     [SerializeField] private CameraRig cameraRig;
     [SerializeField] private TetrisGameManager tetrisGameManager;
     [SerializeField] private PacmanGameManager pacmanGameManager;
-    [SerializeField] private GameSelectUI gameSelectUI;
     [SerializeField] private Vector3 playerStartPosition;
 
     private CharacterController playerCharacterController;
@@ -115,15 +114,14 @@ public class SharedGameplayManager : MonoBehaviour
         playerCharacterController.enabled = true;
     }
 
-    public void OnClickShowDescription()
-    {
-        // GameSelectUI의 설명 팝업을 재사용한다.
-        gameSelectUI.OnClickDescription();
-    }
-
+    /// <summary>
+    /// 사망 팝업/보상(클리어) 팝업 양쪽의 "메인씬으로" 버튼이 공통으로 부른다.
+    /// 사망 팝업이 떠 있는 상태로 호출됐다면 실패로, 그렇지 않다면(보상 팝업 경로) 클리어로 보고한다.
+    /// </summary>
     public void OnClickExitToHub()
     {
-        // 허브 씬이 아직 없어 자리만 마련해둔다.
-        Debug.Log("[SharedGameplayManager] Exit to hub requested (not implemented yet)");
+        bool cleared = !deathPopupRoot.activeSelf;
+        GameFlow.Instance.ReportCurrent(new MiniGameResult(cleared, cleared ? 1f : 0f));
+        GameFlow.Instance.ReturnToMain();
     }
 }
