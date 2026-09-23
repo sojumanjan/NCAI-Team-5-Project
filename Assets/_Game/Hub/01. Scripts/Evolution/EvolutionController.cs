@@ -16,7 +16,9 @@ using UnityEngine;
 /// 별 흩뿌리기는 화면 중앙 고정 위치(StarBurstRoot의 원래 자리)에서 재생한다.
 /// </summary>
 public class EvolutionController : MonoBehaviour
+    
 {
+    public static EvolutionController Instance;
     [Header("참조")]
     [Tooltip("줌인 시 확대할 맵/배경 UI. 화면 전체를 덮는 stretch RectTransform(예: MainRoot)을 연결한다. " +
         "캐릭터와는 별개의 오브젝트이므로, 연출마다 캐릭터의 현재 화면 위치를 계산해 그 지점이 " +
@@ -52,8 +54,12 @@ public class EvolutionController : MonoBehaviour
     private Vector2 defaultZoomAnchoredPosition;
     private bool isPlaying;
 
+    // 캐릭터를 따로 움직이는 스크립트(SeedWanderer 등)가 연출과 싸우지 않도록 비켜설 때 본다.
+    public bool IsPlaying => isPlaying;
+
     private void Awake()
     {
+        if (Instance == null) Instance = this;
         if (zoomTarget != null)
         {
             defaultZoomScale = zoomTarget.localScale;
