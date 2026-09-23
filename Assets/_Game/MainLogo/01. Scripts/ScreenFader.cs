@@ -18,6 +18,10 @@ public class ScreenFader : MonoBehaviour
     [Tooltip("검게 덮이는 데 걸리는 시간 (초).")]
     [SerializeField] private float duration = 1.5f;
 
+    [Header("음악")]
+    [Tooltip("덮이기 시작할 때 배경음을 사그라뜨릴 시간 (초). 0이면 건드리지 않습니다.")]
+    [SerializeField] private float bgmFadeSeconds = 1f;
+
     [Header("참조")]
     [Tooltip("투명도를 만질 곳. 비워두면 이 오브젝트에서 찾습니다.")]
     [SerializeField] private CanvasGroup group;
@@ -65,6 +69,12 @@ public class ScreenFader : MonoBehaviour
         // 덮이기 시작하는 순간부터 막는다. 다 검어진 뒤에 막으면 그 사이에 또 눌린다.
         group.blocksRaycasts = true;
 
+        // 화면과 같이 사그라들게 한다. 다 검어진 뒤에 끄면 소리만 뚝 끊긴다.
+        if (bgmFadeSeconds > 0f)
+        {
+            AudioManager.StopBGM(bgmFadeSeconds);
+        }
+
         float elapsed = 0f;
         float total = Mathf.Max(0.01f, duration);
 
@@ -83,5 +93,6 @@ public class ScreenFader : MonoBehaviour
     private void OnValidate()
     {
         duration = Mathf.Max(0.01f, duration);
+        bgmFadeSeconds = Mathf.Max(0f, bgmFadeSeconds);
     }
 }

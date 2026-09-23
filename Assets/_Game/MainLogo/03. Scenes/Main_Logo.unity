@@ -226,6 +226,7 @@ GameObject:
   - component: {fileID: 112182656}
   - component: {fileID: 112182655}
   - component: {fileID: 112182659}
+  - component: {fileID: 112182660}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -333,6 +334,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TitleScreenReset
   freeCursor: 1
   resumeTime: 1
+--- !u!114 &112182660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 112182654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f6321c69e8875d4cb74a54d81675bd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneBgm
+  bgm: {fileID: 11400000, guid: aca98dd4cbf67174d854ff65bb089719, type: 2}
+  playOnStart: 1
 --- !u!1 &289420707
 GameObject:
   m_ObjectHideFlags: 0
@@ -745,6 +760,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScreenFader
   duration: 1.5
+  bgmFadeSeconds: 1
   group: {fileID: 620811702}
 --- !u!225 &620811702
 CanvasGroup:
@@ -972,7 +988,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 836684050527318884, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1521440161630303478, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1147,6 +1163,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74f1497f23ce7d44fa29d6e1b1f5a128, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Taegeon.MenuEscapeToggle
+--- !u!114 &982879089 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4623104548524108223, guid: 8d8a939d0756b0f4792ae6258a51a517, type: 3}
+  m_PrefabInstance: {fileID: 982879086}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed5c67a3d8d639745a371f054fe83139, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Taegeon.HubSoundBindings
 --- !u!1 &1005210102
 GameObject:
   m_ObjectHideFlags: 0
@@ -1413,9 +1440,9 @@ RectTransform:
   - {fileID: 289420708}
   m_Father: {fileID: 1996168805}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 259.86536, y: -287.5}
   m_SizeDelta: {x: 519.7307, y: 115}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1681500384
@@ -1461,7 +1488,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1681500385}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 982879089}
+        m_TargetAssemblyTypeName: Taegeon.HubSoundBindings, Assembly-CSharp
+        m_MethodName: PlayButtonClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1681500385
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1534,9 +1573,9 @@ RectTransform:
   - {fileID: 820981343}
   m_Father: {fileID: 1996168805}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 259.86536, y: -172.5}
   m_SizeDelta: {x: 519.7307, y: 115}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1711718956
@@ -1586,6 +1625,18 @@ MonoBehaviour:
       - m_Target: {fileID: 982879088}
         m_TargetAssemblyTypeName: Taegeon.MenuEscapeToggle, Assembly-CSharp
         m_MethodName: Open
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 982879089}
+        m_TargetAssemblyTypeName: Taegeon.HubSoundBindings, Assembly-CSharp
+        m_MethodName: PlayButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1966,9 +2017,9 @@ RectTransform:
   - {fileID: 1005210103}
   m_Father: {fileID: 1996168805}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 259.86536, y: -57.5}
   m_SizeDelta: {x: 519.7307, y: 115}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1886800143
@@ -2018,6 +2069,18 @@ MonoBehaviour:
       - m_Target: {fileID: 620811701}
         m_TargetAssemblyTypeName: ScreenFader, Assembly-CSharp
         m_MethodName: FadeToHub
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 982879089}
+        m_TargetAssemblyTypeName: Taegeon.HubSoundBindings, Assembly-CSharp
+        m_MethodName: PlayButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
