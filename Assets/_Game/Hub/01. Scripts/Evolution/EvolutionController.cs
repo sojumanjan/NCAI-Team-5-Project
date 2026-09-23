@@ -124,7 +124,8 @@ public class EvolutionController : MonoBehaviour
         var whiteFlashOverlay = character.WhiteFlashOverlay;
         if (whiteFlashOverlay != null)
         {
-            whiteFlashOverlay.sprite = character.CurrentWhiteSprite;
+            // 광원이 들어간 실루엣은 캔버스가 원본보다 커서, 덮개 사각형도 그만큼 맞춰 키운다.
+            character.PrepareWhiteOverlay();
             SetOverlayAlpha(whiteFlashOverlay, 0f);
         }
 

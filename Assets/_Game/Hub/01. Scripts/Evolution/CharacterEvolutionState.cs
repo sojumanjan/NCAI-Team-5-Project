@@ -114,4 +114,41 @@ public class CharacterEvolutionState : MonoBehaviour
     }
 
     public Sprite CurrentWhiteSprite => GetWhiteSpriteForStage(currentStageIndex);
+
+    /// <summary>
+    /// 흰색 덮개에 지금 단계의 흰 실루엣을 입히고, 그 그림의 캔버스 크기에 맞춰 덮개 사각형을 키운다.
+    ///
+    /// 광원이 들어간 흰 실루엣은 번지는 빛이 잘리지 않게 원본(512)보다 큰 캔버스로 뽑힌다. 그걸 원본과
+    /// 같은 사각형에 그리면 캔버스째 눌려 들어가 실루엣이 작아지고 찌그러진다. 캔버스가 큰 만큼 사각형도
+    /// 키우면, 캔버스 중앙에 원본 영역을 맞춰 뽑은 그림은 원본과 정확히 겹친다.
+    /// </summary>
+    public void PrepareWhiteOverlay()
+    {
+        if (whiteFlashOverlay == null || characterImage == null)
+        {
+            return;
+        }
+
+        Sprite white = CurrentWhiteSprite;
+        whiteFlashOverlay.sprite = white;
+
+        RectTransform image = characterImage.rectTransform;
+        RectTransform overlay = whiteFlashOverlay.rectTransform;
+
+        overlay.anchorMin = image.anchorMin;
+        overlay.anchorMax = image.anchorMax;
+        overlay.pivot = image.pivot;
+        overlay.anchoredPosition = image.anchoredPosition;
+        overlay.localScale = image.localScale;
+
+        Sprite baseSprite = evolutionStages != null && currentStageIndex < evolutionStages.Length ? evolutionStages[currentStageIndex] : null;
+        Vector2 ratio = Vector2.one;
+        if (white != null && baseSprite != null && baseSprite.rect.width > 0f && baseSprite.rect.height > 0f)
+        {
+            ratio = new Vector2(white.rect.width / baseSprite.rect.width, white.rect.height / baseSprite.rect.height);
+        }
+
+        // 앵커가 한 점이든 늘어나 있든 같은 식으로 된다: 늘어난 만큼(실제 크기 × (배율-1))만 더한다.
+        overlay.sizeDelta = image.sizeDelta + Vector2.Scale(image.rect.size, ratio - Vector2.one);
+    }
 }
