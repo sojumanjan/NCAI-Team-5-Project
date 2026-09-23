@@ -24,6 +24,9 @@ public class CharacterEvolutionState : MonoBehaviour
     [Tooltip("evolutionStages와 같은 순서/개수. 각 단계 스프라이트의 실루엣을 흰색으로 채운 버전(알파는 원본과 동일).")]
     [SerializeField] private Sprite[] evolutionStagesWhite;
 
+    [Tooltip("evolutionStages와 같은 순서/개수. 각 단계의 신난 표정. 진화 직후 잠깐 보여준다. 비어 있는 단계는 표정을 바꾸지 않는다.")]
+    [SerializeField] private Sprite[] happyStages;
+
     private int currentStageIndex;
 
     public int CurrentStageIndex => currentStageIndex;
@@ -50,6 +53,41 @@ public class CharacterEvolutionState : MonoBehaviour
 
         currentStageIndex++;
         characterImage.sprite = evolutionStages[currentStageIndex];
+    }
+
+    /// <summary>지금 단계의 신난 표정으로 바꾼다. 단계는 그대로이고 겉모습만 바뀐다.</summary>
+    public void ShowHappy()
+    {
+        if (characterImage == null || happyStages == null || currentStageIndex >= happyStages.Length)
+        {
+            return;
+        }
+
+        Sprite happy = happyStages[currentStageIndex];
+        if (happy != null)
+        {
+            characterImage.sprite = happy;
+        }
+    }
+
+    /// <summary>지금 단계의 기본 표정으로 되돌린다.</summary>
+    public void ShowNormal()
+    {
+        if (characterImage != null && evolutionStages != null && currentStageIndex < evolutionStages.Length)
+        {
+            characterImage.sprite = evolutionStages[currentStageIndex];
+        }
+    }
+
+    /// <summary>첫 단계로 되돌린다. 디버그 초기화용 — 진화 연출을 처음부터 다시 보려면 필요하다.</summary>
+    public void ResetStage()
+    {
+        currentStageIndex = 0;
+
+        if (characterImage != null && evolutionStages != null && evolutionStages.Length > 0)
+        {
+            characterImage.sprite = evolutionStages[0];
+        }
     }
 
     /// <summary>해당 단계의 흰색 실루엣 스프라이트. 흰색 버전이 아직 없는 단계는 null(EvolutionController가 사각형으로 대체).</summary>

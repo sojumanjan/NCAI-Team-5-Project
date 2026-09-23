@@ -47,6 +47,13 @@ public class SeedWanderer : MonoBehaviour
     [Tooltip("켜면 발밑(그림 아래쪽 가운데)을 축으로 기웁니다. 끄면 그림 한가운데를 축으로 돕니다.")]
     [SerializeField] private bool waddleAroundFeet = true;
 
+    [Header("방향")]
+    [Tooltip("가는 방향을 보도록 좌우로 뒤집습니다. 씨앗 그림은 전 단계 모두 왼쪽이 정면이라는 전제입니다.")]
+    [SerializeField] private bool faceMoveDirection = true;
+
+    [Tooltip("좌우 이동이 이보다 작으면 방향을 바꾸지 않습니다 (캔버스 픽셀). 거의 위아래로 갈 때 괜히 뒤집히지 않게.")]
+    [SerializeField] private float turnThreshold = 10f;
+
     [Header("목적지 찾기")]
     [Tooltip("울타리 안쪽 점을 찾기 위해 뽑아볼 횟수. 울타리가 가늘고 길수록 늘립니다.")]
     [SerializeField] private int sampleAttempts = 30;
@@ -170,8 +177,26 @@ public class SeedWanderer : MonoBehaviour
 
         // 튀는 횟수를 걸음 길이에 맞춰 정수로 떨어뜨린다. 그래야 출발과 도착 순간 모두 발이 땅에 닿아 있다.
         _hopCount = Mathf.Max(1, Mathf.RoundToInt(_walkDuration * hopsPerSecond));
+        FaceToward(_to.x - _from.x);
         _feet = waddleAroundFeet ? FeetOffset() : Vector2.zero;
         _state = State.Walking;
+    }
+
+    /// <summary>
+    /// CharacterRoot째 뒤집는다. 그림만 뒤집으면 진화 때 겹치는 흰 덮개가 반대쪽을 보고 남는다.
+    /// 진화 연출은 시작할 때의 스케일을 부호째 기억했다 되돌리므로 뒤집힌 채로 진화해도 맞아떨어진다.
+    /// </summary>
+    private void FaceToward(float dx)
+    {
+        if (!faceMoveDirection || Mathf.Abs(dx) < turnThreshold)
+        {
+            return;
+        }
+
+        // 그림이 왼쪽을 보므로 오른쪽으로 갈 때만 음수.
+        Vector3 scale = _rect.localScale;
+        scale.x = Mathf.Abs(scale.x) * (dx > 0f ? -1f : 1f);
+        _rect.localScale = scale;
     }
 
     /// <summary>
@@ -267,6 +292,7 @@ public class SeedWanderer : MonoBehaviour
         hopHeight = Mathf.Max(0f, hopHeight);
         hopsPerSecond = Mathf.Max(0.1f, hopsPerSecond);
         waddleAngle = Mathf.Clamp(waddleAngle, 0f, 45f);
+        turnThreshold = Mathf.Max(0f, turnThreshold);
         sampleAttempts = Mathf.Max(1, sampleAttempts);
     }
 }

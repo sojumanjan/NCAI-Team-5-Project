@@ -26,6 +26,8 @@ public class EvolutionController : MonoBehaviour
     [SerializeField] private RectTransform zoomTarget;
     [Tooltip("별 흩뿌리기. 원래 배치된 자리(화면 중앙)에서 그대로 재생한다.")]
     [SerializeField] private UIStarBurst starBurst;
+    [Tooltip("빛 모으기·플래시·충격파 고리. 비워두면 이펙트 없이 진행한다.")]
+    [SerializeField] private EvolutionEffects effects;
 
     [Header("화면 줌")]
     [SerializeField] private float zoomedScale = 1.15f;
@@ -49,6 +51,10 @@ public class EvolutionController : MonoBehaviour
     [Header("스케일 팝")]
     [SerializeField] private float popScaleMultiplier = 1.4f;
     [SerializeField] private float popDuration = 0.3f;
+
+    [Header("표정")]
+    [Tooltip("줌아웃이 끝난 뒤 신난 표정을 더 유지하는 시간(초). 끝나자마자 바꾸면 웃다가 뚝 멈춘 것처럼 보인다.")]
+    [SerializeField] private float happyHoldAfter = 0.5f;
 
     private Vector3 defaultZoomScale;
     private Vector2 defaultZoomAnchoredPosition;
@@ -108,6 +114,16 @@ public class EvolutionController : MonoBehaviour
         // 보일 수 있으므로, 하나의 t(0~1) 트윈에서 매 프레임 둘 다 함께 갱신한다.
         sequence.Append(CreateZoomInTween(characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1));
 
+        // 빛이 모여드는 건 하얘지는 시간과 떨리는 시간 전체에 걸친다. 마지막 알갱이가 닿는 순간이 곧 진화 순간이다.
+        RectTransform effectTarget = character.CharacterImage != null ? character.CharacterImage.rectTransform : characterRect;
+        sequence.AppendCallback(() =>
+        {
+            if (effects != null)
+            {
+                effects.PlayGather(effectTarget, fadeToWhiteDuration + shakeHoldDuration);
+            }
+        });
+
         // 흰색 오버레이를 캐릭터 위로 서서히 덮는다 (Image.color 곱셈 틴트로는
         // 유색 스프라이트가 흰색으로 안 바뀌므로, 별도 오버레이의 알파를 올리는 방식으로 구현).
         if (whiteFlashOverlay != null)
@@ -132,7 +148,16 @@ public class EvolutionController : MonoBehaviour
         sequence.AppendCallback(() =>
         {
             characterRect.anchoredPosition = Vector2.zero;
+
+            if (effects != null)
+            {
+                effects.PlayBurst(effectTarget);
+            }
+
             character.AdvanceStage();
+
+            // 흰빛이 걷히는 순간 이미 웃고 있어야 "자라서 기쁘다"로 읽힌다.
+            character.ShowHappy();
 
             if (whiteFlashOverlay != null)
             {
@@ -163,6 +188,10 @@ public class EvolutionController : MonoBehaviour
 
         // 2단계: 줌인의 역순으로, 맵/캐릭터를 원래 크기/위치로 동시에(같은 진행률로) 되돌린다.
         sequence.Append(CreateZoomOutTween(characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1));
+
+        // 표정 복귀까지를 연출로 친다. 그래야 씨앗이 웃는 얼굴로 다시 걸어 다니기 시작하지 않는다.
+        sequence.AppendInterval(happyHoldAfter);
+        sequence.AppendCallback(character.ShowNormal);
 
         sequence.OnComplete(() => isPlaying = false);
     }

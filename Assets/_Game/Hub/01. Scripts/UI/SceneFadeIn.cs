@@ -21,6 +21,9 @@ public class SceneFadeIn : MonoBehaviour
     [Tooltip("투명도를 만질 곳. 비워두면 이 오브젝트에서 찾습니다.")]
     [SerializeField] private CanvasGroup group;
 
+    /// <summary>다 걷혔는지. 허브 연출이 검은 화면 뒤에서 먼저 끝나버리지 않도록 이걸 기다린다.</summary>
+    public bool IsDone { get; private set; }
+
     private void Awake()
     {
         if (group == null)
@@ -60,6 +63,7 @@ public class SceneFadeIn : MonoBehaviour
 
         group.alpha = 0f;
         group.blocksRaycasts = false;
+        IsDone = true;
 
         // 투명해도 전체 화면 Image는 매 프레임 그려진다. 다 걷혔으면 꺼둔다.
         gameObject.SetActive(false);
