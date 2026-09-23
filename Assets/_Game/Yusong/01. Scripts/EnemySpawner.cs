@@ -174,10 +174,6 @@ public class EnemySpawner : MonoBehaviour
 
         var group = new List<RectTransform>();
 
-        var yellow = SpawnEnemy(wave0YellowTrianglePrefab, parent, 0);
-        yellow.anchoredPosition = spawnPoint;
-        group.Add(yellow);
-
         Vector2[] redOffsets = { new Vector2(-55f, 45f), new Vector2(55f, 45f), new Vector2(0f, -60f) };
         foreach (var offset in redOffsets)
         {
@@ -185,6 +181,11 @@ public class EnemySpawner : MonoBehaviour
             red.anchoredPosition = spawnPoint + offset;
             group.Add(red);
         }
+
+        // 가운데 개체의 불꽃 표시가 주변 세모에 가려지지 않도록 마지막에 생성·등록해 맨 위에 그려지게 한다.
+        var yellow = SpawnEnemy(wave0YellowTrianglePrefab, parent, 0);
+        yellow.anchoredPosition = spawnPoint;
+        group.Add(yellow);
 
         StartCoroutine(WatchWave0GroupBecomeVisible(group, yellow, rect));
     }
@@ -222,7 +223,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.PauseForGroupHighlight(group,
-                "노란 적군은 다른 적군보다 강하지만, 제거하면 자신의 주변에 데미지를 전이시킵니다\n막아내지 못하고 중앙에 도달하면 더 강력한 피해를 입으니 주의하세요!");
+                "불꽃 표시가 있는 개체는 다른 적군보다 강하지만, 제거하면 주변 적까지 함께 터뜨립니다\n막아내지 못하고 중앙에 도달하면 더 강력한 피해를 입으니 주의하세요!");
         }
 
         // Wait for that pause to be dismissed before starting the next tutorial beat.
@@ -269,7 +270,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.PauseForGroupHighlight(new List<RectTransform> { enemy },
-                "검은 적군은 다른 적군에 비해 유달리 민첩하지만, 점수와 콤보를 2배로 제공합니다");
+                "별 표시가 있는 특수 개체는 다른 적군에 비해 유달리 민첩하지만, 점수와 콤보를 2배로 제공합니다");
         }
 
         // Wait for that pause to be dismissed, then for the player to actually destroy it,
@@ -287,7 +288,7 @@ public class EnemySpawner : MonoBehaviour
         if (countdownTimer != null)
         {
             countdownTimer.PauseForComboGaugeHighlight(
-                "일정 콤보에 도달하면 피버타임에 진입합니다\n피버타임에는 점수 보너스와 공격 전이가 적용됩니다!");
+                "일정 콤보에 도달하면 피버타임에 진입합니다\n피버타임에는 점수 보너스가 주어지고, 적을 누르면 주변 적까지 함께 터뜨립니다!");
         }
 
         // Wait for that pause to be dismissed, then run the "protect 다슬이" beat before

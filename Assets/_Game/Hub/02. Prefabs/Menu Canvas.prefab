@@ -2896,7 +2896,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b75518b0e86bdee429acf2bd31c501e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Taegeon.GameHelpView
-  helpData: {fileID: 11400000, guid: 5af6621162ae9d84080cfa8bbf1652b6, type: 2}
+  helpData: {fileID: 11400000, guid: 2633dab9c70b544448e8ac5c90f3089a, type: 2}
   titleText: {fileID: 5589903552703938341}
   objectiveText: {fileID: 4543114542134411829}
   controlsText: {fileID: 5237241923598673463}

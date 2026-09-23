@@ -134,9 +134,9 @@ MonoBehaviour:
   bossDeathPunchScale: 1.6
   bossDeathFadeDuration: 0.35
   damageStateSprites:
-  - {fileID: 21300000, guid: c8bd42c3336b1f0469e838dfcef4ecfe, type: 3}
-  - {fileID: 21300000, guid: c3c22ded914385246b202b278edd1ff8, type: 3}
-  - {fileID: 21300000, guid: ebce8f6cc38d90b4fb5aeb1634774dd9, type: 3}
+  - {fileID: 21300000, guid: a3f17102610a6ba49be2f529417ebaa7, type: 3}
+  - {fileID: 21300000, guid: 54348d0c1fa420f4a835333380aa2158, type: 3}
+  - {fileID: 21300000, guid: 8cf0fc5ff4fd8784a823ab02e32b5c1a, type: 3}
   shatterOnDeath: 0
   shatterDuration: 0.2
   shatterScalePunch: 1.3
