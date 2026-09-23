@@ -69,6 +69,10 @@ public class AudioManager : MonoBehaviour
     private SoundData _bgmPlaying;
     private float _bgmFadeLeft;
 
+    // 이번 전환에 쓸 페이드 길이. 프리팹 값이 아니라 여기를 보는 이유는 부르는 쪽에서
+    // 길이를 정할 수 있어야 하기 때문이다 — 타이틀에서 나갈 때처럼.
+    private float _bgmFadeTotal = 1f;
+
     /// <summary>풀에 담긴 소스 하나와, 그 자리가 몇 번째로 쓰였는지.</summary>
     private class Voice
     {
@@ -238,17 +242,23 @@ public class AudioManager : MonoBehaviour
         AudioManager m = Instance;
         if (m != null)
         {
-            m.PlayBGMInternal(data);
+            m.PlayBGMInternal(data, -1f);
         }
     }
 
-    /// <summary>배경음을 끈다.</summary>
-    public static void StopBGM()
+    /// <summary>
+    /// 배경음을 끈다. 기본은 곧바로 끄고, 초를 주면 그만큼 사그라든다.
+    ///
+    /// 기본을 0으로 둔 이유는 "끈다"가 대개 씬을 넘기기 직전이기 때문이다. 그때 남은
+    /// 페이드는 다음 씬으로 넘어가지 못하고 잘려서, 길게 잡아둬도 들리지 않는다.
+    /// 화면 연출과 맞춰 사그라뜨리고 싶을 때만 시간을 준다.
+    /// </summary>
+    public static void StopBGM(float fadeSeconds = 0f)
     {
         AudioManager m = Instance;
         if (m != null)
         {
-            m.PlayBGMInternal(null);
+            m.PlayBGMInternal(null, fadeSeconds);
         }
     }
 
@@ -375,7 +385,7 @@ public class AudioManager : MonoBehaviour
         return true;
     }
 
-    private void PlayBGMInternal(SoundData data)
+    private void PlayBGMInternal(SoundData data, float fadeSeconds)
     {
         if (data == _bgmPlaying)
         {
@@ -402,7 +412,9 @@ public class AudioManager : MonoBehaviour
             }
         }
 
-        _bgmFadeLeft = Mathf.Max(0.01f, bgmFadeSeconds);
+        // 음수면 프리팹에 잡아둔 기본 길이를 쓴다.
+        _bgmFadeTotal = Mathf.Max(0.01f, fadeSeconds >= 0f ? fadeSeconds : bgmFadeSeconds);
+        _bgmFadeLeft = _bgmFadeTotal;
 
         // 첫 곡이면 페이드할 상대가 없다. 그냥 끈다.
         if (!fadingOut.isPlaying)
@@ -471,7 +483,7 @@ public class AudioManager : MonoBehaviour
 
         _bgmFadeLeft -= dt;
 
-        float total = Mathf.Max(0.01f, bgmFadeSeconds);
+        float total = Mathf.Max(0.01f, _bgmFadeTotal);
         float t = Mathf.Clamp01(1f - (_bgmFadeLeft / total));
 
         AudioSource fadingIn = _bgmUsingA ? _bgmA : _bgmB;
