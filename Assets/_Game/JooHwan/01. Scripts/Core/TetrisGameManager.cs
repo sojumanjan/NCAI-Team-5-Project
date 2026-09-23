@@ -14,6 +14,10 @@ public class TetrisGameManager : MonoBehaviour
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
     [SerializeField] private GameObject clearTextRoot;
+    [Tooltip("사망 후 재시작 시 카운트다운 전에 먼저 보여줄 테트리스 설명 UI.")]
+    [SerializeField] private PreGameDescriptionUI tetrisDescriptionUI;
+    [Tooltip("사망 후 재시작 시 팩맨 재시작과 동일하게 화면을 어둡게 했다가 다시 밝히기 위한 페이드 캔버스.")]
+    [SerializeField] private FadeCanvas fadeCanvas;
 
     [Header("Clear Feedback")]
     [SerializeField] private DeathFlashOverlay screenFlashOverlay;
@@ -70,6 +74,12 @@ public class TetrisGameManager : MonoBehaviour
     /// </summary>
     public void StartSequenceForNewGame()
     {
+        // 설명 UI~카운트다운 구간에 ESC로 일시정지를 열었다 닫으면, MenuEscapeBridge가
+        // "카운트다운이 아직 끝나지 않았다"고 판단해 SetTetrisGameplayPaused(false) 호출을
+        // 건너뛰므로 IsGlobalPaused가 true인 채로 남을 수 있다. 카운트다운이 정식으로 끝나
+        // 실제 낙하를 시작하는 이 시점에 명시적으로 풀어, 그 잔여 잠금 때문에 블록이 계속
+        // 멈춰있는 일이 없게 한다.
+        SetTetrisGameplayPaused(false);
         fallSequencer.StartSequence();
     }
 
@@ -155,24 +165,44 @@ public class TetrisGameManager : MonoBehaviour
     /// </summary>
     public void RestartFromDeath(PlayerController playerController, System.Action respawnPlayer)
     {
-        fallSequencer.ResetSequence();
-        respawnPlayer();
-
-        FallingBlock.IsGlobalPaused = false;
-
-        // 끼임 사망 시 비네트가 최대치 근처에서 멈춘 채 남아있을 수 있으므로, 재시작 시 명시적으로 초기화한다.
-        if (TetrisDangerVignette.Instance != null)
+        // 팩맨 재시작(MiniGameFlowManager.RestartPacman)과 동일하게, 화면이 완전히 어두워진 뒤에
+        // 리스폰/리셋을 처리하고 다시 밝아지면서 설명 UI/카운트다운으로 이어지게 한다.
+        fadeCanvas.FadeOut(() =>
         {
-            TetrisDangerVignette.Instance.SetDangerRatio(0f);
-        }
+            fallSequencer.ResetSequence();
+            respawnPlayer();
 
-        // 카운트다운(3,2,1)이 보이는 동안에도 플레이어는 바로 움직일 수 있어야 하므로,
-        // 조작 잠금은 카운트다운을 재생하기 전에 미리 풀어둔다.
-        playerController.SetControlsLocked(false);
+            FallingBlock.IsGlobalPaused = false;
 
-        countdownUI.Play(countdownStartFrom, () =>
-        {
-            fallSequencer.StartSequence();
+            // 끼임 사망 시 비네트가 최대치 근처에서 멈춘 채 남아있을 수 있으므로, 재시작 시 명시적으로 초기화한다.
+            if (TetrisDangerVignette.Instance != null)
+            {
+                TetrisDangerVignette.Instance.SetDangerRatio(0f);
+            }
+
+            // 카운트다운(3,2,1)이 보이는 동안에도 플레이어는 바로 움직일 수 있어야 하므로,
+            // 조작 잠금은 카운트다운을 재생하기 전에 미리 풀어둔다.
+            playerController.SetControlsLocked(false);
+
+            fadeCanvas.FadeIn(() =>
+            {
+                // StartSequenceForNewGame과 동일한 이유로, 설명 UI~카운트다운 구간에 ESC를 열었다 닫아
+                // IsGlobalPaused가 잠긴 채로 남는 경우에 대비해 카운트다운이 끝나는 시점에 명시적으로 푼다.
+                System.Action startSequence = () => countdownUI.Play(countdownStartFrom, () =>
+                {
+                    SetTetrisGameplayPaused(false);
+                    fallSequencer.StartSequence();
+                });
+
+                if (tetrisDescriptionUI != null)
+                {
+                    tetrisDescriptionUI.Show(startSequence);
+                }
+                else
+                {
+                    startSequence();
+                }
+            });
         });
     }
 }
