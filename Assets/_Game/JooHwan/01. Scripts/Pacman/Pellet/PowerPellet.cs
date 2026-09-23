@@ -8,6 +8,13 @@ using UnityEngine;
 public class PowerPellet : MonoBehaviour
 {
     [SerializeField] private string playerTag = "Player";
+    [Tooltip("바닥에 놓인 상태에서의 Y축 회전 속도(도/초). 습득/투척 후에는 이 오브젝트가 비활성화되므로 자동으로 멈춘다.")]
+    [SerializeField] private float rotationSpeed = 90f;
+
+    private void Update()
+    {
+        transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
+    }
 
     private void OnTriggerEnter(Collider other)
     {

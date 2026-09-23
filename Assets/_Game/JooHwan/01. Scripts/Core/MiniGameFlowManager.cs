@@ -17,7 +17,6 @@ public class MiniGameFlowManager : MonoBehaviour
 {
     public static MiniGameFlowManager Instance { get; private set; }
 
-    [SerializeField] private GameObject gameSelectUIRoot;
     [SerializeField] private SharedGameplayManager sharedGameplayManager;
     [SerializeField] private TetrisGameManager tetrisGameManager;
     [SerializeField] private PacmanGameManager pacmanGameManager;
@@ -25,6 +24,9 @@ public class MiniGameFlowManager : MonoBehaviour
     [SerializeField] private FadeCanvas fadeCanvas;
     [SerializeField] private CountdownUI countdownUI;
     [SerializeField] private int countdownStartFrom = 3;
+    [Tooltip("카운트다운 시작 전에 보여줄 게임 설명 UI. 확인 버튼을 눌러야 카운트다운이 시작된다.")]
+    [SerializeField] private PreGameDescriptionUI tetrisDescriptionUI;
+    [SerializeField] private PreGameDescriptionUI pacmanDescriptionUI;
     [SerializeField] private Ghost[] pacmanGhosts;
     [SerializeField] private GameObject heartsUIRoot;
     [SerializeField] private PelletSpawner pelletSpawner;
@@ -92,12 +94,9 @@ public class MiniGameFlowManager : MonoBehaviour
             return;
         }
 
-        ApplyState(MiniGameState.MainUI, shouldPlayCountdown: false);
-    }
-
-    public void ShowGameSelect()
-    {
-        SwitchTo(MiniGameState.MainUI, shouldPlayCountdown: false);
+        // 게임시작/게임설명 인트로 UI(IntroUI)를 없애고, 씬 진입 즉시 테트리스 카운트다운으로 들어간다.
+        // (기존에는 여기서 MainUI 상태로 대기하다가 GameSelectUI의 "게임시작" 버튼으로 StartTetris를 불렀다)
+        StartTetris();
     }
 
     public void StartTetris()
@@ -275,8 +274,6 @@ public class MiniGameFlowManager : MonoBehaviour
     {
         currentState = target;
 
-        gameSelectUIRoot.SetActive(target == MiniGameState.MainUI);
-
         if (target == MiniGameState.MainUI)
         {
             // 메인 UI에서는 어느 게임의 PlayerController도 활성화되지 않아
@@ -315,9 +312,29 @@ public class MiniGameFlowManager : MonoBehaviour
         {
             if (shouldPlayCountdown)
             {
-                countdownUI.Play(countdownStartFrom, () => HandleGameplayReady(target));
+                PlayCountdownWithDescription(target, () => HandleGameplayReady(target));
             }
         });
+    }
+
+    /// <summary>
+    /// 카운트다운 시작 전에 대상 게임에 맞는 설명 UI를 먼저 보여주고, 확인을 눌러야 카운트다운을 재생한다.
+    /// 설명 UI가 연결되어 있지 않으면 기존처럼 곧바로 카운트다운을 재생한다.
+    /// </summary>
+    private void PlayCountdownWithDescription(MiniGameState target, System.Action onCountdownComplete)
+    {
+        PreGameDescriptionUI descriptionUI = target == MiniGameState.Tetris ? tetrisDescriptionUI
+            : target == MiniGameState.Pacman ? pacmanDescriptionUI
+            : null;
+
+        if (descriptionUI != null)
+        {
+            descriptionUI.Show(() => countdownUI.Play(countdownStartFrom, onCountdownComplete));
+        }
+        else
+        {
+            countdownUI.Play(countdownStartFrom, onCountdownComplete);
+        }
     }
 
     private void HandleGameplayReady(MiniGameState target)

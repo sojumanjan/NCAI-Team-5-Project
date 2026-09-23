@@ -34,15 +34,16 @@ public class Ghost : MonoBehaviour
 
     [Header("비주얼")]
     [SerializeField] private Renderer bodyRenderer;
-    [SerializeField] private Color dimColor = new Color(0.6f, 0.15f, 0.15f, 1f);
+    [Tooltip("발광(공격 신호) 중 사용할 이 고스트의 기준색(보통 몸통 텍스처의 실제 색과 같은 톤으로 맞춘다). " +
+        "평소(비발광) 상태는 이 색과 무관하게 _EmissionColor를 꺼서 텍스처 원본 색이 그대로 보이게 한다.")]
+    [SerializeField] private Color glowBaseColor = new Color(0.9f, 0.42f, 0.41f, 1f);
     [Tooltip("발광(공격 신호) 중 고스트 고유 색조(Hue)는 그대로 유지하고, 채도/명도만 이 값으로 끌어올려 '자기 색 그대로 더 밝고 진하게' 빛나게 한다.")]
     [Range(0f, 1f)]
     [SerializeField] private float glowSaturation = 0.9f;
     [Range(0f, 3f)]
     [SerializeField] private float glowBrightness = 2.2f;
-    [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private GhostDefeatEffect defeatEffect;
-    [Tooltip("발광(타격 가능) 중 켜지는 오라 파티클. 고스트 원래 색으로 재생한다.")]
+    [Tooltip("발광(타격 가능) 중 켜지는 오라 파티클. 고스트 고유색(glowBaseColor)으로 재생한다.")]
     [SerializeField] private ParticleSystem glowAura;
 
     private NavMeshAgent agent;
@@ -59,7 +60,6 @@ public class Ghost : MonoBehaviour
     private Material bodyMaterialInstance;
     private Coroutine glowCycleCoroutine;
     private Coroutine hitStunCoroutine;
-    private Color originalBodyColor;
 
     /// <summary>처치된 순간(디졸브 연출 시작 시점)에 발생한다. 전멸 판정에 사용한다.</summary>
     public System.Action<Ghost> Defeated;
@@ -75,19 +75,25 @@ public class Ghost : MonoBehaviour
         if (bodyRenderer != null)
         {
             bodyMaterialInstance = bodyRenderer.material;
-            originalBodyColor = bodyMaterialInstance.GetColor("_BaseColor");
+        }
+
+        // 평소(비발광) 상태에서는 텍스처 원본 색이 그대로 보이도록 발광을 꺼둔다.
+        if (bodyMaterialInstance != null)
+        {
+            bodyMaterialInstance.SetColor("_EmissionColor", Color.black);
+            bodyMaterialInstance.DisableKeyword("_EMISSION");
         }
 
         if (glowAura != null)
         {
             ParticleSystem.MainModule auraMain = glowAura.main;
-            auraMain.startColor = originalBodyColor;
+            auraMain.startColor = glowBaseColor;
 
             var auraRenderer = glowAura.GetComponent<ParticleSystemRenderer>();
             if (auraRenderer != null && auraRenderer.sharedMaterial != null)
             {
                 var matInstance = new Material(auraRenderer.sharedMaterial);
-                matInstance.SetColor("_BaseColor", originalBodyColor);
+                matInstance.SetColor("_BaseColor", glowBaseColor);
                 auraRenderer.material = matInstance;
             }
         }
@@ -383,24 +389,21 @@ public class Ghost : MonoBehaviour
             return;
         }
 
-        Color baseColor;
-
-        if (isGlowing)
+        if (!isGlowing)
         {
-            // 파스텔처럼 채도가 낮은 색을 그대로 밝기만 높이면 흰색으로 날아가 버리므로,
-            // HSV로 변환해 색조(Hue)는 완전히 그대로 유지한 채 채도/명도만 끌어올려
-            // "이 고스트만의 색 그대로 더 밝고 진하게" 빛나게 한다.
-            Color.RGBToHSV(originalBodyColor, out float h, out float s, out float v);
+            // 평소(비발광) 상태에서는 발광 자체를 꺼서 텍스처 원본 색이 그대로 보이게 한다.
+            bodyMaterialInstance.SetColor("_EmissionColor", Color.black);
+            return;
+        }
 
-            baseColor = Color.HSVToRGB(h, glowSaturation, 1f);
-            baseColor *= glowBrightness;
-            baseColor.a = 1f;
-        }
-        else
-        {
-            float pulse = (Mathf.Sin(Time.time * pulseSpeed) + 1f) * 0.5f;
-            baseColor = Color.Lerp(dimColor * 0.6f, dimColor, pulse);
-        }
+        // 파스텔처럼 채도가 낮은 색을 그대로 밝기만 높이면 흰색으로 날아가 버리므로,
+        // HSV로 변환해 색조(Hue)는 완전히 그대로 유지한 채 채도/명도만 끌어올려
+        // "이 고스트만의 색 그대로 더 밝고 진하게" 빛나게 한다.
+        Color.RGBToHSV(glowBaseColor, out float h, out float s, out float v);
+
+        Color baseColor = Color.HSVToRGB(h, glowSaturation, 1f);
+        baseColor *= glowBrightness;
+        baseColor.a = 1f;
 
         bodyMaterialInstance.SetColor("_EmissionColor", baseColor);
         bodyMaterialInstance.EnableKeyword("_EMISSION");
