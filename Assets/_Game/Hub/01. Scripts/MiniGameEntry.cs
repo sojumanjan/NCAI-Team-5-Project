@@ -26,6 +26,12 @@ public class MiniGameEntry : MonoBehaviour
     /// <summary>이미 깬 미니게임인지. 잠금 표시나 체크 표시에 쓴다.</summary>
     public bool IsCleared => Flow != null && Flow.IsCleared(miniGame);
 
+    /// <summary>깼을 때 켜지는 모습. 허브 연출이 바꿔치기 순간을 잡을 때 쓴다.</summary>
+    public GameObject ClearedView => clearedView;
+
+    /// <summary>못 깼을 때 켜지는 모습.</summary>
+    public GameObject NotClearedView => notClearedView;
+
     private GameFlow Flow => flow != null ? flow : GameFlow.Instance;
 
     private void Awake()
@@ -65,10 +71,14 @@ public class MiniGameEntry : MonoBehaviour
     /// 허브는 미니게임이 결과를 보고하는 순간 로드돼 있지 않아 이벤트를 못 받는다.
     /// 그래서 이벤트만 믿지 않고 켜질 때마다 직접 읽는다.
     /// </summary>
-    public void RefreshClearMark()
-    {
-        bool cleared = IsCleared;
+    public void RefreshClearMark() => ShowClearMark(IsCleared);
 
+    /// <summary>
+    /// 실제 기록과 상관없이 겉모습만 바꾼다. 방금 깨고 돌아온 오브젝트를 연출 전까지
+    /// 못 깬 모습으로 붙잡아 둘 때 쓴다.
+    /// </summary>
+    public void ShowClearMark(bool cleared)
+    {
         if (clearedView != null)
         {
             clearedView.SetActive(cleared);
