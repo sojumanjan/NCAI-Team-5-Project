@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// 요리 미니게임 한 판이 어디쯤 와 있는지.
@@ -52,6 +54,9 @@ public class MiniGameSession : MonoBehaviour
 
     [Tooltip("커서를 풀기 위해 필요합니다.")]
     [SerializeField] private PlayerControllerJihoon player;
+
+    [Tooltip("허브로 돌아가기를 누른 뒤 화면이 검게 덮이는 시간 (초). 배경음도 같은 시간 동안 사그라듭니다.")]
+    [SerializeField] private float hubFadeOutSeconds = 1.2f;
 
     [Header("시작")]
     [Tooltip("켜면 플레이와 동시에 영업을 시작합니다. 튜토리얼이 붙으면 끄고 StartDay()를 부르세요.")]
@@ -229,16 +234,50 @@ public class MiniGameSession : MonoBehaviour
     public void ReturnToHub()
     {
         GameFlow flow = GameFlow.Instance;
-        if (flow == null)
+        if (flow == null || _leaving)
         {
             return;
         }
 
+        _leaving = true;
+        StartCoroutine(FadeOutThenReturn(flow));
+    }
+
+    // 덮이는 동안 버튼을 또 눌러 씬 로드가 두 번 걸리지 않게.
+    private bool _leaving;
+
+    /// <summary>허브는 검은 화면에서 시작해 걷어내므로(SceneFadeIn), 이쪽이 검게 덮은 채 넘겨야 화면이 끊기지 않는다.</summary>
+    private IEnumerator FadeOutThenReturn(GameFlow flow)
+    {
+        // 결과 화면 위까지 덮어야 한다. 허브와 같은 순서(1000)를 쓴다.
+        GameObject coverRoot = ScreenInputBlocker.Create(null, "ReturnToHubCover");
+        coverRoot.GetComponent<Canvas>().sortingOrder = 1000;
+        coverRoot.GetComponentInChildren<Image>(true).color = Color.black;
+
+        CanvasGroup group = coverRoot.AddComponent<CanvasGroup>();
+        group.alpha = 0f;
+        coverRoot.SetActive(true);
+
+        AudioManager.StopBGM(hubFadeOutSeconds);
+
+        float elapsed = 0f;
+        float total = Mathf.Max(0.01f, hubFadeOutSeconds);
+
+        while (elapsed < total)
+        {
+            // 결과 화면은 timeScale 0으로 얼어 있다. 게임 시간으로 재면 영원히 덮이지 않는다.
+            elapsed += Time.unscaledDeltaTime;
+            group.alpha = Mathf.Clamp01(elapsed / total);
+            yield return null;
+        }
+
+        group.alpha = 1f;
         flow.ReturnToMain();
     }
 
     private void OnValidate()
     {
         clearRating = Mathf.Max(0f, clearRating);
+        hubFadeOutSeconds = Mathf.Max(0f, hubFadeOutSeconds);
     }
 }

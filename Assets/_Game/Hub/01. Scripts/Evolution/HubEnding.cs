@@ -56,6 +56,13 @@ public class HubEnding : MonoBehaviour
     [Tooltip("깨끗해진 방 그림.")]
     [SerializeField] private Sprite cleanBackground;
 
+    [Tooltip("앞쪽 잎들이 모여 있는 부모(ForegroundLeaves). 아래 RawImage의 그림을 전부 함께 바꿉니다.")]
+    [SerializeField] private Transform foregroundLeaves;
+
+    [Tooltip("시든 잎 그림. 방이 엉망인 동안 잎에 입힙니다. 지금 잎 그림(Leap)과 같은 크기·같은 배치로 그려야 " +
+        "잎마다 잘라 쓰는 영역이 그대로 맞습니다. 비워두면 잎은 바뀌지 않습니다.")]
+    [SerializeField] private Texture decayLeaves;
+
     [Tooltip("방이 흰빛으로 덮이는 시간 (초).")]
     [SerializeField] private float cleanWhiteIn = 0.8f;
 
@@ -138,6 +145,10 @@ public class HubEnding : MonoBehaviour
 
     private Sprite _decayBackground;
 
+    // 씬에 놓인 잎 그림이 깨끗한 쪽이다. 배경과 반대라 원래 그림을 기억했다가 되돌린다.
+    private RawImage[] _leafImages = System.Array.Empty<RawImage>();
+    private Texture[] _cleanLeaves = System.Array.Empty<Texture>();
+
     /// <summary>엔딩이 도는 중인지.</summary>
     public bool IsPlaying => _playing;
 
@@ -145,20 +156,29 @@ public class HubEnding : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetOnPlay() => _roomCleaned = false;
 
-    /// <summary>방 배경을 깨끗한 그림(true) 또는 엉망인 원래 그림(false)으로 바꾼다.</summary>
+    /// <summary>방(배경과 앞쪽 잎)을 깨끗한 모습(true) 또는 엉망인 모습(false)으로 바꾼다.</summary>
     public void SetRoomClean(bool clean)
     {
         _roomCleaned = clean;
 
-        if (roomBackground == null)
+        if (roomBackground != null)
         {
-            return;
+            Sprite target = clean ? cleanBackground : _decayBackground;
+            if (target != null)
+            {
+                roomBackground.sprite = target;
+            }
         }
 
-        Sprite target = clean ? cleanBackground : _decayBackground;
-        if (target != null)
+        for (int i = 0; i < _leafImages.Length; i++)
         {
-            roomBackground.sprite = target;
+            if (_leafImages[i] == null)
+            {
+                continue;
+            }
+
+            Texture target = clean || decayLeaves == null ? _cleanLeaves[i] : decayLeaves;
+            _leafImages[i].texture = target;
         }
     }
 
@@ -169,10 +189,18 @@ public class HubEnding : MonoBehaviour
             _decayBackground = roomBackground.sprite;
         }
 
-        if (_roomCleaned)
+        if (foregroundLeaves != null)
         {
-            SetRoomClean(true);
+            _leafImages = foregroundLeaves.GetComponentsInChildren<RawImage>(true);
+            _cleanLeaves = new Texture[_leafImages.Length];
+            for (int i = 0; i < _leafImages.Length; i++)
+            {
+                _cleanLeaves[i] = _leafImages[i].texture;
+            }
         }
+
+        // 배경은 씬에 엉망인 그림이, 잎은 깨끗한 그림이 놓여 있다. 시작할 때 한쪽으로 맞춰 둔다.
+        SetRoomClean(_roomCleaned);
 
         if (character == null)
         {

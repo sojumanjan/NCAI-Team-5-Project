@@ -18,7 +18,7 @@ using UnityEngine.UI;
 public class SeedIntro : MonoBehaviour
 {
     [Header("재생")]
-    [Tooltip("끄면 인트로 없이 바로 돌아다닙니다. '처음 들어온 순간'만 트는 판정은 나중에 붙입니다.")]
+    [Tooltip("끄면 인트로 없이 바로 돌아다닙니다. 켜 두어도 플레이당 처음 허브에 들어올 때 한 번만 틉니다.")]
     [SerializeField] private bool playIntro = true;
 
     [Header("참조")]
@@ -138,8 +138,15 @@ public class SeedIntro : MonoBehaviour
     private Vector2 _labelRest;
     private bool _playing;
 
+    // 미니게임에서 돌아오면 허브 씬이 새로 로드되어 인스펙터 값이 되살아난다. 씬을 넘어 기억하려고 static으로 둔다.
+    private static bool _played;
+
     /// <summary>인트로가 도는 중인지. 클리어 복귀 연출과 표정 타이머가 비켜설 때 본다.</summary>
     public bool IsPlaying => _playing;
+
+    // 도메인 리로드를 꺼 두면 static이 플레이 사이에 남는다. 플레이마다 처음엔 다시 보이도록 비운다.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetOnPlay() => _played = false;
 
     private void Awake()
     {
@@ -181,7 +188,12 @@ public class SeedIntro : MonoBehaviour
         }
 
         // 다른 연출이 Start에서 인트로 여부를 물어볼 수 있어, 재생할 거라면 Awake에서 미리 켜 둔다.
-        _playing = playIntro && character != null;
+        _playing = playIntro && !_played && character != null;
+
+        if (_playing)
+        {
+            _played = true;
+        }
 
         if (_playing && wanderer != null)
         {

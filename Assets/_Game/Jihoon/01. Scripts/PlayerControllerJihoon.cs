@@ -23,8 +23,9 @@ public class PlayerControllerJihoon : MonoBehaviour
     // ---------------------------------------------------------------- look
 
     [Header("시점 — 감도")]
-    [Tooltip("마우스 감도 (x = 좌우, y = 상하).")]
-    [SerializeField] private Vector2 mouseSensitivity = new Vector2(0.12f, 0.12f);
+    // 옵션 창의 감도 슬라이더가 이 값을 직접 읽고 쓴다. 공통 설정창은 float 하나만 다루므로 좌우·상하를 한 값으로 묶었다.
+    [Tooltip("마우스 감도. 좌우와 상하에 똑같이 적용됩니다.")]
+    public float mouseSensitivity = 0.12f;
 
     [Tooltip("게임패드 감도 (deg/sec). 마우스와 달리 프레임 시간에 비례합니다.")]
     [SerializeField] private Vector2 gamepadSensitivity = new Vector2(220f, 160f);
@@ -285,7 +286,7 @@ public class PlayerControllerJihoon : MonoBehaviour
         bool fromStick = _look?.activeControl?.device is Gamepad;
         Vector2 scaled = fromStick
             ? new Vector2(raw.x * gamepadSensitivity.x, raw.y * gamepadSensitivity.y) * dt
-            : new Vector2(raw.x * mouseSensitivity.x, raw.y * mouseSensitivity.y);
+            : raw * mouseSensitivity;
 
         if (lookSmoothing > 0f)
         {
