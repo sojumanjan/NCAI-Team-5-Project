@@ -263,6 +263,7 @@ MonoBehaviour:
   warningLeadTime: 3
   warningBlinkInterval: 0.15
   survivedSound: {fileID: 11400000, guid: e62743ed1a826114c81f17a06fece0ee, type: 2}
+  hitSound: {fileID: 11400000, guid: 9e6583e693a1a0649898bbdbbefdd383, type: 2}
 --- !u!1 &7573124279065046787
 GameObject:
   m_ObjectHideFlags: 0

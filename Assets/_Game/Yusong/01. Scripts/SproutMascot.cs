@@ -13,6 +13,7 @@ public class SproutMascot : MonoBehaviour
     [SerializeField] private float surprisedDuration = 1.2f;
 
     private bool isFever;
+    private bool isCleared;
     private Coroutine surprisedRoutine;
 
     private void OnEnable()
@@ -20,6 +21,7 @@ public class SproutMascot : MonoBehaviour
         ComboManager.FeverStarted += HandleFeverStarted;
         ComboManager.FeverEnded += HandleFeverEnded;
         PlayerHealth.Damaged += HandleDamaged;
+        CountdownTimer.GameCleared += HandleGameCleared;
     }
 
     private void OnDisable()
@@ -27,11 +29,13 @@ public class SproutMascot : MonoBehaviour
         ComboManager.FeverStarted -= HandleFeverStarted;
         ComboManager.FeverEnded -= HandleFeverEnded;
         PlayerHealth.Damaged -= HandleDamaged;
+        CountdownTimer.GameCleared -= HandleGameCleared;
     }
 
     private void Start()
     {
         isFever = false;
+        isCleared = false;
         if (surprisedRoutine != null) StopCoroutine(surprisedRoutine);
         surprisedRoutine = null;
         SetSprite(basicSprite);
@@ -55,11 +59,26 @@ public class SproutMascot : MonoBehaviour
     {
         isFever = false;
 
-        if (surprisedRoutine == null) SetSprite(basicSprite);
+        if (surprisedRoutine == null && !isCleared) SetSprite(basicSprite);
+    }
+
+    // 클리어 후에는 결과 화면이 떠 있는 동안 계속 기뻐하는 얼굴로 둔다 — 피버 종료나 피격으로 표정이 돌아가지 않게 막는다.
+    private void HandleGameCleared()
+    {
+        isCleared = true;
+
+        if (surprisedRoutine != null)
+        {
+            StopCoroutine(surprisedRoutine);
+            surprisedRoutine = null;
+        }
+
+        SetSprite(happySprite);
     }
 
     private void HandleDamaged()
     {
+        if (isCleared) return;
         if (surprisedRoutine != null) StopCoroutine(surprisedRoutine);
         surprisedRoutine = StartCoroutine(ShowSurprisedThenRevert());
     }
@@ -68,7 +87,7 @@ public class SproutMascot : MonoBehaviour
     {
         SetSprite(surprisedSprite);
         yield return new WaitForSeconds(surprisedDuration);
-        SetSprite(isFever ? happySprite : basicSprite);
+        SetSprite(isFever || isCleared ? happySprite : basicSprite);
         surprisedRoutine = null;
     }
 
