@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace Taegeon
 {
     /// <summary>
-    /// 메인 화면의 밝기를 보정하고 적용하기 버튼으로 설정을 저장합니다.
+    /// 메뉴 프리팹 내부에서 화면 밝기를 보정하고 적용하기 버튼으로 설정을 저장합니다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HubBrightnessBindings : MonoBehaviour
@@ -17,7 +17,8 @@ namespace Taegeon
         [SerializeField] private Slider brightnessSlider;
         [SerializeField] private GameObject settingsPanel;
 
-        private Image brightnessOverlay;
+        [SerializeField] private Image brightnessOverlay;
+        private GameObject overlayRoot;
         private float appliedBrightness;
         private float pendingBrightness;
         private bool panelWasVisible;
@@ -33,7 +34,6 @@ namespace Taegeon
         {
             appliedBrightness = Mathf.Clamp01(PlayerPrefs.GetFloat(PreferenceKey, 0.5f));
             CreateOverlay();
-            UpdateOverlay();
             ResetPendingBrightness();
             panelWasVisible = settingsPanel != null && settingsPanel.activeInHierarchy;
         }
@@ -46,7 +46,7 @@ namespace Taegeon
             bool visible = settingsPanel != null && settingsPanel.activeInHierarchy;
             if (visible != panelWasVisible)
             {
-                ResetPendingBrightness();
+                if (!visible) ResetPendingBrightness();
                 panelWasVisible = visible;
             }
         }
@@ -62,6 +62,23 @@ namespace Taegeon
             {
                 brightnessSlider.SetValueWithoutNotify(appliedBrightness);
             }
+        }
+
+        #endregion
+
+        #region 보정 화면 생명주기
+        /// <summary>설정 관리자가 다시 활성화되면 저장된 밝기를 표시합니다.</summary>
+        private void OnEnable()
+        {
+            if (overlayRoot != null) overlayRoot.SetActive(true);
+            ResetPendingBrightness();
+        }
+
+        /// <summary>설정 관리자가 비활성화되면 미적용 값을 취소하고 보정 화면을 숨깁니다.</summary>
+        private void OnDisable()
+        {
+            ResetPendingBrightness();
+            if (overlayRoot != null) overlayRoot.SetActive(false);
         }
 
         #endregion
@@ -97,21 +114,40 @@ namespace Taegeon
         /// </summary>
         private void CreateOverlay()
         {
-            var layer = new GameObject("Brightness Overlay", typeof(RectTransform), typeof(Canvas));
-            layer.transform.SetParent(transform, false);
-            var canvas = layer.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var menuCanvas = GetComponentInParent<Canvas>();
+            if (menuCanvas == null)
+            {
+                Debug.LogWarning("밝기 관리자는 Menu Canvas 안에 배치해 주세요.", this);
+                return;
+            }
+            if (brightnessOverlay == null)
+            {
+                var existing = menuCanvas.transform.Find("Brightness Overlay/Brightness Tint");
+                if (existing != null) brightnessOverlay = existing.GetComponent<Image>();
+            }
+            if (brightnessOverlay == null)
+            {
+                var layer = new GameObject("Brightness Overlay", typeof(RectTransform), typeof(Canvas));
+                layer.transform.SetParent(menuCanvas.transform, false);
+                var shade = new GameObject("Brightness Tint", typeof(RectTransform), typeof(Image));
+                shade.transform.SetParent(layer.transform, false);
+                brightnessOverlay = shade.GetComponent<Image>();
+            }
+            var canvas = brightnessOverlay.GetComponentInParent<Canvas>();
+            overlayRoot = canvas.gameObject;
+            var layerRect = canvas.GetComponent<RectTransform>();
+            layerRect.anchorMin = Vector2.zero;
+            layerRect.anchorMax = Vector2.one;
+            layerRect.offsetMin = Vector2.zero;
+            layerRect.offsetMax = Vector2.zero;
+            layerRect.localScale = Vector3.one;
+            canvas.overrideSorting = true;
             canvas.sortingOrder = 32760;
-
-            var shade = new GameObject("Brightness Tint", typeof(RectTransform), typeof(Image));
-            shade.transform.SetParent(layer.transform, false);
-            var rect = shade.GetComponent<RectTransform>();
+            var rect = brightnessOverlay.rectTransform;
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
-
-            brightnessOverlay = shade.GetComponent<Image>();
             brightnessOverlay.raycastTarget = false;
         }
 
