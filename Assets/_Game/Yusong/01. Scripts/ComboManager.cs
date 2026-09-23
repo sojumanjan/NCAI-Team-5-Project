@@ -35,6 +35,9 @@ public class ComboManager : MonoBehaviour
     [SerializeField] private float gaugePunchScale = 1.3f;
     [SerializeField] private float gaugePunchDuration = 0.25f;
 
+    [Header("Sound")]
+    [SerializeField] private SoundData feverStartSound;
+
     private int comboCount;
     private float timer;
     private bool active;
@@ -143,6 +146,7 @@ public class ComboManager : MonoBehaviour
 
         if (fireOverlay != null) fireOverlay.SetActive(true);
         if (feverAnnouncement != null) feverAnnouncement.Show();
+        AudioManager.Play(feverStartSound);
 
         FeverStarted?.Invoke();
     }
