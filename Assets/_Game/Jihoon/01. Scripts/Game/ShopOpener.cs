@@ -61,6 +61,10 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     [Tooltip("셔터가 내려올 때. 비워두면 올라갈 때 소리를 그대로 씁니다.")]
     [SerializeField] private SoundData closeSound;
 
+    [Tooltip("셔터 소리가 나는 자리. 셔터 아래쪽이나 입구에 둔 빈 오브젝트를 넣으세요. " +
+             "비워두면 셔터가 닫혀 있을 때의 피벗 자리에서 납니다.")]
+    [SerializeField] private Transform soundPoint;
+
     [Header("문구")]
     [Tooltip("아직 시작 전일 때.")]
     [SerializeField] private string readyPrompt = "장사 시작하기";
@@ -81,6 +85,10 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     [SerializeField] private string closingPrompt = "셔터 닫는 중...";
 
     private float _closedLocalY;
+
+    // 닫을 때 피벗은 7.4m 위 천장 뒤에 있어 그 자리에서 틀면 들리는 거리를 벗어난다. 닫힌 자리를 기억해 둔다.
+    private Vector3 _closedSoundPosition;
+
     private Motion _motion = Motion.Idle;
     private bool _opened;
     private bool _closed;
@@ -114,7 +122,10 @@ public class ShopOpener : MonoBehaviour, IClickTarget
         // 닫힌 자세를 씬에서 읽어둔다. 에디터에서 셔터 위치를 옮겨도 그게 곧 닫힌 상태다.
         _closedLocalY = shutterPivot.localPosition.y;
         SetLocalY(_closedLocalY);
+        _closedSoundPosition = shutterPivot.position;
     }
+
+    private Vector3 SoundPosition => soundPoint != null ? soundPoint.position : _closedSoundPosition;
 
     private void OnDestroy()
     {
@@ -205,7 +216,7 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     {
         _motion = Motion.Opening;
 
-        AudioManager.PlayAt(shutterSound, shutterPivot.position);
+        AudioManager.PlayAt(shutterSound, SoundPosition);
 
         _tween?.Kill();
         _tween = shutterPivot.DOLocalMoveY(_closedLocalY + liftHeight, duration)
@@ -219,7 +230,7 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     {
         _motion = Motion.Closing;
 
-        AudioManager.PlayAt(closeSound != null ? closeSound : shutterSound, shutterPivot.position);
+        AudioManager.PlayAt(closeSound != null ? closeSound : shutterSound, SoundPosition);
 
         _tween?.Kill();
         _tween = shutterPivot.DOLocalMoveY(_closedLocalY, closeDuration)
