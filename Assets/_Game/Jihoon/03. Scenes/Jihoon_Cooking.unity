@@ -32973,7 +32973,7 @@ MonoBehaviour:
   inactiveZ: 0.1
   pressDuration: 0.08
   pressSound: {fileID: 11400000, guid: 27bd09503869f964f92750f7c0bad1cc, type: 2}
-  label: "\uBCF4\uD1B5"
+  label: "\uBCF4\uD1B5(\uCD94\uCC9C)"
   selectPrompt: "\uB09C\uC774\uB3C4 {0} \uC120\uD0DD\uD558\uAE30"
   selectedPrompt: "\uB09C\uC774\uB3C4 {0} (\uC120\uD0DD\uB428)"
 --- !u!1001 &1695691977
