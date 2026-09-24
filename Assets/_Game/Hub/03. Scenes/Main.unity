@@ -2703,6 +2703,7 @@ GameObject:
   - component: {fileID: 381323742}
   - component: {fileID: 381323744}
   - component: {fileID: 381323743}
+  - component: {fileID: 381323745}
   m_Layer: 0
   m_Name: Reward (2)
   m_TagString: Untagged
@@ -2767,6 +2768,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 381323741}
   m_CullTransparentMesh: 1
+--- !u!114 &381323745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 381323741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bc89911ad93ae84381195a45e9c54f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISpriteOutline
+  shader: {fileID: 4800000, guid: 922aac8899009c1449b727324dd0142c, type: 3}
+  color: {r: 1, g: 1, b: 1, a: 1}
+  width: 1.5
 --- !u!1 &382958589
 GameObject:
   m_ObjectHideFlags: 0
@@ -3834,6 +3850,7 @@ GameObject:
   - component: {fileID: 503843133}
   - component: {fileID: 503843135}
   - component: {fileID: 503843134}
+  - component: {fileID: 503843136}
   m_Layer: 0
   m_Name: Reward (1)
   m_TagString: Untagged
@@ -3898,6 +3915,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 503843132}
   m_CullTransparentMesh: 1
+--- !u!114 &503843136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 503843132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bc89911ad93ae84381195a45e9c54f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISpriteOutline
+  shader: {fileID: 4800000, guid: 922aac8899009c1449b727324dd0142c, type: 3}
+  color: {r: 1, g: 1, b: 1, a: 1}
+  width: 1.5
 --- !u!1 &527344528
 GameObject:
   m_ObjectHideFlags: 0
@@ -4320,6 +4352,7 @@ GameObject:
   - component: {fileID: 725337880}
   - component: {fileID: 725337882}
   - component: {fileID: 725337881}
+  - component: {fileID: 725337883}
   m_Layer: 0
   m_Name: Reward
   m_TagString: Untagged
@@ -4384,6 +4417,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 725337879}
   m_CullTransparentMesh: 1
+--- !u!114 &725337883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 725337879}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bc89911ad93ae84381195a45e9c54f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISpriteOutline
+  shader: {fileID: 4800000, guid: 922aac8899009c1449b727324dd0142c, type: 3}
+  color: {r: 1, g: 1, b: 1, a: 1}
+  width: 1.5
 --- !u!1 &728971619
 GameObject:
   m_ObjectHideFlags: 0
@@ -7000,6 +7048,7 @@ GameObject:
   - component: {fileID: 1281074922}
   - component: {fileID: 1281074924}
   - component: {fileID: 1281074923}
+  - component: {fileID: 1281074925}
   m_Layer: 0
   m_Name: Reward (1)
   m_TagString: Untagged
@@ -7064,6 +7113,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1281074921}
   m_CullTransparentMesh: 1
+--- !u!114 &1281074925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1281074921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bc89911ad93ae84381195a45e9c54f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISpriteOutline
+  shader: {fileID: 4800000, guid: 922aac8899009c1449b727324dd0142c, type: 3}
+  color: {r: 1, g: 1, b: 1, a: 1}
+  width: 1.5
 --- !u!1 &1334529249
 GameObject:
   m_ObjectHideFlags: 0
