@@ -33,6 +33,8 @@ public class EvolutionController : MonoBehaviour
     [SerializeField] private EvolutionEffects effects;
     [Tooltip("흔들림이 끝나고 새 모습으로 바뀌는 순간 나는 소리.")]
     [SerializeField] private SoundData evolutionSound;
+    [Tooltip("흰 실루엣으로 바들바들 떠는 동안 나는 소리. 새 모습으로 바뀌는 순간 끊깁니다.")]
+    [SerializeField] private SoundData upgradingSound;
 
     [Header("화면 줌")]
     [SerializeField] private float zoomedScale = 1.15f;
@@ -118,6 +120,9 @@ public class EvolutionController : MonoBehaviour
 
         Sequence sequence = DOTween.Sequence();
 
+        // 떨림 소리는 진화 순간 끊어야 한다. 콜백 두 곳이 같은 손잡이를 나눠 쥔다.
+        SoundHandle upgrading = SoundHandle.None;
+
         // 1단계: 맵과 캐릭터를 "동시에, 같은 진행률로" 확대 + 캐릭터 위치를 화면 중앙으로 이동.
         // 확대와 이동이 각각 독립된 트윈으로 따로 진행되면 속도가 미묘하게 어긋나 빈 공간이
         // 보일 수 있으므로, 하나의 t(0~1) 트윈에서 매 프레임 둘 다 함께 갱신한다.
@@ -149,6 +154,11 @@ public class EvolutionController : MonoBehaviour
         {
             characterRect.DOShakeAnchorPos(
                 shakeHoldDuration, shakeStrength, shakeVibrato, 90f, false, true);
+
+            if (upgradingSound != null)
+            {
+                upgrading = AudioManager.Play(upgradingSound);
+            }
         });
         sequence.AppendInterval(shakeHoldDuration);
 
@@ -168,6 +178,9 @@ public class EvolutionController : MonoBehaviour
             {
                 starBurst.Play();
             }
+
+            // 떨림이 멎는 순간 소리도 멎어야 "다 자랐다"로 들린다. 클립이 더 길어도 여기서 끊는다.
+            upgrading.Stop();
 
             // 소리는 모습이 바뀌는 바로 그 프레임에. 흔들림 도중에 나면 무엇이 일어났는지 귀가 먼저 알아버린다.
             if (evolutionSound != null)

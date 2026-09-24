@@ -32,6 +32,10 @@ public class MiniGameEntry : MonoBehaviour
     [Tooltip("아직 못 깼을 때 켤 오브젝트.")]
     [SerializeField] private GameObject notClearedView;
 
+    [Header("보상 (선택)")]
+    [Tooltip("처음 깨고 돌아왔을 때 이 자리에 떠올라 씨앗에게 날아갈 보상 그림. 평소에는 꺼둡니다.")]
+    [SerializeField] private GameObject reward;
+
     /// <summary>이 문이 가리키는 미니게임. 메인 화면 UI가 이름·아이콘을 그릴 때 쓴다.</summary>
     public MiniGameDefinition MiniGame => miniGame;
 
@@ -44,6 +48,9 @@ public class MiniGameEntry : MonoBehaviour
     /// <summary>못 깼을 때 켜지는 모습.</summary>
     public GameObject NotClearedView => notClearedView;
 
+    /// <summary>클리어 연출이 씨앗에게 먹일 보상 그림. 없으면 null.</summary>
+    public GameObject Reward => reward;
+
     private GameFlow Flow => flow != null ? flow : GameFlow.Instance;
 
     // 문이 여러 개라 덮이는 동안 다른 문을 눌러도 씬 로드가 두 번 걸리지 않게 함께 막는다.
@@ -54,6 +61,12 @@ public class MiniGameEntry : MonoBehaviour
 
     private void Awake()
     {
+        // 씬에는 자리를 잡기 쉽게 켜둔 채 둔다. 보상은 클리어 연출 때만 잠깐 보이고, 씨앗이 먹은 뒤로는 다시 나오지 않는다.
+        if (reward != null)
+        {
+            reward.SetActive(false);
+        }
+
         if (miniGame == null)
         {
             Debug.LogError($"{nameof(MiniGameEntry)} on '{name}': Definition을 연결하세요.", this);
