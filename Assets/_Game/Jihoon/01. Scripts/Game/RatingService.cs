@@ -115,6 +115,20 @@ public class RatingService : MonoBehaviour
     }
 
     /// <summary>
+    /// 난이도 수치를 넣는다. 영업 전(아직 주문이 하나도 없을 때)에만 불리므로 평점을 새 시작값으로 되돌린다.
+    /// </summary>
+    public void ApplyDifficulty(float starting, float[] correct, float[] wrong, float[] abandoned)
+    {
+        startingRating = Mathf.Clamp(starting, minRating, maxRating);
+        correctDeltas = correct != null ? (float[])correct.Clone() : correctDeltas;
+        wrongDeltas = wrong != null ? (float[])wrong.Clone() : wrongDeltas;
+        abandonedDeltas = abandoned != null ? (float[])abandoned.Clone() : abandonedDeltas;
+
+        Rating = startingRating;
+        RatingChanged?.Invoke(Rating, 0f);
+    }
+
+    /// <summary>
     /// 평점을 직접 움직인다. 정상 흐름에서는 주문 결과로만 바뀌므로, 이건 디버그용 통로다.
     /// 성공/실패 집계는 건드리지 않는다.
     /// </summary>
