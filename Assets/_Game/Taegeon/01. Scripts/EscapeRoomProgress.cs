@@ -90,9 +90,44 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         animatedPiece = null;
     }
 
+    /// <summary>부품 장착 효과음을 1초 재생한 뒤 멈춥니다.</summary>
+    private System.Collections.IEnumerator PlayPartInstallSound(Transform target)
+    {
+        if (partInstallSound == null) yield break;
+        partInstallHandle = AudioManager.PlayAttached(partInstallSound, target);
+        yield return new WaitForSecondsRealtime(1f);
+        partInstallHandle.Stop();
+        partInstallHandle = SoundHandle.None;
+        partInstallRoutine = null;
+    }
+
+    /// <summary>부품과 열쇠를 획득했을 때 효과음을 한 번 재생합니다.</summary>
+    private void PlayPickupSound()
+    {
+        if (pickupRoutine != null) StopCoroutine(pickupRoutine);
+        pickupHandle.Stop();
+        pickupRoutine = null;
+        if (pickupSound != null) pickupRoutine = StartCoroutine(PlayPickupSoundForOneSecond());
+    }
+
+    private System.Collections.IEnumerator PlayPickupSoundForOneSecond()
+    {
+        pickupHandle = AudioManager.Play(pickupSound);
+        yield return new WaitForSecondsRealtime(1f);
+        pickupHandle.Stop();
+        pickupHandle = SoundHandle.None;
+        pickupRoutine = null;
+    }
+
     private void OnDisable()
     {
         keyInsertHandle.Stop();
+        pickupHandle.Stop();
+        if (pickupRoutine != null) StopCoroutine(pickupRoutine);
+        pickupRoutine = null;
+        partInstallHandle.Stop();
+        if (partInstallRoutine != null) StopCoroutine(partInstallRoutine);
+        partInstallRoutine = null;
         foreach (var sound in drawerSoundHandles) sound.Stop();
         starterBoxSoundHandle.Stop();
         if (restorationRoutine != null) StopCoroutine(restorationRoutine);
@@ -108,6 +143,12 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private bool testClearJukebox = false;
     [SerializeField] private SoundData minigameClearSound;
     [SerializeField] private SoundData keyInsertSound;
+    [SerializeField] private SoundData pickupSound;
+    private SoundHandle pickupHandle = SoundHandle.None;
+    private Coroutine pickupRoutine;
+    [SerializeField] private SoundData partInstallSound;
+    private SoundHandle partInstallHandle = SoundHandle.None;
+    private Coroutine partInstallRoutine;
     [SerializeField] private SoundData drawerOpenSound;
     [SerializeField] private SoundData chestOpenSound;
     [SerializeField] private SoundData fireplaceOpenSound;
@@ -537,6 +578,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         if(kind==0)
         {
             carried[index]=true;
+            PlayPickupSound();
             worldKeys[index].SetActive(false);
             Destroy(worldKeys[index]);worldKeys[index]=null;
             if (usePartProgression)
@@ -565,6 +607,9 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             partCarried[index]=false;partInstalled[index]=true;
             repairParts[index].installedVisual.SetActive(true);
             repairParts[index].emptySocket.SetActive(false);
+            if (partInstallRoutine != null) StopCoroutine(partInstallRoutine);
+            partInstallHandle.Stop();
+            partInstallRoutine = StartCoroutine(PlayPartInstallSound(repairParts[index].installedVisual.transform));
             ApplyGameLocks();
             ShowNotice(repairParts[index].displayName+" 장착 완료! 주변 원 안에서 [F]로 플레이하세요.");
         }
@@ -578,6 +623,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             else
             {
                 partCarried[0]=true;repairParts[0].pickupVisual.SetActive(false);
+                PlayPickupSound();
                 ShowNotice("음표 버튼 획득. 이 모양이 들어갈 빈자리를 찾아보세요.");
             }
         }
