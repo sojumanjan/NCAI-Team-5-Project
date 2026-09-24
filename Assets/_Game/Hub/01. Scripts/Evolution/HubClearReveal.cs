@@ -9,7 +9,8 @@ using UnityEngine.UI;
 /// 미니게임을 처음 깨고 허브로 돌아왔을 때, 그 게임의 오브젝트가 먼지를 털어내듯 깨끗한 모습으로
 /// 바뀌는 연출. 이어서 씨앗을 진화시킨다. 허브 씬에 하나만 둔다.
 ///
-/// 흐름: 들썩 → 먼지 펑 + 그림 교체 + 뽀잉 + 반짝 (한 박자) → 먼지가 흩어짐 → 1초 뒤 씨앗 진화
+/// 흐름: 들썩 → 먼지 펑 + 그림 교체 + 보상 등장 + 뽀잉 + 반짝 (한 박자) → 먼지가 흩어짐
+///       → 보상이 씨앗에게 날아가 먹힘 → 1초 뒤 씨앗 진화
 ///
 /// 흰빛이 아니라 먼지인 이유: 흰빛은 바로 뒤 씨앗 진화가 쓴다. 같은 연출이 연달아 나오면 진화가
 /// 묻힌다. 그리고 "잠든 사이 엉망이 된 집을 되찾는다"는 이야기엔 먼지가 털리는 그림이 맞다.
@@ -92,11 +93,30 @@ public class HubClearReveal : MonoBehaviour
     [SerializeField] private float sparkleDuration = 0.55f;
     [SerializeField] private Color sparkleColor = new Color(1f, 0.95f, 0.7f, 1f);
 
+    [Header("보상")]
+    [Tooltip("깨끗해진 뒤 보상이 날아가기 시작할 때까지 (초). 무엇을 얻었는지 한 번 보여주는 틈.")]
+    [SerializeField] private float rewardHold = 0.3f;
+
+    [Tooltip("보상이 씨앗까지 날아가는 시간 (초).")]
+    [SerializeField] private float rewardFlyDuration = 0.8f;
+
+    [Tooltip("날아가는 길이 위로 볼록하게 휘는 높이 (캔버스 픽셀). 0이면 곧장 날아갑니다.")]
+    [SerializeField] private float rewardArcHeight = 120f;
+
+    [Tooltip("씨앗에 닿는 순간 부푸는 배율.")]
+    [SerializeField] private float rewardEatScale = 1.3f;
+
+    [SerializeField] private float rewardEatGrowDuration = 0.12f;
+    [SerializeField] private float rewardEatShrinkDuration = 0.2f;
+
+    [Tooltip("보상이 씨앗에게 먹히는 순간 나는 소리.")]
+    [SerializeField] private SoundData rewardEatSound;
+
     [Header("씨앗 진화")]
     [Tooltip("끄면 오브젝트 변신만 하고 끝납니다.")]
     [SerializeField] private bool evolveCharacter = true;
 
-    [Tooltip("변신이 끝난 뒤 진화를 시작하기까지 (초).")]
+    [Tooltip("보상을 먹은 뒤(보상이 없으면 변신이 끝난 뒤) 진화를 시작하기까지 (초).")]
     [SerializeField] private float evolutionDelay = 1f;
 
     [Tooltip("진화시킬 씨앗. 비워두면 씬에서 찾습니다.")]
@@ -258,6 +278,12 @@ public class HubClearReveal : MonoBehaviour
         {
             target.localRotation = baseRotation;
             entry.ShowClearMark(true);
+
+            // 깨끗한 그림과 같은 프레임에 켠다. 먼지가 걷히며 "깨끗해졌고, 이걸 얻었다"가 한 번에 드러난다.
+            if (entry.Reward != null)
+            {
+                entry.Reward.SetActive(true);
+            }
         });
         sequence.Insert(swapAt, CreateBounce(target, baseScale, basePosition, size));
         AddSparkles(sequence, swapAt, target, longSide);
@@ -281,6 +307,11 @@ public class HubClearReveal : MonoBehaviour
         target.anchoredPosition = basePosition;
         target.localRotation = baseRotation;
         ClearSpawned();
+
+        if (entry.Reward != null)
+        {
+            yield return FeedReward(entry.Reward);
+        }
 
         // 마지막 게임을 깬 판이면 엔딩으로. 모든 게임을 처음 깨는 순간은 한 번뿐이라 엔딩도 한 번만 나온다.
         bool finale = ending != null && HubEnding.AllCleared();
@@ -432,6 +463,74 @@ public class HubClearReveal : MonoBehaviour
         image.color = color;
     }
 
+    /// <summary>
+    /// 보상이 씨앗에게 휘어 날아가 먹힌다. 먹고 나서 자라야 "얻은 것으로 컸다"로 읽힌다.
+    /// 끝나면 보상은 원래 자리로 돌려 꺼둔다 — 디버그로 되돌려 다시 틀어도 같은 자리에서 시작해야 한다.
+    /// </summary>
+    private IEnumerator FeedReward(GameObject reward)
+    {
+        var rect = (RectTransform)reward.transform;
+        Transform homeParent = rect.parent;
+        int homeSibling = rect.GetSiblingIndex();
+        Vector2 homePosition = rect.anchoredPosition;
+        Vector3 homeScale = rect.localScale;
+
+        if (rewardHold > 0f)
+        {
+            yield return new WaitForSeconds(rewardHold);
+        }
+
+        if (character != null)
+        {
+            // 방 오브젝트 아래에 두면 씨앗(CharacterRoot)보다 뒤에 그려져 도착하기 전에 가려진다. 맨 앞으로 옮긴다.
+            Canvas canvas = rect.GetComponentInParent<Canvas>();
+            if (canvas != null)
+            {
+                rect.SetParent(canvas.rootCanvas.transform, true);
+                rect.SetAsLastSibling();
+            }
+
+            Vector3 flyScale = rect.localScale;
+            Vector3 start = rect.position;
+            float arc = rewardArcHeight * rect.parent.lossyScale.y;
+
+            // 씨앗은 연출 중에도 돌아다닐 수 있다. 도착점을 처음에 한 번만 재면 빈 자리로 날아간다.
+            yield return DOVirtual.Float(0f, 1f, rewardFlyDuration, t =>
+            {
+                Vector3 end = SeedCenter();
+                Vector3 control = (start + end) * 0.5f + Vector3.up * arc;
+                float u = 1f - t;
+                rect.position = u * u * start + 2f * u * t * control + t * t * end;
+            }).SetEase(Ease.InOutSine).SetLink(reward).WaitForCompletion();
+
+            // 닿는 그 프레임에. 소리가 늦으면 삼킨 게 아니라 부딪힌 것처럼 들린다.
+            if (rewardEatSound != null)
+            {
+                AudioManager.Play(rewardEatSound);
+            }
+
+            yield return DOTween.Sequence()
+                                .Append(rect.DOScale(flyScale * rewardEatScale, rewardEatGrowDuration).SetEase(Ease.OutQuad))
+                                .Append(rect.DOScale(Vector3.zero, rewardEatShrinkDuration).SetEase(Ease.InBack))
+                                .OnUpdate(() => rect.position = SeedCenter())
+                                .SetLink(reward)
+                                .WaitForCompletion();
+        }
+
+        reward.SetActive(false);
+        rect.SetParent(homeParent, false);
+        rect.SetSiblingIndex(homeSibling);
+        rect.anchoredPosition = homePosition;
+        rect.localScale = homeScale;
+    }
+
+    /// <summary>씨앗 그림의 한가운데(월드 좌표). 기준점은 발밑이라 그대로 쓰면 발에 먹는다.</summary>
+    private Vector3 SeedCenter()
+    {
+        RectTransform seed = character.CharacterImage != null ? character.CharacterImage.rectTransform : character.RectTransform;
+        return seed.TransformPoint(seed.rect.center);
+    }
+
     private IEnumerator Evolve()
     {
         EvolutionController controller = EvolutionController.Instance;
@@ -518,5 +617,10 @@ public class HubClearReveal : MonoBehaviour
         sparkleDistance.y = Mathf.Max(sparkleDistance.x, sparkleDistance.y);
         sparkleDuration = Mathf.Max(0.01f, sparkleDuration);
         evolutionDelay = Mathf.Max(0f, evolutionDelay);
+        rewardHold = Mathf.Max(0f, rewardHold);
+        rewardFlyDuration = Mathf.Max(0.01f, rewardFlyDuration);
+        rewardEatScale = Mathf.Max(1f, rewardEatScale);
+        rewardEatGrowDuration = Mathf.Max(0.01f, rewardEatGrowDuration);
+        rewardEatShrinkDuration = Mathf.Max(0.01f, rewardEatShrinkDuration);
     }
 }
