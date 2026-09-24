@@ -106,6 +106,12 @@ public class MiniGameSession : MonoBehaviour
 
     // ---------------------------------------------------------------- 진행
 
+    /// <summary>클리어 기준 평점을 바꾼다. 난이도가 영업 전에 부른다.</summary>
+    public void SetClearRating(float value)
+    {
+        clearRating = Mathf.Max(0f, value);
+    }
+
     /// <summary>영업을 시작한다. 튜토리얼이 끝난 뒤 불러도 된다.</summary>
     public void StartDay()
     {

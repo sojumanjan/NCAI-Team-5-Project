@@ -38,6 +38,9 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     [Tooltip("움직일 셔터. 이 트랜스폼을 통째로 들어 올립니다. 셔터 본체가 아니라 피벗입니다.")]
     [SerializeField] private Transform shutterPivot;
 
+    [Tooltip("난이도를 골라야 셔터를 올릴 수 있습니다. 비워두면 씬에서 찾고, 씬에도 없으면 막지 않습니다.")]
+    [SerializeField] private CookingDifficulty difficulty;
+
     [Header("셔터")]
     [Tooltip("열릴 때 들어 올릴 높이 (m). 셔터가 천장 뒤로 완전히 숨을 만큼 주세요.")]
     [SerializeField] private float liftHeight = 7.4f;
@@ -54,12 +57,28 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     [Tooltip("셔터가 다 닫히고 결과 화면이 뜨기까지의 뜸 (초). 0이면 곧바로 뜹니다.")]
     [SerializeField] private float resultDelay = 1f;
 
+    [Header("스위치")]
+    [Tooltip("딸깍 넘어가는 스위치 손잡이의 축. 로컬 X 회전으로 올림·내림을 나타냅니다. 비워두면 움직이지 않습니다.")]
+    [SerializeField] private Transform switchPivot;
+
+    [Tooltip("셔터를 올릴 때 스위치의 로컬 X 각도.")]
+    [SerializeField] private float switchOpenedAngle = 220f;
+
+    [Tooltip("셔터를 내릴 때(그리고 처음) 스위치의 로컬 X 각도.")]
+    [SerializeField] private float switchClosedAngle = 320f;
+
+    [Tooltip("스위치가 넘어가는 시간 (초). 짧을수록 딸깍 합니다.")]
+    [SerializeField] private float switchDuration = 0.08f;
+
     [Header("소리")]
     [Tooltip("셔터가 올라갈 때.")]
     [SerializeField] private SoundData shutterSound;
 
     [Tooltip("셔터가 내려올 때. 비워두면 올라갈 때 소리를 그대로 씁니다.")]
     [SerializeField] private SoundData closeSound;
+
+    [Tooltip("스위치를 딸깍 넘길 때. 셔터 소리와 함께 납니다.")]
+    [SerializeField] private SoundData switchSound;
 
     [Tooltip("셔터 소리가 나는 자리. 셔터 아래쪽이나 입구에 둔 빈 오브젝트를 넣으세요. " +
              "비워두면 셔터가 닫혀 있을 때의 피벗 자리에서 납니다.")]
@@ -68,6 +87,9 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     [Header("문구")]
     [Tooltip("아직 시작 전일 때.")]
     [SerializeField] private string readyPrompt = "장사 시작하기";
+
+    [Tooltip("시작 전인데 난이도를 아직 고르지 않았을 때.")]
+    [SerializeField] private string needDifficultyPrompt = "난이도를 먼저 선택하세요";
 
     [Tooltip("셔터가 올라가는 동안. 비워두면 줄이 사라집니다.")]
     [SerializeField] private string openingPrompt = "셔터 여는 중...";
@@ -93,6 +115,11 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     private bool _opened;
     private bool _closed;
     private Tween _tween;
+    private Tween _switchTween;
+
+    // X가 90°를 넘으면 localEulerAngles가 (320,180,180)처럼 다른 표현으로 돌아온다. 매번 읽으면 Y·Z가 뒤집혀
+    // 닫을 때 제자리에서 안 움직이므로, 처음 Y·Z를 기억해 두고 X만 바꾼다.
+    private Vector2 _switchBaseYZ;
 
     /// <summary>
     /// 셔터를 올리기 시작했는지. 올라가는 중도 포함한다 — 튜토리얼 쪽지가 이걸 보고
@@ -103,6 +130,8 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     /// <summary>셔터를 내리기 시작했는지. <see cref="HasOpened"/>와 같은 이유로 내려가는 중도 포함한다.</summary>
     public bool HasClosed => _motion == Motion.Closing || _closed;
 
+    private bool DifficultyChosen => difficulty == null || difficulty.HasSelection;
+
     // ---------------------------------------------------------------- 수명주기
 
     private void Awake()
@@ -110,6 +139,11 @@ public class ShopOpener : MonoBehaviour, IClickTarget
         if (session == null)
         {
             session = FindFirstObjectByType<MiniGameSession>();
+        }
+
+        if (difficulty == null)
+        {
+            difficulty = FindAnyObjectByType<CookingDifficulty>();
         }
 
         if (session == null || shutterPivot == null)
@@ -123,6 +157,15 @@ public class ShopOpener : MonoBehaviour, IClickTarget
         _closedLocalY = shutterPivot.localPosition.y;
         SetLocalY(_closedLocalY);
         _closedSoundPosition = shutterPivot.position;
+
+        // 씬에서 손잡이를 어느 쪽에 두었든 셔터는 닫힌 채 시작하므로 내림 쪽에 맞춘다.
+        if (switchPivot != null)
+        {
+            Vector3 euler = switchPivot.localEulerAngles;
+            _switchBaseYZ = new Vector2(euler.y, euler.z);
+        }
+
+        SetSwitch(switchClosedAngle, false);
     }
 
     private Vector3 SoundPosition => soundPoint != null ? soundPoint.position : _closedSoundPosition;
@@ -132,6 +175,8 @@ public class ShopOpener : MonoBehaviour, IClickTarget
         // 트윈은 대상보다 오래 산다. 파괴된 트랜스폼에 쓰려 들면 씬을 내릴 때 터진다.
         _tween?.Kill();
         _tween = null;
+        _switchTween?.Kill();
+        _switchTween = null;
     }
 
     // ---------------------------------------------------------------- IClickTarget
@@ -158,7 +203,7 @@ public class ShopOpener : MonoBehaviour, IClickTarget
             switch (session.State)
             {
                 case CookingSessionState.Ready:
-                    return readyPrompt;
+                    return DifficultyChosen ? readyPrompt : needDifficultyPrompt;
 
                 case CookingSessionState.Running:
                     return busyPrompt;
@@ -199,7 +244,12 @@ public class ShopOpener : MonoBehaviour, IClickTarget
 
         if (session.State == CookingSessionState.Ready)
         {
-            OpenShutter();
+            // CanClick은 참으로 둔다. 거짓이면 "난이도를 먼저 선택하세요"까지 감춰져 왜 안 열리는지 모른다.
+            if (DifficultyChosen)
+            {
+                OpenShutter();
+            }
+
             return;
         }
 
@@ -216,6 +266,8 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     {
         _motion = Motion.Opening;
 
+        SetSwitch(switchOpenedAngle, true);
+        PlaySwitchSound();
         AudioManager.PlayAt(shutterSound, SoundPosition);
 
         _tween?.Kill();
@@ -230,6 +282,8 @@ public class ShopOpener : MonoBehaviour, IClickTarget
     {
         _motion = Motion.Closing;
 
+        SetSwitch(switchClosedAngle, true);
+        PlaySwitchSound();
         AudioManager.PlayAt(closeSound != null ? closeSound : shutterSound, SoundPosition);
 
         _tween?.Kill();
@@ -267,6 +321,34 @@ public class ShopOpener : MonoBehaviour, IClickTarget
         DOVirtual.DelayedCall(resultDelay, session.EndDay).SetLink(gameObject);
     }
 
+    // 스위치는 셔터가 움직이기 시작하는 순간 넘어간다. 다 올라간 뒤에 넘어가면 눌렀는데 안 먹힌 것처럼 보인다.
+    private void SetSwitch(float angle, bool animate)
+    {
+        if (switchPivot == null)
+        {
+            return;
+        }
+
+        Quaternion target = Quaternion.Euler(angle, _switchBaseYZ.x, _switchBaseYZ.y);
+        _switchTween?.Kill();
+
+        if (!animate || switchDuration <= 0f)
+        {
+            switchPivot.localRotation = target;
+            return;
+        }
+
+        _switchTween = switchPivot.DOLocalRotateQuaternion(target, switchDuration).SetEase(Ease.OutQuad).SetLink(switchPivot.gameObject);
+    }
+
+    private void PlaySwitchSound()
+    {
+        if (switchSound != null)
+        {
+            AudioManager.PlayAt(switchSound, transform.position);
+        }
+    }
+
     private void SetLocalY(float y)
     {
         Vector3 position = shutterPivot.localPosition;
@@ -280,5 +362,6 @@ public class ShopOpener : MonoBehaviour, IClickTarget
         resultDelay = Mathf.Max(0f, resultDelay);
         duration = Mathf.Max(0.1f, duration);
         closeDuration = Mathf.Max(0.1f, closeDuration);
+        switchDuration = Mathf.Max(0f, switchDuration);
     }
 }

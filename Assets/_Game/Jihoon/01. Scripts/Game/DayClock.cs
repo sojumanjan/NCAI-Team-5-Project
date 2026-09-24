@@ -72,6 +72,12 @@ public class DayClock : MonoBehaviour
         Ticked?.Invoke(Progress01);
     }
 
+    /// <summary>하루 길이(실제 초)를 바꾼다. 난이도가 영업 전에 부른다.</summary>
+    public void SetDayLength(float seconds)
+    {
+        dayLengthSeconds = Mathf.Max(1f, seconds);
+    }
+
     /// <summary>흐름만 멈춘다. 경과 시간은 남는다.</summary>
     public void Pause() => IsRunning = false;
 
