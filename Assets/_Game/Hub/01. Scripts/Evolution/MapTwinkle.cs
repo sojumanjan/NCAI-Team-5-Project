@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 화면 곳곳에서 반짝이가 톡톡 피었다 사라진다. 화면 전체를 덮는 RectTransform에 붙인다.
-/// 방이 깨끗해진 순간부터 엔딩으로 넘어갈 때까지 "방이 되살아났다"를 반짝임으로 보여준다.
+/// 방이 깨끗해진 순간 잠깐(Spawn Duration) "방이 되살아났다"를 반짝임으로 보여준다.
 ///
 /// 꽃잎(PetalRain)과 같은 이유로 Update에서 직접 돌린다. 수십 개가 끝없이 생겼다 사라지는 걸
 /// 트윈으로 쪼개면 트윈이 계속 쌓인다.
@@ -18,6 +18,9 @@ public class MapTwinkle : MonoBehaviour
 
     [Tooltip("시작하자마자 한꺼번에 피울 반짝이 수. 방이 바뀌는 순간 확 빛나 보이게.")]
     [SerializeField] private int burstCount = 18;
+
+    [Tooltip("시작한 뒤 새 반짝이를 피우는 시간 (초). 지나면 새로 피우는 것만 멈추고, 떠 있던 것은 끝까지 사라집니다.")]
+    [SerializeField] private float spawnDuration = 1f;
 
     [Header("모양")]
     [Tooltip("반짝이 크기 범위 (캔버스 픽셀).")]
@@ -56,6 +59,7 @@ public class MapTwinkle : MonoBehaviour
     private readonly Stack<Image> _pool = new();
     private bool _running;
     private float _spawnDebt;
+    private float _spawnTimeLeft;
 
     private void Awake()
     {
@@ -73,6 +77,7 @@ public class MapTwinkle : MonoBehaviour
     {
         _running = true;
         _spawnDebt = 0f;
+        _spawnTimeLeft = spawnDuration;
 
         for (int i = 0; i < burstCount; i++)
         {
@@ -108,11 +113,20 @@ public class MapTwinkle : MonoBehaviour
 
         if (_running)
         {
-            _spawnDebt += twinklesPerSecond * dt;
+            // 방이 바뀌는 순간만 반짝인다. 엔딩으로 넘어갈 때까지 계속 피우면 여운 내내 화면이 어수선하다.
+            float spawnDt = Mathf.Min(dt, _spawnTimeLeft);
+            _spawnTimeLeft -= dt;
+
+            _spawnDebt += twinklesPerSecond * spawnDt;
             while (_spawnDebt >= 1f)
             {
                 _spawnDebt -= 1f;
                 Spawn();
+            }
+
+            if (_spawnTimeLeft <= 0f)
+            {
+                _running = false;
             }
         }
 
@@ -199,6 +213,7 @@ public class MapTwinkle : MonoBehaviour
     {
         twinklesPerSecond = Mathf.Max(0f, twinklesPerSecond);
         burstCount = Mathf.Max(0, burstCount);
+        spawnDuration = Mathf.Max(0f, spawnDuration);
         sizeRange.x = Mathf.Max(1f, sizeRange.x);
         sizeRange.y = Mathf.Max(sizeRange.x, sizeRange.y);
         lifetime.x = Mathf.Max(0.05f, lifetime.x);
