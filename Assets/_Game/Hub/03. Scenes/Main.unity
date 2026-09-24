@@ -1105,6 +1105,7 @@ GameObject:
   - component: {fileID: 246433781}
   - component: {fileID: 246433782}
   - component: {fileID: 246433783}
+  - component: {fileID: 246433784}
   m_Layer: 0
   m_Name: KitchenStation
   m_TagString: Untagged
@@ -1306,6 +1307,19 @@ MonoBehaviour:
   - {fileID: 1154356165}
   outlineTemplate: {fileID: 2100000, guid: c372bf1c983c64d44b2ef11bef027dc5, type: 2}
   outlinePixels: 3
+--- !u!114 &246433784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 246433774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 333668eb3db144341bde4094ee673b63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoverSound
+  sound: {fileID: 11400000, guid: c58250520f9f50b498f07d2c28a3ed72, type: 2}
 --- !u!1 &248282077
 GameObject:
   m_ObjectHideFlags: 0
@@ -1322,6 +1336,7 @@ GameObject:
   - component: {fileID: 248282084}
   - component: {fileID: 248282085}
   - component: {fileID: 248282086}
+  - component: {fileID: 248282087}
   m_Layer: 5
   m_Name: Pool
   m_TagString: Untagged
@@ -1523,6 +1538,19 @@ MonoBehaviour:
   - {fileID: 948571843}
   outlineTemplate: {fileID: 2100000, guid: c372bf1c983c64d44b2ef11bef027dc5, type: 2}
   outlinePixels: 3
+--- !u!114 &248282087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 248282077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 333668eb3db144341bde4094ee673b63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoverSound
+  sound: {fileID: 11400000, guid: c58250520f9f50b498f07d2c28a3ed72, type: 2}
 --- !u!1 &253170123
 GameObject:
   m_ObjectHideFlags: 0
@@ -2279,6 +2307,7 @@ GameObject:
   - component: {fileID: 345531085}
   - component: {fileID: 345531086}
   - component: {fileID: 345531087}
+  - component: {fileID: 345531088}
   m_Layer: 5
   m_Name: TreeHouse
   m_TagString: Untagged
@@ -2480,6 +2509,19 @@ MonoBehaviour:
   - {fileID: 748350703}
   outlineTemplate: {fileID: 2100000, guid: c372bf1c983c64d44b2ef11bef027dc5, type: 2}
   outlinePixels: 3
+--- !u!114 &345531088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 345531078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 333668eb3db144341bde4094ee673b63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoverSound
+  sound: {fileID: 11400000, guid: c58250520f9f50b498f07d2c28a3ed72, type: 2}
 --- !u!1001 &356218680
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9296,6 +9338,7 @@ GameObject:
   - component: {fileID: 1892023462}
   - component: {fileID: 1892023463}
   - component: {fileID: 1892023464}
+  - component: {fileID: 1892023465}
   m_Layer: 0
   m_Name: DrawTask
   m_TagString: Untagged
@@ -9497,6 +9540,19 @@ MonoBehaviour:
   - {fileID: 1553992009}
   outlineTemplate: {fileID: 2100000, guid: c372bf1c983c64d44b2ef11bef027dc5, type: 2}
   outlinePixels: 3
+--- !u!114 &1892023465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1892023455}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 333668eb3db144341bde4094ee673b63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoverSound
+  sound: {fileID: 11400000, guid: c58250520f9f50b498f07d2c28a3ed72, type: 2}
 --- !u!1 &1927793083
 GameObject:
   m_ObjectHideFlags: 0

@@ -35,6 +35,8 @@ public class EvolutionController : MonoBehaviour
     [SerializeField] private SoundData evolutionSound;
     [Tooltip("흰 실루엣으로 바들바들 떠는 동안 나는 소리. 새 모습으로 바뀌는 순간 끊깁니다.")]
     [SerializeField] private SoundData upgradingSound;
+    [Tooltip("떨림 소리를 끊을 때 줄여 없애는 시간 (초). 0이면 뚝 끊겨 '파직' 하는 잡음이 납니다.")]
+    [SerializeField] private float upgradingFadeOut = 0.15f;
 
     [Header("화면 줌")]
     [SerializeField] private float zoomedScale = 1.15f;
@@ -179,8 +181,9 @@ public class EvolutionController : MonoBehaviour
                 starBurst.Play();
             }
 
-            // 떨림이 멎는 순간 소리도 멎어야 "다 자랐다"로 들린다. 클립이 더 길어도 여기서 끊는다.
-            upgrading.Stop();
+            // 떨림이 멎는 순간 소리도 멎어야 "다 자랐다"로 들린다. 파형 한가운데서 자르면 딸깍 소리가 나서,
+            // 진화 소리에 묻힐 만큼 아주 짧게 줄이며 끊는다.
+            upgrading.FadeOut(upgradingFadeOut);
 
             // 소리는 모습이 바뀌는 바로 그 프레임에. 흔들림 도중에 나면 무엇이 일어났는지 귀가 먼저 알아버린다.
             if (evolutionSound != null)
