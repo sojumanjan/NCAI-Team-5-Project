@@ -63,7 +63,7 @@ public class CountdownTimer : MonoBehaviour
     [SerializeField] private float stepInputDelay = 0.35f;
 
     [Header("Debug")]
-    [Tooltip("누르면 지금 웨이브를 바로 끝냅니다. 에디터와 개발 빌드에서만 동작합니다.")]
+    [Tooltip("누르면 지금 웨이브를 바로 끝냅니다. 에디터에서만 동작합니다.")]
     [SerializeField] private Key debugEndWaveKey = Key.F2;
 
     [Header("Secondary Object")]
@@ -592,7 +592,7 @@ public class CountdownTimer : MonoBehaviour
             return;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         if (state == State.Counting && Keyboard.current != null && Keyboard.current[debugEndWaveKey].wasPressedThisFrame)
         {
             DebugEndWaveNow();
@@ -870,6 +870,7 @@ public class CountdownTimer : MonoBehaviour
         StartWave();
     }
 
+#if UNITY_EDITOR
     /// <summary>
     /// 디버그: 지금 웨이브를 바로 끝낸다. 남은 시간을 0이 아니라 아주 조금만 남겨, 다음 프레임에 평소와 같은
     /// 길(웨이브 종료 → 다음 웨이브 또는 클리어)로 끝나게 한다 — 0으로 두면 카운트가 이미 끝난 것으로 보고 멈춘다.
@@ -891,6 +892,7 @@ public class CountdownTimer : MonoBehaviour
         remaining = 0.0001f;
         Debug.Log($"[YusongDebug] {debugEndWaveKey}: {GetWaveLabel(currentWave)} 즉시 종료", this);
     }
+#endif
 
     public void PauseForEnemyHighlight(RectTransform enemyRect)
     {

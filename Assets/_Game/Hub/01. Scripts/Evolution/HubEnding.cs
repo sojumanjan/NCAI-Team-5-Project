@@ -69,6 +69,9 @@ public class HubEnding : MonoBehaviour
     [Tooltip("흰빛이 걷히며 깨끗한 방이 드러나는 시간 (초).")]
     [SerializeField] private float cleanWhiteOut = 0.8f;
 
+    [Tooltip("방이 깨끗해진 뒤 씨앗이 처음 서 있던 가운데 자리로 걸어가는 시간 (초). 어디서 출발하든 이 시간 동안 걷습니다.")]
+    [SerializeField] private float returnHomeDuration = 2f;
+
     [Tooltip("방 곳곳의 반짝임. 깨끗해진 순간부터 엔딩으로 넘어갈 때까지.")]
     [SerializeField] private MapTwinkle twinkles;
 
@@ -304,9 +307,10 @@ public class HubEnding : MonoBehaviour
         }
 
         // 씨앗은 처음 서 있던 자리로 걸어 돌아간다. 이야기가 시작된 그 자리에서 눈을 감아야 한 바퀴가 닫힌다.
+        // 어디서 출발하든 같은 시간을 걷는다. 속도로 재면 근처에 있을 땐 순식간에 끝나 박자가 무너진다.
         if (wanderer != null && wanderer.isActiveAndEnabled)
         {
-            yield return wanderer.WalkTo(wanderer.HomePosition);
+            yield return wanderer.WalkTo(wanderer.HomePosition, returnHomeDuration);
         }
     }
 
@@ -519,6 +523,7 @@ public class HubEnding : MonoBehaviour
         zoomScale = Mathf.Max(1f, zoomScale);
         cleanWhiteIn = Mathf.Max(0.01f, cleanWhiteIn);
         cleanWhiteOut = Mathf.Max(0.01f, cleanWhiteOut);
+        returnHomeDuration = Mathf.Max(0f, returnHomeDuration);
         textFadeIn = Mathf.Max(0.01f, textFadeIn);
         textFadeOut = Mathf.Max(0.01f, textFadeOut);
         imageDrift = Mathf.Max(1f, imageDrift);

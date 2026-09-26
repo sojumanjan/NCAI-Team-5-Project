@@ -195,7 +195,14 @@ public class SeedWanderer : MonoBehaviour
     /// 정해준 자리까지 평소처럼 통통 뒤뚱거리며 걸어간다. 도착하면 끝나고, 그 자리에 머문다.
     /// 다음에 이 컴포넌트가 꺼졌다 켜질 때까지 새 목적지를 고르지 않는다.
     /// </summary>
-    public IEnumerator WalkTo(Vector2 destination)
+    public IEnumerator WalkTo(Vector2 destination) => WalkTo(destination, -1f);
+
+    /// <summary>
+    /// 위와 같되, 거리와 상관없이 <paramref name="duration"/>초 동안 걸어간다. 0 이하면 평소 속도로 걷는다.
+    /// 연출 박자를 맞출 때 쓴다 — 속도로 재면 가까이 있을 땐 눈 깜짝할 새 도착해 버린다.
+    /// 이미 그 자리에 서 있으면 그 시간만큼 가만히 기다린다. 박자는 항상 같아야 한다.
+    /// </summary>
+    public IEnumerator WalkTo(Vector2 destination, float duration)
     {
         _holding = true;
 
@@ -213,10 +220,16 @@ public class SeedWanderer : MonoBehaviour
         if ((destination - _ground).sqrMagnitude < 1f)
         {
             _state = State.Idle;
+
+            if (duration > 0f)
+            {
+                yield return new WaitForSeconds(duration);
+            }
+
             yield break;
         }
 
-        BeginWalk(destination);
+        BeginWalk(destination, duration);
 
         while (enabled && _state == State.Walking)
         {
@@ -224,12 +237,12 @@ public class SeedWanderer : MonoBehaviour
         }
     }
 
-    private void BeginWalk(Vector2 destination)
+    private void BeginWalk(Vector2 destination, float duration = -1f)
     {
         _from = _ground;
         _to = destination;
         _walkTime = 0f;
-        _walkDuration = Vector2.Distance(_from, _to) / Mathf.Max(1f, moveSpeed);
+        _walkDuration = duration > 0f ? duration : Vector2.Distance(_from, _to) / Mathf.Max(1f, moveSpeed);
 
         // 튀는 횟수를 걸음 길이에 맞춰 정수로 떨어뜨린다. 그래야 출발과 도착 순간 모두 발이 땅에 닿아 있다.
         _hopCount = Mathf.Max(1, Mathf.RoundToInt(_walkDuration * hopsPerSecond));
