@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 namespace Yusong
@@ -33,6 +34,21 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float wave0FeverClusterSpread = 80f;
     [SerializeField] private float wave0FeverClusterInterval = 1.2f;
 
+    [Header("Enemy Waddle")]
+    [Tooltip("적이 걸어오며 좌우로 기우는 최대 각도 (도). 0이면 흔들리지 않습니다. 보스 포함 모든 적에 적용됩니다.")]
+    [SerializeField] private float waddleAngle = 4f;
+    [Tooltip("한쪽으로 기우는 데 걸리는 시간 (초). 짧을수록 종종걸음, 길수록 느긋하게 뒤뚱거립니다.")]
+    [SerializeField] private float waddleStepDuration = 0.3f;
+
+    [Header("Wave End Clear")]
+    [Tooltip("웨이브가 끝났을 때 가장 먼 적이 사라지기 시작할 때까지의 지연 (초). 수원에서 가까운 적부터 차례로 사라집니다.")]
+    [SerializeField] private float clearStaggerMax = 0.5f;
+    [Tooltip("사라지기 직전 톡 부푸는 배율.")]
+    [SerializeField] private float clearPunchScale = 1.2f;
+    [SerializeField] private float clearPunchDuration = 0.08f;
+    [Tooltip("작아지며 흐려지는 시간 (초).")]
+    [SerializeField] private float clearShrinkDuration = 0.3f;
+
     [Header("Yellow Pacing")]
     [SerializeField] private int yellowPairSize = 2;
     [SerializeField] private float yellowSlotJitterFraction = 0.25f;
@@ -49,8 +65,19 @@ public class EnemySpawner : MonoBehaviour
 
     private Coroutine spawnRoutine;
 
+    // 플레이 중 인스펙터에서 바꾸면 그 뒤로 새로 나오는 적부터 반영된다.
+    private void OnValidate() => ApplyWaddleSettings();
+
+    private void ApplyWaddleSettings()
+    {
+        EnemyMover.WaddleAngle = Mathf.Max(0f, waddleAngle);
+        EnemyMover.WaddleStepDuration = Mathf.Max(0.05f, waddleStepDuration);
+    }
+
     private void OnEnable()
     {
+        ApplyWaddleSettings();
+
         if (countdownTimer != null)
         {
             countdownTimer.WaveStarted += HandleWaveStarted;
@@ -80,14 +107,62 @@ public class EnemySpawner : MonoBehaviour
         StopAllCoroutines();
         spawnRoutine = null;
 
+        // 가장 먼 적까지의 거리로 지연을 나눈다. 수원에서 가까운 적부터 차례로 사라져 정화가 퍼져나가는 것처럼 보인다.
+        float farthest = 1f;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var child = transform.GetChild(i) as RectTransform;
+            if (child != null && IsWaveObject(child)) farthest = Mathf.Max(farthest, child.anchoredPosition.magnitude);
+        }
+
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
-            var child = transform.GetChild(i);
-            if (child.GetComponent<EnemyHealth>() != null || child.GetComponent<SecondaryObjectController>() != null)
-            {
-                Destroy(child.gameObject);
-            }
+            var child = transform.GetChild(i) as RectTransform;
+            if (child == null || !IsWaveObject(child)) continue;
+
+            float delay = child.anchoredPosition.magnitude / farthest * clearStaggerMax;
+            DismissAtWaveEnd(child, delay);
         }
+    }
+
+    private static bool IsWaveObject(Transform t)
+    {
+        return t.GetComponent<EnemyHealth>() != null || t.GetComponent<SecondaryObjectController>() != null;
+    }
+
+    /// <summary>
+    /// 웨이브가 끝나 남은 적을 치운다. 톡 부풀었다가 작아지며 흐려진다.
+    /// 먼저 움직임·클릭·자체 연출을 전부 멈춘다 — 사라지는 도중에 수원에 닿아 체력을 깎거나, 눌려서 점수가 들어가면 안 된다.
+    /// </summary>
+    private void DismissAtWaveEnd(RectTransform target, float delay)
+    {
+        var mover = target.GetComponent<EnemyMover>();
+        if (mover != null) mover.enabled = false;
+
+        // 끄기만 하면 피격 반짝임·사망 연출 코루틴이 계속 돌며 크기를 덮어쓴다.
+        foreach (var behaviour in new MonoBehaviour[] { target.GetComponent<EnemyHealth>(), target.GetComponent<SecondaryObjectController>() })
+        {
+            if (behaviour == null) continue;
+            behaviour.StopAllCoroutines();
+            behaviour.enabled = false;
+        }
+
+        var group = target.GetComponent<CanvasGroup>();
+        if (group == null) group = target.gameObject.AddComponent<CanvasGroup>();
+        group.blocksRaycasts = false;
+        group.interactable = false;
+
+        Vector3 baseScale = target.localScale;
+
+        // 마지막 웨이브는 끝난 뒤 결과 화면이 시간을 멈춘다. 그 사이에도 끝까지 사라져야 해서 실제 시간으로 돌린다.
+        DOTween.Sequence()
+            .SetUpdate(true)
+            .SetLink(target.gameObject)
+            .AppendInterval(delay)
+            .Append(target.DOScale(baseScale * clearPunchScale, clearPunchDuration).SetEase(Ease.OutQuad))
+            .Append(target.DOScale(Vector3.zero, clearShrinkDuration).SetEase(Ease.InBack))
+            .Join(group.DOFade(0f, clearShrinkDuration).SetEase(Ease.InQuad))
+            .OnComplete(() => Destroy(target.gameObject));
     }
 
     [SerializeField] private int lastConfiguredWave = 2;
