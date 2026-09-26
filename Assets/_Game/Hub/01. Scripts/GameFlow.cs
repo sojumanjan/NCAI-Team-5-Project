@@ -122,6 +122,12 @@ public class GameFlow : ScriptableObject
         }
     }
 
+    /// <summary>
+    /// 방금 처음 깨고 돌아와, 허브의 클리어 연출이 아직 꺼내 가지 않은 결과가 있는지. 꺼내지 않고 보기만 한다.
+    /// 씨앗이 허브에 들어설 때 "이미 자란 만큼"만 자라 있어야 해서 본다 — 나머지 한 단계는 연출이 눈앞에서 키운다.
+    /// </summary>
+    public bool HasPendingNewClear => _hasPending && _pendingNewClear;
+
     public bool IsCleared(MiniGameDefinition game) =>
         game != null && _results.TryGetValue(game, out MiniGameResult result) && result.Cleared;
 

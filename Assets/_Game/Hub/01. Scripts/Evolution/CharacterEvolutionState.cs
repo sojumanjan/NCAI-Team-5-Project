@@ -37,10 +37,30 @@ public class CharacterEvolutionState : MonoBehaviour
 
     private void Awake()
     {
+        currentStageIndex = RestoredStage();
+
         if (characterImage != null && evolutionStages != null && evolutionStages.Length > 0)
         {
-            characterImage.sprite = evolutionStages[0];
+            characterImage.sprite = evolutionStages[currentStageIndex];
         }
+    }
+
+    /// <summary>
+    /// 허브는 미니게임에서 돌아올 때마다 새로 로드되어 이 컴포넌트도 새로 생긴다. 단계를 여기에만 들고 있으면
+    /// 매번 0단계로 돌아가, 몇 개를 깼든 클리어 연출 한 번(=1단계)만큼만 자란다.
+    /// 그래서 씬을 넘어 남는 GameFlow의 깬 게임 수로 단계를 되살린다. 방금 처음 깨고 온 게임은 클리어 연출이
+    /// 눈앞에서 한 단계 키우므로 그만큼 빼고 시작한다.
+    /// </summary>
+    private int RestoredStage()
+    {
+        GameFlow flow = GameFlow.Instance;
+        if (flow == null || evolutionStages == null || evolutionStages.Length == 0)
+        {
+            return 0;
+        }
+
+        int grown = flow.ClearedCount - (flow.HasPendingNewClear ? 1 : 0);
+        return Mathf.Clamp(grown, 0, evolutionStages.Length - 1);
     }
 
     /// <summary>다음 단계 스프라이트로 넘어간다. CanEvolve가 false면 아무 동작도 하지 않는다.</summary>

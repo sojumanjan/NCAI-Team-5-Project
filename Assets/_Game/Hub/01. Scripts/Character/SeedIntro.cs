@@ -18,7 +18,8 @@ using UnityEngine.UI;
 public class SeedIntro : MonoBehaviour
 {
     [Header("재생")]
-    [Tooltip("끄면 인트로 없이 바로 돌아다닙니다. 켜 두어도 플레이당 처음 허브에 들어올 때 한 번만 틉니다.")]
+    [Tooltip("에디터 테스트용 스위치입니다. 끄면 에디터에서는 인트로 없이 바로 돌아다닙니다. " +
+             "빌드에서는 이 값과 상관없이 항상 처음 허브에 들어올 때 한 번 틉니다.")]
     [SerializeField] private bool playIntro = true;
 
     [Header("참조")]
@@ -127,6 +128,33 @@ public class SeedIntro : MonoBehaviour
     [Tooltip("글이 떠오르며 아래에서 올라오는 거리 (캔버스 픽셀).")]
     [SerializeField] private float pageRise = 16f;
 
+    [Header("카메라")]
+    [Tooltip("씨앗과 함께 확대할 방(보통 MainRoot). 비워두면 확대 없이 처음부터 방 전체가 보입니다.")]
+    [SerializeField] private RectTransform cameraTarget;
+
+    [Tooltip("시작할 때 씨앗 쪽으로 확대된 배율.")]
+    [SerializeField] private float cameraZoom = 2.2f;
+
+    [Tooltip("두리번거리기 시작(첫 고개 돌림)부터 아래 '남길 확대 배율'까지 물러나는 시간 (초).")]
+    [SerializeField] private float cameraZoomOutDuration = 1f;
+
+    [Tooltip("두리번 뒤에 남겨 둘 확대 배율. 1보다 조금 커야 놀랄 때 흔들려도 방 바깥이 보이지 않습니다.")]
+    [SerializeField] private float cameraHoldZoom = 1.12f;
+
+    [Tooltip("놀라는 순간부터 방이 꽉 차는 1배까지 마저 물러나는 시간 (초). 흔들리면서 함께 물러납니다.")]
+    [SerializeField] private float cameraFinalZoomOutDuration = 0.8f;
+
+    [SerializeField] private Ease cameraZoomOutEase = Ease.InOutCubic;
+
+    [Tooltip("놀라는 순간 카메라가 흔들리는 시간 (초). 0이면 흔들리지 않습니다.")]
+    [SerializeField] private float surpriseShakeDuration = 0.35f;
+
+    [Tooltip("흔들리는 세기 (캔버스 픽셀).")]
+    [SerializeField] private float surpriseShakeStrength = 12f;
+
+    [Tooltip("흔들리는 잦기. 클수록 잘게 떱니다.")]
+    [SerializeField] private int surpriseShakeVibrato = 20;
+
     private RectTransform _seed;
     private Vector3 _baseScale;
     private Vector2 _basePosition;
@@ -137,6 +165,19 @@ public class SeedIntro : MonoBehaviour
     private Vector2 _storyRest;
     private Vector2 _labelRest;
     private bool _playing;
+
+    // 캔버스 하나라 진짜 카메라가 없다. 방과 씨앗을 같은 배율·같은 이동으로 움직여 카메라처럼 보이게 한다.
+    // 씨앗은 인트로가 크기·자리를 직접 움직이므로, 그 결과(아래 _anim*) 위에 카메라를 한 번 더 씌운다.
+    private float _cameraK;
+    private Vector2 _cameraFocus;
+    private Vector2 _mapBasePosition;
+    private Vector3 _mapBaseScale;
+    private Tween _cameraTween;
+    private Tween _shakeTween;
+    private Vector2 _shakeOffset;
+    private float _animSx = 1f;
+    private float _animSy = 1f;
+    private float _animLift;
 
     // 미니게임에서 돌아오면 허브 씬이 새로 로드되어 인스펙터 값이 되살아난다. 씬을 넘어 기억하려고 static으로 둔다.
     private static bool _played;
@@ -188,7 +229,13 @@ public class SeedIntro : MonoBehaviour
         }
 
         // 다른 연출이 Start에서 인트로 여부를 물어볼 수 있어, 재생할 거라면 Awake에서 미리 켜 둔다.
-        _playing = playIntro && !_played && character != null;
+#if UNITY_EDITOR
+        bool wantIntro = playIntro;
+#else
+        // 테스트하느라 스위치를 꺼 둔 채 빌드해도 실제 플레이어는 반드시 첫 장면을 봐야 한다.
+        bool wantIntro = true;
+#endif
+        _playing = wantIntro && !_played && character != null;
 
         if (_playing)
         {
@@ -222,6 +269,9 @@ public class SeedIntro : MonoBehaviour
         _facing = Mathf.Sign(_baseScale.x);
         _baseScale.x = Mathf.Abs(_baseScale.x);
         _visualHeight = MeasureHeight();
+
+        // 페이드가 걷히기 전, 첫 화면부터 씨앗 쪽으로 당겨져 있어야 한다. Start에서 첫 yield 전까지는 그리기 전이다.
+        BeginCameraZoomedIn();
 
         _blocker = ScreenInputBlocker.Create(transform, "IntroBlocker");
         _blocker.SetActive(true);
@@ -294,6 +344,12 @@ public class SeedIntro : MonoBehaviour
 
     private IEnumerator LookAround()
     {
+        // 두리번을 0번으로 두면 물러날 계기가 없어 놀라는 내내 확대된 채 남는다.
+        if (lookCount <= 0)
+        {
+            StartCameraZoomOut(HoldK, cameraZoomOutDuration);
+        }
+
         for (int i = 0; i < lookCount; i++)
         {
             yield return new WaitForSeconds(i == 0 ? firstLookDelay : lookInterval);
@@ -301,6 +357,12 @@ public class SeedIntro : MonoBehaviour
             // 고개만 휙 돌린다. 트윈 없이 한 프레임에 뒤집어야 "두리번"이다.
             _facing = -_facing;
             Apply(1f, 1f, 0f);
+
+            // 첫 고개 돌림과 함께 카메라가 물러난다. 다 풀지 않고 살짝 남겨 둔다 — 곧 놀라며 흔들릴 여유다.
+            if (i == 0)
+            {
+                StartCameraZoomOut(HoldK, cameraZoomOutDuration);
+            }
         }
     }
 
@@ -312,6 +374,7 @@ public class SeedIntro : MonoBehaviour
 
         character.ShowSprite(surprisedSprite);
         ShowExclamation();
+        ShakeCamera();
 
         // 느낌표와 같은 프레임에. 느낌표 그림이 아직 없어도 놀라는 순간은 소리로 짚어준다.
         if (surpriseSound != null)
@@ -441,6 +504,9 @@ public class SeedIntro : MonoBehaviour
     /// </summary>
     private void ReleaseSeed()
     {
+        // 돌아다니기 전에 카메라를 확실히 제자리로. 물러나는 도중이면 방이 확대된 채 굳는다.
+        EndCamera();
+
         _seed.localScale = new Vector3(_baseScale.x * _facing, _baseScale.y, _baseScale.z);
         _seed.anchoredPosition = _basePosition;
 
@@ -482,10 +548,150 @@ public class SeedIntro : MonoBehaviour
     /// </summary>
     private void Apply(float sx, float sy, float lift)
     {
-        _seed.localScale = new Vector3(_baseScale.x * sx * _facing, _baseScale.y * sy, _baseScale.z);
+        _animSx = sx;
+        _animSy = sy;
+        _animLift = lift;
+        ApplySeed();
+    }
 
-        float keepBottom = -(1f - sy) * _visualHeight * 0.5f;
-        _seed.anchoredPosition = _basePosition + new Vector2(0f, keepBottom + Mathf.Max(0f, lift));
+    /// <summary>씨앗의 인트로 움직임(_anim*)을 계산하고, 그 위에 지금 카메라(확대·이동)를 씌운다.</summary>
+    private void ApplySeed()
+    {
+        float zoom = Mathf.Lerp(1f, cameraZoom, _cameraK);
+        Vector2 offset = CameraOffset();
+
+        Vector3 localScale = new Vector3(_baseScale.x * _animSx * _facing, _baseScale.y * _animSy, _baseScale.z);
+        float keepBottom = -(1f - _animSy) * _visualHeight * 0.5f;
+        Vector2 localPosition = _basePosition + new Vector2(0f, keepBottom + Mathf.Max(0f, _animLift));
+
+        _seed.localScale = new Vector3(localScale.x * zoom, localScale.y * zoom, localScale.z);
+        _seed.anchoredPosition = localPosition * zoom + offset;
+    }
+
+    // ---------------------------------------------------------------- 카메라
+
+    /// <summary>
+    /// 캔버스 위의 점 X가 화면에서 X × 배율 + 오프셋에 오게 한다. 완전히 당겨졌을 때(k=1) 씨앗 한가운데가 화면 중앙에 온다.
+    /// 배율과 오프셋을 같은 k로 함께 움직여야 씨앗이 물러나는 내내 제자리에 붙어 있는 것처럼 보인다.
+    /// </summary>
+    private Vector2 CameraOffset()
+    {
+        Vector2 offset = -_cameraFocus * cameraZoom * _cameraK + _shakeOffset;
+        if (cameraTarget == null)
+        {
+            return offset;
+        }
+
+        // 방이 화면을 항상 꽉 채우는 범위로 묶는다. 흔들림·확대값을 어떻게 바꿔도 방 바깥(흰 바탕)이 보이지 않는다.
+        // 1배에 가까울수록 움직일 여유가 없어서 흔들림도 그만큼 약해진다.
+        float zoom = Mathf.Lerp(1f, cameraZoom, _cameraK);
+        Vector2 screenHalf = ((RectTransform)_seed.parent).rect.size * 0.5f;
+        Vector2 mapHalf = Vector2.Scale(cameraTarget.rect.size * 0.5f, (Vector2)_mapBaseScale) * zoom;
+        Vector2 limit = Vector2.Max(Vector2.zero, mapHalf - screenHalf);
+
+        Vector2 center = _mapBasePosition * zoom + offset;
+        center.x = Mathf.Clamp(center.x, -limit.x, limit.x);
+        center.y = Mathf.Clamp(center.y, -limit.y, limit.y);
+        return center - _mapBasePosition * zoom;
+    }
+
+    /// <summary>두리번 뒤에 남겨 둘 확대 배율을 카메라 진행도(0=방 전체, 1=처음 확대)로 바꾼 값.</summary>
+    private float HoldK => Mathf.Clamp01((cameraHoldZoom - 1f) / Mathf.Max(0.0001f, cameraZoom - 1f));
+
+    /// <summary>놀라는 순간 화면이 흠칫한다. 방과 씨앗을 같은 만큼 흔들어야 씨앗이 방 안에서 미끄러지지 않는다.</summary>
+    private void ShakeCamera()
+    {
+        if (cameraTarget == null)
+        {
+            return;
+        }
+
+        // 흔들리면서 동시에 마저 물러난다. 흔들림이 끝나길 기다렸다 물러나면 두 동작이 끊겨 보인다.
+        // 1배에 가까워질수록 흔들 여유가 줄어(CameraOffset의 제한) 흔들림도 줌과 함께 잦아든다.
+        StartCameraZoomOut(0f, cameraFinalZoomOutDuration);
+
+        if (surpriseShakeDuration <= 0f || surpriseShakeStrength <= 0f)
+        {
+            return;
+        }
+
+        _shakeTween?.Kill();
+        _shakeTween = DOTween.Shake(() => (Vector3)_shakeOffset,
+                                    v =>
+                                    {
+                                        _shakeOffset = v;
+                                        ApplyCamera();
+                                    },
+                                    surpriseShakeDuration, surpriseShakeStrength, surpriseShakeVibrato, 90f, true, true)
+                             .SetLink(gameObject)
+                             .OnComplete(() =>
+                             {
+                                 _shakeOffset = Vector2.zero;
+                                 ApplyCamera();
+                             });
+    }
+
+    private void BeginCameraZoomedIn()
+    {
+        if (cameraTarget == null)
+        {
+            return;
+        }
+
+        _mapBasePosition = cameraTarget.anchoredPosition;
+        _mapBaseScale = cameraTarget.localScale;
+
+        // 씨앗 그림의 한가운데(발밑 기준점이 아니라). 씨앗은 캔버스 바로 아래에 있어 부모 좌표가 곧 캔버스 좌표다.
+        RectTransform focus = character.CharacterImage != null ? character.CharacterImage.rectTransform : _seed;
+        _cameraFocus = _seed.parent.InverseTransformPoint(focus.TransformPoint(focus.rect.center));
+
+        _cameraK = 1f;
+        ApplyCamera();
+    }
+
+    private void StartCameraZoomOut(float targetK, float duration)
+    {
+        if (cameraTarget == null || _cameraK <= targetK)
+        {
+            return;
+        }
+
+        _cameraTween?.Kill();
+        _cameraTween = DOVirtual.Float(_cameraK, targetK, Mathf.Max(0.01f, duration), k =>
+                                {
+                                    _cameraK = k;
+                                    ApplyCamera();
+                                })
+                                .SetEase(cameraZoomOutEase)
+                                .SetLink(gameObject);
+    }
+
+    private void EndCamera()
+    {
+        _cameraTween?.Kill();
+        _cameraTween = null;
+        _shakeTween?.Kill();
+        _shakeTween = null;
+        _shakeOffset = Vector2.zero;
+
+        if (cameraTarget == null)
+        {
+            return;
+        }
+
+        _cameraK = 0f;
+        cameraTarget.anchoredPosition = _mapBasePosition;
+        cameraTarget.localScale = _mapBaseScale;
+    }
+
+    private void ApplyCamera()
+    {
+        float zoom = Mathf.Lerp(1f, cameraZoom, _cameraK);
+        cameraTarget.localScale = _mapBaseScale * zoom;
+        cameraTarget.anchoredPosition = _mapBasePosition * zoom + CameraOffset();
+
+        // 뽀잉이 끝난 뒤엔 씨앗 트윈이 멈춰 있어도 카메라는 계속 움직인다. 씨앗도 매번 같이 옮겨야 따라온다.
+        ApplySeed();
     }
 
     /// <summary>씨앗 그림이 화면에서 차지하는 높이(부모 단위). 기준점 사각형이 아니라 실제 그림 크기로 재야 발밑이 맞는다.</summary>
@@ -548,5 +754,12 @@ public class SeedIntro : MonoBehaviour
         storyFadeOut = Mathf.Max(0.01f, storyFadeOut);
         pageFadeIn = Mathf.Max(0.01f, pageFadeIn);
         pageFadeOut = Mathf.Max(0.01f, pageFadeOut);
+        cameraZoom = Mathf.Max(1f, cameraZoom);
+        cameraHoldZoom = Mathf.Clamp(cameraHoldZoom, 1f, cameraZoom);
+        cameraZoomOutDuration = Mathf.Max(0.01f, cameraZoomOutDuration);
+        cameraFinalZoomOutDuration = Mathf.Max(0.01f, cameraFinalZoomOutDuration);
+        surpriseShakeDuration = Mathf.Max(0f, surpriseShakeDuration);
+        surpriseShakeStrength = Mathf.Max(0f, surpriseShakeStrength);
+        surpriseShakeVibrato = Mathf.Max(1, surpriseShakeVibrato);
     }
 }

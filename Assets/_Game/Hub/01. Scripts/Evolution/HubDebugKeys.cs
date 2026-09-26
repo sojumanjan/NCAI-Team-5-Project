@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 ///           이어서 F7을 누르면 마지막 클리어 → 최종 진화 → 엔딩까지 본다.
 /// F9      : 엔딩만 바로 튼다. 크레딧 글을 고치며 확인할 때.
 ///
-/// 에디터와 개발 빌드에서만 동작한다. 최종 빌드에서 키를 눌러 진행도가 바뀌면 안 된다.
+/// 에디터에서만 동작한다. 빌드(개발 빌드 포함)에서 키를 눌러 진행도가 바뀌면 안 된다.
 /// </summary>
 public class HubDebugKeys : MonoBehaviour
 {
@@ -32,7 +32,7 @@ public class HubDebugKeys : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float reportScore01 = 1f;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
     private void Awake()
     {
         if (reveal == null)
