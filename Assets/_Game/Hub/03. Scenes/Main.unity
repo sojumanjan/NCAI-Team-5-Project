@@ -4433,13 +4433,16 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6601877641048773489, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1337686779}
+    - targetCorrespondingSourceObject: {fileID: 3531813824228380554, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 652963489}
   m_SourcePrefab: {fileID: 100100000, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
 --- !u!114 &356218681 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9115918718052843448, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
   m_PrefabInstance: {fileID: 356218680}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 356218685}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68121ecd9f3a7934ca9d4f1038a14c4e, type: 3}
@@ -4461,7 +4464,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2135553859871908016, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
   m_PrefabInstance: {fileID: 356218680}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 356218685}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
@@ -4470,6 +4473,11 @@ MonoBehaviour:
 --- !u!224 &356218684 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8198481265986699336, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
+  m_PrefabInstance: {fileID: 356218680}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &356218685 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3531813824228380554, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
   m_PrefabInstance: {fileID: 356218680}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &363574206
@@ -6672,6 +6680,36 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 642722229181430934, guid: 80ae3ee5b3853db459454c9afd63a1de, type: 3}
   m_PrefabInstance: {fileID: 356218680}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &652963489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 356218685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c9f85d0100a0ea4e87bad67e378e0c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeedTouch
+  expression: {fileID: 1337686779}
+  reveal: {fileID: 527344529}
+  heartLayer: {fileID: 0}
+  sound: {fileID: 11400000, guid: 62558d6462951ab4ba9ed8dd45c70ffc, type: 2}
+  cooldown: 3
+  happyDuration: 1.5
+  jumpHeight: 28
+  secondJumpRatio: 0.55
+  jumpDuration: 0.8
+  squash: 0.12
+  tiltAngle: 8
+  heartSprite: {fileID: 21300000, guid: dd8467d508b6c7e4c87afb37dd3a9fcf, type: 3}
+  heartCount: {x: 3, y: 5}
+  heartSize: {x: 35.2, y: 48}
+  heartDistance: {x: 110, y: 170}
+  heartAngle: {x: 30, y: 75}
+  heartDuration: 0.9
+  heartStagger: 0.08
 --- !u!1 &662022860
 GameObject:
   m_ObjectHideFlags: 0
@@ -10050,7 +10088,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1006374963
 MonoBehaviour:
   m_ObjectHideFlags: 0
