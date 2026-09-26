@@ -46,6 +46,9 @@ public class GameFlow : ScriptableObject
     // 보관된 결과는 이전 기록과 합친 값이라, 재도전인지 첫 클리어인지는 합치기 전에 따로 적어둬야 안다.
     [NonSerialized] private bool _pendingNewClear;
 
+    // 옵션의 게임 스킵은 한 번이라도 들어가 본 게임만 허락한다. 결과 보고 없이 중간에 나와도 들어간 건 들어간 것이다.
+    [NonSerialized] private readonly HashSet<MiniGameDefinition> _visited = new();
+
     private static GameFlow _instance;
 
     /// <summary>미니게임 하나가 끝날 때마다. 같은 씬에 있는 쪽만 들을 수 있다.</summary>
@@ -127,6 +130,9 @@ public class GameFlow : ScriptableObject
     /// 씨앗이 허브에 들어설 때 "이미 자란 만큼"만 자라 있어야 해서 본다 — 나머지 한 단계는 연출이 눈앞에서 키운다.
     /// </summary>
     public bool HasPendingNewClear => _hasPending && _pendingNewClear;
+
+    /// <summary>이번 판에 한 번이라도 들어가 본 미니게임인지. 클리어·실패와 상관없다.</summary>
+    public bool HasVisited(MiniGameDefinition game) => game != null && _visited.Contains(game);
 
     public bool IsCleared(MiniGameDefinition game) =>
         game != null && _results.TryGetValue(game, out MiniGameResult result) && result.Cleared;
@@ -263,6 +269,7 @@ public class GameFlow : ScriptableObject
     public void ResetRun()
     {
         _results.Clear();
+        _visited.Clear();
         _pendingGame = null;
         _hasPending = false;
         _pendingNewClear = false;
@@ -281,6 +288,7 @@ public class GameFlow : ScriptableObject
             return;
         }
 
+        _visited.Add(game);
         Go(game.SceneName);
     }
 
@@ -291,6 +299,13 @@ public class GameFlow : ScriptableObject
         {
             Debug.LogError($"{name}: 허브 씬이 지정되지 않았습니다.", this);
             return;
+        }
+
+        // 에디터에서 미니게임 씬부터 Play를 누르면 허브를 거쳐 들어가지 않아 위에서 기록되지 않는다.
+        MiniGameDefinition current = CurrentDefinition;
+        if (current != null)
+        {
+            _visited.Add(current);
         }
 
         Go(mainSceneName);
