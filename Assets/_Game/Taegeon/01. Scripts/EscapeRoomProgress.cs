@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -9,12 +9,152 @@ namespace Taegeon
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "Assembly-CSharp", sourceClassName: "EscapeRoomProgress")]
 public sealed class EscapeRoomProgress : MonoBehaviour
 {
+
+    [Header("액자 조각 복원 연출")]
+    [SerializeField] private Camera restorationCamera;
+    [SerializeField] private SoundData frameInsertSound;
+    private SoundHandle frameInsertHandle = SoundHandle.None;
+    [SerializeField, Min(.1f)] private float pieceInsertSeconds = .85f;
+    [SerializeField, Min(0f)] private float restorationHoldSeconds = .7f;
+    private bool restoringPiece;
+    private Coroutine restorationRoutine;
+    private Transform animatedPiece;
+    private Vector3 pieceRestPosition, pieceRestScale;
+    private bool previousPlayerEnabled, previousSwitcherEnabled, previousCameraEnabled;
+    private bool previousCursorVisible;
+    private CursorLockMode previousCursorLock;
+
+    private System.Collections.IEnumerator RestoreFramePiece(int index)
+    {
+        if (restorationCamera == null) { framePieces[index].SetActive(true); yield break; }
+        restoringPiece = true;
+        animatedPiece = framePieces[index].transform;
+        pieceRestPosition = animatedPiece.localPosition;
+        pieceRestScale = animatedPiece.localScale;
+        previousPlayerEnabled = player.enabled;
+        previousSwitcherEnabled = switcher.enabled;
+        previousCameraEnabled = player.ViewCamera.enabled;
+        previousCursorVisible = Cursor.visible;
+        previousCursorLock = Cursor.lockState;
+        player.enabled = false;
+        switcher.enabled = false;
+        player.ViewCamera.enabled = false;
+        restorationCamera.enabled = true;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = false;
+        prompt.text = "";
+        try
+        {
+            yield return new WaitForSeconds(.2f);
+            Vector3 finalWorld = animatedPiece.position;
+            Vector3 start = finalWorld + (restorationCamera.transform.position - finalWorld).normalized * .8f + Vector3.up * .35f;
+            animatedPiece.gameObject.SetActive(true);
+            if (frameInsertSound != null) frameInsertHandle = AudioManager.PlayAttached(frameInsertSound, animatedPiece);
+            float elapsed = 0;
+            while (elapsed < pieceInsertSeconds)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0, 1, Mathf.Clamp01(elapsed / Mathf.Max(.1f, pieceInsertSeconds)));
+                animatedPiece.position = Vector3.Lerp(start, finalWorld, t);
+                animatedPiece.localScale = pieceRestScale * Mathf.Lerp(.75f, 1f, t);
+                yield return null;
+            }
+            animatedPiece.localPosition = pieceRestPosition;
+            animatedPiece.localScale = pieceRestScale;
+            yield return new WaitForSeconds(restorationHoldSeconds);
+        }
+        finally { EndRestorationView(); }
+        restorationRoutine = null;
+    }
+
+    private void EndRestorationView()
+    {
+        if (!restoringPiece) return;
+        frameInsertHandle.Stop();
+        if (animatedPiece != null)
+        {
+            animatedPiece.localPosition = pieceRestPosition;
+            animatedPiece.localScale = pieceRestScale;
+            animatedPiece.gameObject.SetActive(true);
+        }
+        if (restorationCamera != null) restorationCamera.enabled = false;
+        if (player != null)
+        {
+            player.ViewCamera.enabled = previousCameraEnabled;
+            player.enabled = previousPlayerEnabled;
+        }
+        if (switcher != null) switcher.enabled = previousSwitcherEnabled;
+        Cursor.lockState = previousCursorLock;
+        Cursor.visible = previousCursorVisible;
+        restoringPiece = false;
+        animatedPiece = null;
+    }
+
+    /// <summary>부품 장착 효과음을 1초 재생한 뒤 멈춥니다.</summary>
+    private System.Collections.IEnumerator PlayPartInstallSound(Transform target)
+    {
+        if (partInstallSound == null) yield break;
+        partInstallHandle = AudioManager.PlayAttached(partInstallSound, target);
+        yield return new WaitForSecondsRealtime(1f);
+        partInstallHandle.Stop();
+        partInstallHandle = SoundHandle.None;
+        partInstallRoutine = null;
+    }
+
+    /// <summary>부품과 열쇠를 획득했을 때 효과음을 한 번 재생합니다.</summary>
+    private void PlayPickupSound()
+    {
+        if (pickupRoutine != null) StopCoroutine(pickupRoutine);
+        pickupHandle.Stop();
+        pickupRoutine = null;
+        if (pickupSound != null) pickupRoutine = StartCoroutine(PlayPickupSoundForOneSecond());
+    }
+
+    private System.Collections.IEnumerator PlayPickupSoundForOneSecond()
+    {
+        pickupHandle = AudioManager.Play(pickupSound);
+        yield return new WaitForSecondsRealtime(1f);
+        pickupHandle.Stop();
+        pickupHandle = SoundHandle.None;
+        pickupRoutine = null;
+    }
+
+    private void OnDisable()
+    {
+        keyInsertHandle.Stop();
+        pickupHandle.Stop();
+        if (pickupRoutine != null) StopCoroutine(pickupRoutine);
+        pickupRoutine = null;
+        partInstallHandle.Stop();
+        if (partInstallRoutine != null) StopCoroutine(partInstallRoutine);
+        partInstallRoutine = null;
+        foreach (var sound in drawerSoundHandles) sound.Stop();
+        starterBoxSoundHandle.Stop();
+        if (restorationRoutine != null) StopCoroutine(restorationRoutine);
+        restorationRoutine = null;
+        EndRestorationView();
+    }
+
     #region 테스트 클리어 설정
 
     [Header("테스트 클리어 (실행 중 체크하면 보상 생성)")]
     [SerializeField, InspectorName("1번 주크박스 클리어")]
     [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다. 체크를 해제해도 지급 기록은 초기화되지 않습니다.")]
     private bool testClearJukebox = false;
+    [SerializeField] private SoundData minigameClearSound;
+    [SerializeField] private SoundData keyInsertSound;
+    [SerializeField] private SoundData pickupSound;
+    private SoundHandle pickupHandle = SoundHandle.None;
+    private Coroutine pickupRoutine;
+    [SerializeField] private SoundData partInstallSound;
+    private SoundHandle partInstallHandle = SoundHandle.None;
+    private Coroutine partInstallRoutine;
+    [SerializeField] private SoundData drawerOpenSound;
+    [SerializeField] private SoundData chestOpenSound;
+    [SerializeField] private SoundData fireplaceOpenSound;
+    private readonly bool[] drawerSoundPlayed = new bool[4];
+    private readonly SoundHandle[] drawerSoundHandles = new SoundHandle[4];
+    private SoundHandle keyInsertHandle = SoundHandle.None;
     [SerializeField, InspectorName("2번 룬 원판 클리어")]
     [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
     private bool testClearDial = false;
@@ -46,6 +186,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
 
     [Header("시작 부품 상자 연출")]
     [SerializeField, InspectorName("상자 흔들기")] private bool shakeStarterBox = true;
+    [SerializeField] private SoundData starterBoxSound;
+    private SoundHandle starterBoxSoundHandle = SoundHandle.None;
     [SerializeField, Range(0f, 15f), InspectorName("좌우 기울기")] private float starterShakeAngle = 7f;
     [SerializeField, Range(0f, .2f), InspectorName("좌우 이동 폭")] private float starterShakeDistance = .07f;
     private Vector3 starterRestPosition;
@@ -55,7 +197,10 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// <summary>열기 전에는 상자를 짧게 흔들고, 열면 원래 자세로 부드럽게 되돌립니다.</summary>
     private void UpdateStarterBoxMotion(float deltaTime)
     {
-        if (!usePartProgression || starterBox == null) return;
+        if (!usePartProgression || starterBox == null) { starterBoxSoundHandle.Stop(); return; }
+        if (starterOpened || !shakeStarterBox) starterBoxSoundHandle.Stop();
+        else if (starterBoxSound != null && !starterBoxSoundHandle.IsPlaying)
+            starterBoxSoundHandle = AudioManager.PlayAttached(starterBoxSound, starterBox);
         if (starterOpened || !shakeStarterBox)
         {
             starterBox.localPosition = Vector3.MoveTowards(starterBox.localPosition, starterRestPosition, deltaTime * .8f);
@@ -134,7 +279,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     [SerializeField] private Text frameCounter;
     [SerializeField] private Transform leftDoor;
     [SerializeField] private Transform rightDoor;
-    [SerializeField] private BoxCollider escapeArea;
+    [SerializeField] private Transform escapeBook;
+    private Quaternion leftDoorClosedRotation, rightDoorClosedRotation;
     [SerializeField] private Text prompt;
     [SerializeField] private Text victoryText;
     [SerializeField] private float interactDistance = 3.5f;
@@ -153,7 +299,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private string notice;
     private float noticeUntil;
     private bool ending;
-    [SerializeField, Min(0f)] private float returnToHubDelay = 2f;
+    [SerializeField] private GameObject resultPanel;
+    private bool returningToMain;
     public int PieceCount { get { int n=0; foreach(bool b in collected) if(b)n++; return n; } }
     public bool DoorOpen => opening >= 1f;
     public bool Escaped { get; private set; }
@@ -176,8 +323,11 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private void Awake()
     {
         leftClosed = leftDoor.localPosition;
+        leftDoorClosedRotation = leftDoor.localRotation;
+        rightDoorClosedRotation = rightDoor.localRotation;
         rightClosed = rightDoor.localPosition;
         victoryText.gameObject.SetActive(false);
+        if (resultPanel != null) resultPanel.SetActive(false);
         for (int i=0;i<4;i++)
         {
             closedDrawers[i] = drawers[i].localPosition;
@@ -219,7 +369,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        if (ending) return;
+        if (ending || restoringPiece) return;
         UpdateStarterBoxMotion(Time.deltaTime);
         PollRewards();
         UpdateDoor(Time.deltaTime);
@@ -228,15 +378,16 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             Vector3 offset = usePartProgression && drawerOpenOffsets != null && drawerOpenOffsets.Length > i
                 ? drawerOpenOffsets[i] : Vector3.back * .65f;
             Vector3 target=closedDrawers[i]+(used[i]?offset:Vector3.zero);
+            if (used[i] && !drawerSoundPlayed[i] && Time.deltaTime > 0f)
+            {
+                drawerSoundPlayed[i] = true;
+                SoundData openingSound = i == 0 ? fireplaceOpenSound : i == 3 ? chestOpenSound : drawerOpenSound;
+                if (openingSound != null) drawerSoundHandles[i] = AudioManager.PlayAttached(openingSound, drawers[i]);
+            }
             if (usePartProgression && drawerOpenAngles != null && drawerOpenAngles.Length > i)
                 drawers[i].localRotation = Quaternion.RotateTowards(drawers[i].localRotation,
                     closedDrawerRotations[i] * Quaternion.Euler(used[i] ? drawerOpenAngles[i] : Vector3.zero), Time.deltaTime * 100f);
             drawers[i].localPosition=Vector3.MoveTowards(drawers[i].localPosition,target,Time.deltaTime*1.2f);
-        }
-        if (DoorOpen && player.ViewActive && escapeArea.bounds.Contains(player.transform.position))
-        {
-            FinishGame(true, 1f);
-            return;
         }
         if (usePartProgression && starterOpened)
             starterLid.localRotation = Quaternion.RotateTowards(starterLid.localRotation,
@@ -271,13 +422,15 @@ public sealed class EscapeRoomProgress : MonoBehaviour
 
         if (hintNote != null) hintNote.Close();
         ending = true;
+        starterBoxSoundHandle.Stop();
         Escaped = cleared;
         prompt.text = "";
         if (hintText != null) hintText.gameObject.SetActive(false);
+        if (resultPanel != null) resultPanel.SetActive(true);
         victoryText.gameObject.SetActive(true);
         victoryText.text = cleared
-            ? "탈출 성공!\n잠시 후 메인 허브로 돌아갑니다."
-            : "게임 종료\n잠시 후 메인 허브로 돌아갑니다.";
+            ? "탈출 성공!\n아래 버튼을 눌러 메인 허브로 돌아가세요."
+            : "게임 종료\n아래 버튼을 눌러 메인 허브로 돌아가세요.";
         player.enabled = false;
         switcher.enabled = false;
         foreach (var canvas in switcher.GetComponentsInChildren<Canvas>()) canvas.enabled = false;
@@ -285,17 +438,22 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         Cursor.visible = true;
 
         flow.ReportCurrent(new global::MiniGameResult(cleared, Mathf.Clamp01(score01)));
-        StartCoroutine(ReturnToHub());
+
     }
 
     /// <summary>
     /// 결과 안내 후 메인 허브로 돌아갑니다.
     /// </summary>
-    private System.Collections.IEnumerator ReturnToHub()
+    public void ReturnToMainFromResult()
     {
-        yield return new WaitForSecondsRealtime(returnToHubDelay);
+        if (!ending || returningToMain) return;
         var flow = global::GameFlow.Instance;
-        if (flow != null) flow.ReturnToMain();
+        if (flow == null) return;
+        returningToMain = true;
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        flow.ReturnToMain();
     }
 
     #endregion
@@ -313,12 +471,13 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             // 테스트 클리어는 부품 잠금을 건너뛰되 기존 보상 지급 경로를 그대로 사용합니다.
             if (rewarded[i] || (!IsTestCleared(i) && (!IsGameUnlocked(i) || !solved))) continue;
             rewarded[i]=true;
+            if (minigameClearSound != null) AudioManager.PlayAttached(minigameClearSound, transform);
             worldKeys[i]=Instantiate(keyPrefab,keySpawns[i].position,keySpawns[i].rotation);
             worldKeys[i].name=(i+1)+"번 액자 열쇠";
             if (usePartProgression && i < 3) repairParts[i + 1].pickupVisual.SetActive(true);
             ColorKey(worldKeys[i],i);
             RefreshHintText();
-            ShowNotice(names[i]+" 클리어!  0번으로 돌아가 보상을 바라보고 E · 노란 쪽지 [H]");
+            ShowNotice(names[i]+" 클리어!  F로 돌아가 보상을 바라보고 E · 노란 쪽지 [H]");
         }
     }
 
@@ -365,6 +524,20 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private int FindInteraction(out int kind)
     {
         kind=-1;int selected=-1;float best=float.MaxValue;
+        if (PieceCount == 4 && DoorOpen && escapeBook != null && CanSee(escapeBook.position, escapeBook))
+        { kind = 5; return 0; }
+        // 보유한 부품은 해당 게임의 입장 존 안에서 시선과 관계없이 장착합니다.
+        if (usePartProgression && !ending && !restoringPiece && player != null && player.enabled && player.ViewActive && switcher != null)
+        {
+            for (int i = 0; i < repairParts.Length; i++)
+            {
+                if (partCarried[i] && !partInstalled[i] && switcher.IsInEntryZone(i))
+                {
+                    kind = 3;
+                    return i;
+                }
+            }
+        }
         for(int category=0;category<(usePartProgression?5:3);category++)
         for(int i=0;i<4;i++)
         {
@@ -374,8 +547,9 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             else if(category==2){if(used[i])continue;target=lockRoots[i];point=lockAimPoints[i].position;}
             else if(category==3)
             {
-                if(partInstalled[i])continue;
-                target=repairParts[i].machineRoot;point=repairParts[i].socket.position;
+                // 부품 장착은 위의 입장 존 판정에서만 선택합니다.
+                continue;
+                
             }
             else
             {
@@ -396,12 +570,15 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// </summary>
     public bool TryInteract()
     {
+        if (restoringPiece || ending) return false;
         if (hintNote != null && hintNote.IsOpen) return false;
         int kind;int index=FindInteraction(out kind);
         if(index<0)return false;
+        if (kind == 5) { FinishGame(true, 1f); return ending; }
         if(kind==0)
         {
             carried[index]=true;
+            PlayPickupSound();
             worldKeys[index].SetActive(false);
             Destroy(worldKeys[index]);worldKeys[index]=null;
             if (usePartProgression)
@@ -419,9 +596,10 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         }
         else if(kind==1)
         {
-            collected[index]=true;loosePieces[index].SetActive(false);framePieces[index].SetActive(true);
+            collected[index]=true;loosePieces[index].SetActive(false);
+            restorationRoutine = StartCoroutine(RestoreFramePiece(index));
             RefreshDisplays();
-            ShowNotice(PieceCount==4?"Leap 액자 완성! 탈출방 문을 지나 나가세요.":"액자 조각 획득 · "+PieceCount+" / 4  — 탈출방 액자에 복원되었습니다.");
+            ShowNotice(PieceCount==4?"Leap 액자 완성! 열린 옷장 안의 책을 바라보고 [E]를 누르세요.":"액자 조각 획득 · "+PieceCount+" / 4  — 탈출방 액자에 복원되었습니다.");
         }
         else if(kind==3)
         {
@@ -429,19 +607,23 @@ public sealed class EscapeRoomProgress : MonoBehaviour
             partCarried[index]=false;partInstalled[index]=true;
             repairParts[index].installedVisual.SetActive(true);
             repairParts[index].emptySocket.SetActive(false);
+            if (partInstallRoutine != null) StopCoroutine(partInstallRoutine);
+            partInstallHandle.Stop();
+            partInstallRoutine = StartCoroutine(PlayPartInstallSound(repairParts[index].installedVisual.transform));
             ApplyGameLocks();
-            ShowNotice(repairParts[index].displayName+" 장착 완료! 주변 원 안에서 ["+(index+1)+"]로 플레이하세요.");
+            ShowNotice(repairParts[index].displayName+" 장착 완료! 주변 원 안에서 [F]로 플레이하세요.");
         }
         else if(kind==4)
         {
             if(!starterOpened)
             {
-                starterOpened=true;repairParts[0].pickupVisual.SetActive(true);
+                starterOpened=true;starterBoxSoundHandle.Stop();repairParts[0].pickupVisual.SetActive(true);
                 ShowNotice("상자 안에 음표가 새겨진 버튼이 있습니다. 바라보고 [E]로 집어 드세요.");
             }
             else
             {
                 partCarried[0]=true;repairParts[0].pickupVisual.SetActive(false);
+                PlayPickupSound();
                 ShowNotice("음표 버튼 획득. 이 모양이 들어갈 빈자리를 찾아보세요.");
             }
         }
@@ -449,6 +631,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         {
             if(!carried[index]){ShowNotice(usePartProgression?"맞는 열쇠가 없습니다. 클리어 후 받은 단서를 살펴보세요. [H]":(index+1)+"번 열쇠가 필요합니다.");return false;}
             carried[index]=false;used[index]=true;
+            if (keyInsertSound != null) keyInsertHandle = AudioManager.PlayAttached(keyInsertSound, lockRoots[index]);
             loosePieces[index].SetActive(true);
             // 사용한 열쇠는 소비하여 열린 서랍이나 조각과 겹치지 않게 합니다.
             ApplyGameLocks();RefreshDisplays();
@@ -483,7 +666,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         int kind;int index=FindInteraction(out kind);
         if(index>=0)
         {
-            if(kind==0)prompt.text=usePartProgression
+            if(kind==5)prompt.text="[E] 옷장 속 책을 펼쳐 탈출하기";
+            else if(kind==0)prompt.text=usePartProgression
                 ? "[E] " + (index < 3 ? repairParts[index+1].displayName + " + " : "") + "액자 열쇠 받기"
                 : "[E] "+(index+1)+"번 열쇠 획득";
             else if(kind==1)prompt.text="[E] 액자 조각 획득 · "+PieceCount+" / 4";
@@ -501,7 +685,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     public string GetRepairHint(int index)
     {
         if (!usePartProgression || index < 0 || index >= 4) return "잠금장치를 확인하세요.";
-        return partCarried[index] ? "빈자리를 바라보고 [E]로 " + repairParts[index].displayName + " 장착"
+        return partCarried[index] ? "해당 게임 앞 원 안에서 [E]로 " + repairParts[index].displayName + " 장착"
             : new[] { "음표 버튼 하나가 빠져 있다.", "안쪽 그림 원판이 빠져 있다.", "열쇠 무늬 블록 자리가 비어 있다.", "안테나가 없어 신호를 받을 수 없다." }[index];
     }
 
@@ -552,8 +736,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         if(PieceCount!=4||opening>=1)return;
         opening=Mathf.Min(1,opening+dt/2);
         float t=Mathf.SmoothStep(0,1,opening);
-        leftDoor.localPosition=leftClosed+Vector3.left*3.1f*t;
-        rightDoor.localPosition=rightClosed+Vector3.right*3.1f*t;
+        leftDoor.localRotation=leftDoorClosedRotation * Quaternion.Euler(0, 110f*t, 0);
+        rightDoor.localRotation=rightDoorClosedRotation * Quaternion.Euler(0, -110f*t, 0);
     }
     #endregion
 

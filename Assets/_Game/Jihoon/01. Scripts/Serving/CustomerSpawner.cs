@@ -258,6 +258,17 @@ public class CustomerSpawner : MonoBehaviour
         _timer = Mathf.Max(0f, firstSpawnDelay);
     }
 
+    /// <summary>
+    /// 난이도 수치를 넣는다. 값은 손님을 보낼 때마다 새로 읽으므로 영업 전에만 부르면 된다.
+    /// 배열은 복사해 둔다 — 프리셋과 같은 배열을 쥐면 OnValidate의 정리가 프리셋까지 고쳐버린다.
+    /// </summary>
+    public void ApplyDifficulty(Vector2[] intervalsByOrderCount, Vector2 patience, float[] countWeights)
+    {
+        spawnIntervalByOrderCount = intervalsByOrderCount != null ? (Vector2[])intervalsByOrderCount.Clone() : spawnIntervalByOrderCount;
+        patienceRange = SortedRange(patience, 1f);
+        orderCountWeights = countWeights != null ? (float[])countWeights.Clone() : orderCountWeights;
+    }
+
     /// <summary>Stops sending customers. Anyone already at the counter stays.</summary>
     public void Pause() => IsSpawning = false;
 

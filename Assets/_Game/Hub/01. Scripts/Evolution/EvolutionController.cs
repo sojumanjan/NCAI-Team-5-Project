@@ -16,7 +16,9 @@ using UnityEngine;
 /// 별 흩뿌리기는 화면 중앙 고정 위치(StarBurstRoot의 원래 자리)에서 재생한다.
 /// </summary>
 public class EvolutionController : MonoBehaviour
+    
 {
+    public static EvolutionController Instance;
     [Header("참조")]
     [Tooltip("줌인 시 확대할 맵/배경 UI. 화면 전체를 덮는 stretch RectTransform(예: MainRoot)을 연결한다. " +
         "캐릭터와는 별개의 오브젝트이므로, 연출마다 캐릭터의 현재 화면 위치를 계산해 그 지점이 " +
@@ -24,6 +26,17 @@ public class EvolutionController : MonoBehaviour
     [SerializeField] private RectTransform zoomTarget;
     [Tooltip("별 흩뿌리기. 원래 배치된 자리(화면 중앙)에서 그대로 재생한다.")]
     [SerializeField] private UIStarBurst starBurst;
+    [Tooltip("켜면 별이 새 모습으로 바뀌는 순간(플래시·소리와 같은 프레임)에 터진다. " +
+        "끄면 예전처럼 스케일 팝이 끝난 뒤에 터진다.")]
+    [SerializeField] private bool starBurstOnEvolve = true;
+    [Tooltip("빛 모으기·플래시·충격파 고리. 비워두면 이펙트 없이 진행한다.")]
+    [SerializeField] private EvolutionEffects effects;
+    [Tooltip("흔들림이 끝나고 새 모습으로 바뀌는 순간 나는 소리.")]
+    [SerializeField] private SoundData evolutionSound;
+    [Tooltip("흰 실루엣으로 바들바들 떠는 동안 나는 소리. 새 모습으로 바뀌는 순간 끊깁니다.")]
+    [SerializeField] private SoundData upgradingSound;
+    [Tooltip("떨림 소리를 끊을 때 줄여 없애는 시간 (초). 0이면 뚝 끊겨 '파직' 하는 잡음이 납니다.")]
+    [SerializeField] private float upgradingFadeOut = 0.15f;
 
     [Header("화면 줌")]
     [SerializeField] private float zoomedScale = 1.15f;
@@ -48,12 +61,20 @@ public class EvolutionController : MonoBehaviour
     [SerializeField] private float popScaleMultiplier = 1.4f;
     [SerializeField] private float popDuration = 0.3f;
 
+    [Header("표정")]
+    [Tooltip("줌아웃이 끝난 뒤 신난 표정을 더 유지하는 시간(초). 끝나자마자 바꾸면 웃다가 뚝 멈춘 것처럼 보인다.")]
+    [SerializeField] private float happyHoldAfter = 0.5f;
+
     private Vector3 defaultZoomScale;
     private Vector2 defaultZoomAnchoredPosition;
     private bool isPlaying;
 
+    // 캐릭터를 따로 움직이는 스크립트(SeedWanderer 등)가 연출과 싸우지 않도록 비켜설 때 본다.
+    public bool IsPlaying => isPlaying;
+
     private void Awake()
     {
+        if (Instance == null) Instance = this;
         if (zoomTarget != null)
         {
             defaultZoomScale = zoomTarget.localScale;
@@ -75,6 +96,9 @@ public class EvolutionController : MonoBehaviour
 
         isPlaying = true;
 
+        // 돌아다니다 >< 표정을 짓던 중일 수 있다. 흰 덮개는 기본 얼굴 실루엣이라 얼굴이 다르면 삐져나온다.
+        character.ShowNormal();
+
         RectTransform characterRect = character.RectTransform;
         Vector2 originalCharacterPosition = characterRect.anchoredPosition;
         Vector3 originalCharacterScale = characterRect.localScale;
@@ -91,16 +115,30 @@ public class EvolutionController : MonoBehaviour
         var whiteFlashOverlay = character.WhiteFlashOverlay;
         if (whiteFlashOverlay != null)
         {
-            whiteFlashOverlay.sprite = character.CurrentWhiteSprite;
+            // 광원이 들어간 실루엣은 캔버스가 원본보다 커서, 덮개 사각형도 그만큼 맞춰 키운다.
+            character.PrepareWhiteOverlay();
             SetOverlayAlpha(whiteFlashOverlay, 0f);
         }
 
         Sequence sequence = DOTween.Sequence();
 
+        // 떨림 소리는 진화 순간 끊어야 한다. 콜백 두 곳이 같은 손잡이를 나눠 쥔다.
+        SoundHandle upgrading = SoundHandle.None;
+
         // 1단계: 맵과 캐릭터를 "동시에, 같은 진행률로" 확대 + 캐릭터 위치를 화면 중앙으로 이동.
         // 확대와 이동이 각각 독립된 트윈으로 따로 진행되면 속도가 미묘하게 어긋나 빈 공간이
         // 보일 수 있으므로, 하나의 t(0~1) 트윈에서 매 프레임 둘 다 함께 갱신한다.
         sequence.Append(CreateZoomInTween(characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1));
+
+        // 빛이 모여드는 건 하얘지는 시간과 떨리는 시간 전체에 걸친다. 마지막 알갱이가 닿는 순간이 곧 진화 순간이다.
+        RectTransform effectTarget = character.CharacterImage != null ? character.CharacterImage.rectTransform : characterRect;
+        sequence.AppendCallback(() =>
+        {
+            if (effects != null)
+            {
+                effects.PlayGather(effectTarget, fadeToWhiteDuration + shakeHoldDuration);
+            }
+        });
 
         // 흰색 오버레이를 캐릭터 위로 서서히 덮는다 (Image.color 곱셈 틴트로는
         // 유색 스프라이트가 흰색으로 안 바뀌므로, 별도 오버레이의 알파를 올리는 방식으로 구현).
@@ -118,6 +156,11 @@ public class EvolutionController : MonoBehaviour
         {
             characterRect.DOShakeAnchorPos(
                 shakeHoldDuration, shakeStrength, shakeVibrato, 90f, false, true);
+
+            if (upgradingSound != null)
+            {
+                upgrading = AudioManager.Play(upgradingSound);
+            }
         });
         sequence.AppendInterval(shakeHoldDuration);
 
@@ -126,7 +169,32 @@ public class EvolutionController : MonoBehaviour
         sequence.AppendCallback(() =>
         {
             characterRect.anchoredPosition = Vector2.zero;
+
+            if (effects != null)
+            {
+                effects.PlayBurst(effectTarget);
+            }
+
+            // 별은 플래시·고리·소리와 같은 프레임에 터뜨린다. 스케일 팝이 끝난 뒤에 터뜨리면 혼자 한 박자 늦는다.
+            if (starBurstOnEvolve && starBurst != null)
+            {
+                starBurst.Play();
+            }
+
+            // 떨림이 멎는 순간 소리도 멎어야 "다 자랐다"로 들린다. 파형 한가운데서 자르면 딸깍 소리가 나서,
+            // 진화 소리에 묻힐 만큼 아주 짧게 줄이며 끊는다.
+            upgrading.FadeOut(upgradingFadeOut);
+
+            // 소리는 모습이 바뀌는 바로 그 프레임에. 흔들림 도중에 나면 무엇이 일어났는지 귀가 먼저 알아버린다.
+            if (evolutionSound != null)
+            {
+                AudioManager.Play(evolutionSound);
+            }
+
             character.AdvanceStage();
+
+            // 흰빛이 걷히는 순간 이미 웃고 있어야 "자라서 기쁘다"로 읽힌다.
+            character.ShowHappy();
 
             if (whiteFlashOverlay != null)
             {
@@ -141,22 +209,34 @@ public class EvolutionController : MonoBehaviour
             .SetLoops(2, LoopType.Yoyo);
         sequence.Append(popTween);
 
-        sequence.AppendCallback(() =>
-        {
-            if (starBurst != null)
-            {
-                starBurst.Play();
-            }
-        });
-
         float burstDuration = starBurst != null ? starBurst.Duration : 0f;
-        sequence.AppendInterval(burstDuration);
+
+        if (starBurstOnEvolve)
+        {
+            // 별은 팝과 함께 이미 퍼지고 있으니, 팝이 끝난 뒤엔 남은 만큼만 기다린다.
+            sequence.AppendInterval(Mathf.Max(0f, burstDuration - popDuration));
+        }
+        else
+        {
+            sequence.AppendCallback(() =>
+            {
+                if (starBurst != null)
+                {
+                    starBurst.Play();
+                }
+            });
+            sequence.AppendInterval(burstDuration);
+        }
 
         // 별 흩뿌리기가 다 끝난 뒤에도 잠깐 여운을 두고 나서 원래 크기/위치로 돌아간다.
         sequence.AppendInterval(zoomOutDelayAfterBurst);
 
         // 2단계: 줌인의 역순으로, 맵/캐릭터를 원래 크기/위치로 동시에(같은 진행률로) 되돌린다.
         sequence.Append(CreateZoomOutTween(characterRect, originalCharacterPosition, originalCharacterScale, zoomTargetLocalPointAtScale1));
+
+        // 표정 복귀까지를 연출로 친다. 그래야 씨앗이 웃는 얼굴로 다시 걸어 다니기 시작하지 않는다.
+        sequence.AppendInterval(happyHoldAfter);
+        sequence.AppendCallback(character.ShowNormal);
 
         sequence.OnComplete(() => isPlaying = false);
     }

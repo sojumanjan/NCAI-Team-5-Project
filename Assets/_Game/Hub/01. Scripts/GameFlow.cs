@@ -43,6 +43,12 @@ public class GameFlow : ScriptableObject
     [NonSerialized] private MiniGameResult _pendingResult;
     [NonSerialized] private bool _hasPending;
 
+    // 보관된 결과는 이전 기록과 합친 값이라, 재도전인지 첫 클리어인지는 합치기 전에 따로 적어둬야 안다.
+    [NonSerialized] private bool _pendingNewClear;
+
+    // 옵션의 게임 스킵은 한 번이라도 들어가 본 게임만 허락한다. 결과 보고 없이 중간에 나와도 들어간 건 들어간 것이다.
+    [NonSerialized] private readonly HashSet<MiniGameDefinition> _visited = new();
+
     private static GameFlow _instance;
 
     /// <summary>미니게임 하나가 끝날 때마다. 같은 씬에 있는 쪽만 들을 수 있다.</summary>
@@ -119,6 +125,15 @@ public class GameFlow : ScriptableObject
         }
     }
 
+    /// <summary>
+    /// 방금 처음 깨고 돌아와, 허브의 클리어 연출이 아직 꺼내 가지 않은 결과가 있는지. 꺼내지 않고 보기만 한다.
+    /// 씨앗이 허브에 들어설 때 "이미 자란 만큼"만 자라 있어야 해서 본다 — 나머지 한 단계는 연출이 눈앞에서 키운다.
+    /// </summary>
+    public bool HasPendingNewClear => _hasPending && _pendingNewClear;
+
+    /// <summary>이번 판에 한 번이라도 들어가 본 미니게임인지. 클리어·실패와 상관없다.</summary>
+    public bool HasVisited(MiniGameDefinition game) => game != null && _visited.Contains(game);
+
     public bool IsCleared(MiniGameDefinition game) =>
         game != null && _results.TryGetValue(game, out MiniGameResult result) && result.Cleared;
 
@@ -184,6 +199,7 @@ public class GameFlow : ScriptableObject
         // 허브가 켜질 때 가져가게 한다.
         _pendingGame = game;
         _pendingResult = result;
+        _pendingNewClear = !wasCleared && result.Cleared;
         _hasPending = true;
 
         Reported?.Invoke(game, result);
@@ -206,16 +222,57 @@ public class GameFlow : ScriptableObject
         bool had = _hasPending;
         _hasPending = false;
         _pendingGame = null;
+        _pendingNewClear = false;
 
         return had;
+    }
+
+    /// <summary>
+    /// 위와 같되, 이번 판이 <b>처음으로</b> 깬 것인지도 알려준다. 이미 깬 게임을 다시 깨고 오면
+    /// <paramref name="result"/>는 클리어지만 <paramref name="newClear"/>는 false다.
+    /// 오브젝트 변신·씨앗 진화처럼 게임당 한 번만 일어나야 하는 연출이 이쪽을 쓴다.
+    /// </summary>
+    public bool TryConsumeLastResult(out MiniGameDefinition game, out MiniGameResult result, out bool newClear)
+    {
+        newClear = _pendingNewClear;
+        return TryConsumeLastResult(out game, out result);
+    }
+
+    /// <summary>
+    /// 미니게임 하나의 기록만 지운다. 디버그용 — 허브 연출을 몇 번이고 다시 보려면
+    /// "아직 안 깬 상태"로 되돌릴 수 있어야 한다.
+    /// </summary>
+    public void ForgetResult(MiniGameDefinition game)
+    {
+        if (game == null)
+        {
+            return;
+        }
+
+        bool wasCleared = IsCleared(game);
+        _results.Remove(game);
+
+        if (_pendingGame == game)
+        {
+            _pendingGame = null;
+            _hasPending = false;
+            _pendingNewClear = false;
+        }
+
+        if (wasCleared)
+        {
+            ProgressChanged?.Invoke();
+        }
     }
 
     /// <summary>처음부터 다시.</summary>
     public void ResetRun()
     {
         _results.Clear();
+        _visited.Clear();
         _pendingGame = null;
         _hasPending = false;
+        _pendingNewClear = false;
 
         ProgressChanged?.Invoke();
     }
@@ -231,6 +288,7 @@ public class GameFlow : ScriptableObject
             return;
         }
 
+        _visited.Add(game);
         Go(game.SceneName);
     }
 
@@ -241,6 +299,13 @@ public class GameFlow : ScriptableObject
         {
             Debug.LogError($"{name}: 허브 씬이 지정되지 않았습니다.", this);
             return;
+        }
+
+        // 에디터에서 미니게임 씬부터 Play를 누르면 허브를 거쳐 들어가지 않아 위에서 기록되지 않는다.
+        MiniGameDefinition current = CurrentDefinition;
+        if (current != null)
+        {
+            _visited.Add(current);
         }
 
         Go(mainSceneName);

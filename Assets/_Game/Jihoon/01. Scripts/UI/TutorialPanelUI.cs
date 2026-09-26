@@ -40,6 +40,10 @@ public class TutorialPanelUI : MonoBehaviour
 
         /// <summary>셔터를 내리면 끝. 다 내려갈 때까지 기다리지 않는다.</summary>
         ShopClosed,
+
+        // 씬에 저장된 줄들은 번호로 기억되므로 새 목표는 항상 맨 끝에 붙인다. 중간에 끼우면 기존 줄의 목표가 밀린다.
+        /// <summary>난이도 버튼을 하나라도 고르면 끝.</summary>
+        DifficultySelected,
     }
 
     [Serializable]
@@ -118,6 +122,7 @@ public class TutorialPanelUI : MonoBehaviour
 
     private ShopOpener _shopOpener;
     private MiniGameSession _session;
+    private CookingDifficulty _difficulty;
 
     private int _sequence;
     private int _step;
@@ -148,6 +153,7 @@ public class TutorialPanelUI : MonoBehaviour
         _stations.AddRange(FindObjectsByType<StationBase>(FindObjectsSortMode.None));
         _shopOpener = FindFirstObjectByType<ShopOpener>();
         _session = FindFirstObjectByType<MiniGameSession>();
+        _difficulty = FindAnyObjectByType<CookingDifficulty>();
 
         SkipEmpty();
         Redraw();
@@ -292,6 +298,9 @@ public class TutorialPanelUI : MonoBehaviour
 
             case StepGoal.ShopClosed:
                 return _shopOpener != null && _shopOpener.HasClosed;
+
+            case StepGoal.DifficultySelected:
+                return _difficulty != null && _difficulty.HasSelection;
 
             default:
                 return false;

@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bea654365d20dff44b5e720978493daf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
-  hitsToDestroy: 14
+  hitsToDestroy: 20
   scoreValue: 3000
   comboStacksOnKill: 5
   hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
@@ -139,6 +139,9 @@ MonoBehaviour:
   shatterOnDeath: 0
   shatterDuration: 0.2
   shatterScalePunch: 1.3
+  killSound: {fileID: 11400000, guid: 8d43d46ae3f58194eb095b2b0679a9bd, type: 2}
+  hitSound: {fileID: 11400000, guid: de18e265d8778154f8094dadfc33108c, type: 2}
+  explosionSound: {fileID: 0}
 --- !u!1 &4100844992220388496
 GameObject:
   m_ObjectHideFlags: 0

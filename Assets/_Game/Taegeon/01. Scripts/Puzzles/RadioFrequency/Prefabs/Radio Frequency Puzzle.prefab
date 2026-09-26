@@ -3079,6 +3079,7 @@ MonoBehaviour:
   onSignalMatched:
     m_PersistentCalls:
       m_Calls: []
+  tuningSound: {fileID: 11400000, guid: 3107f575c695b8f4b9a80a5abec39652, type: 2}
 --- !u!1 &5284768795003490991
 GameObject:
   m_ObjectHideFlags: 0

@@ -57,6 +57,7 @@ namespace Taegeon
         private static void EnsureMenu(Scene scene)
         {
             if (!scene.IsValid() || !scene.isLoaded) return;
+            MouseSensitivityTarget.EnsurePlayerControllerTarget(scene);
 
             var settings = Resources.Load<MenuAutoSpawner>(ResourcePath);
             if (settings == null || settings.menuPrefab == null) return;

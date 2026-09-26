@@ -22,6 +22,7 @@ namespace Taegeon
         /// <summary>씬의 감도 연결을 찾고 지원 여부에 따라 입력을 설정합니다.</summary>
         private void OnEnable()
         {
+            MouseSensitivityTarget.EnsurePlayerControllerTarget(gameObject.scene);
             target = null;
             foreach (var root in gameObject.scene.GetRootGameObjects())
             foreach (var candidate in root.GetComponentsInChildren<MouseSensitivityTarget>(true))
