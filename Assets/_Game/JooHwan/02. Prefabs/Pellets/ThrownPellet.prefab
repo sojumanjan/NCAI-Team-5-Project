@@ -187,3 +187,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThrownPellet
   lifeTime: 5
+  popSound: {fileID: 11400000, guid: 5acb35c93a348b642a2de1c2049777b7, type: 2}

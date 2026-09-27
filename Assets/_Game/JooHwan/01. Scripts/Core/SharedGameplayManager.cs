@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 테트리스/팩맨이 공유하는 플레이어·카메라·사망 팝업을 다루는 공용 실행 계층.
@@ -11,11 +12,23 @@ public class SharedGameplayManager : MonoBehaviour
     public static SharedGameplayManager Instance { get; private set; }
 
     [SerializeField] private GameObject deathPopupRoot;
+    [Tooltip("사망 팝업의 문구. 테트리스/팩맨 중 어느 쪽에서 죽었는지에 따라 내용을 바꿔 넣는다.")]
+    [SerializeField] private Text deathPopupTitleText;
+    private const string TetrisDeathMessage = "블록 사이에 끼였어요!";
+    private const string PacmanDeathMessage = "무당벌레를 몰아내는 데 실패했어요!";
     [SerializeField] private PlayerController playerController;
     [SerializeField] private CameraRig cameraRig;
     [SerializeField] private TetrisGameManager tetrisGameManager;
     [SerializeField] private PacmanGameManager pacmanGameManager;
     [SerializeField] private Vector3 playerStartPosition;
+
+    [Header("사운드")]
+    [Tooltip("피격 순간의 물리적 타격음. 팩맨 일반 피격은 이것만, 테트리스/팩맨 사망 시에는 이 다음에 gameOverSound가 이어진다.")]
+    [SerializeField] private SoundData hitSound;
+    [Tooltip("사망(테트리스 끼임 / 팩맨 목숨 소진)이 확정된 순간 hitSound 바로 뒤에 이어서 재생되는 별도 신호음.")]
+    [SerializeField] private SoundData gameOverSound;
+    [Tooltip("hitSound 재생 후 gameOverSound가 이어지기까지의 간격 (초).")]
+    [SerializeField] private float gameOverSoundDelay = 0.2f;
 
     private CharacterController playerCharacterController;
 
@@ -61,18 +74,48 @@ public class SharedGameplayManager : MonoBehaviour
 
     public void OnPlayerPinned()
     {
+        if (deathPopupTitleText != null)
+        {
+            deathPopupTitleText.text = TetrisDeathMessage;
+        }
+
         playerController.SetControlsLocked(true);
         CameraShake.ShakeAll(deathShakeDuration, deathShakePositionAmplitude, deathShakeRotationAmplitude);
         deathFlashOverlay.Flash();
+        StartCoroutine(PlayDeathSoundSequence());
         StartCoroutine(ShowDeathPopupAfterDelay());
     }
 
     public void ShowDeathPopupForPacman()
     {
+        if (deathPopupTitleText != null)
+        {
+            deathPopupTitleText.text = PacmanDeathMessage;
+        }
+
+        // 목숨이 소진된 순간 고스트도 함께 멈춘다. 안 그러면 팝업이 뜨는 지연시간(deathPopupDelay) 동안
+        // 계속 쫓아오며 공격 판정을 내고(피격음/게임오버음이 반복 재생됨), 이동음(크랙클)도 계속 들린다.
+        // SetGhostsPaused는 위치는 그대로 둔 채 이동/발광/사운드만 멈추므로(SetActive(false) 경유) 이 용도에 맞다.
+        MiniGameFlowManager.Instance.SetGhostsPaused(true);
+
         playerController.SetControlsLocked(true);
         CameraShake.ShakeAll(deathShakeDuration, deathShakePositionAmplitude, deathShakeRotationAmplitude);
         deathFlashOverlay.Flash();
+        StartCoroutine(PlayDeathSoundSequence());
         StartCoroutine(ShowDeathPopupAfterDelay());
+    }
+
+    /// <summary>피격 타격음이 먼저 나고, 짧은 간격 뒤에 게임오버 신호음이 이어지도록 재생한다.</summary>
+    private System.Collections.IEnumerator PlayDeathSoundSequence()
+    {
+        AudioManager.Play(hitSound);
+
+        // 고정된 간격만 기다리면 히트 사운드 자체 길이보다 짧을 경우 겹쳐 들린다.
+        // 히트 사운드가 실제로 끝날 때까지 기다린 뒤, 추가 여유(gameOverSoundDelay)만큼 더 기다린다.
+        float hitClipLength = hitSound != null ? (hitSound.PickClip() != null ? hitSound.PickClip().length : 0f) : 0f;
+        yield return new WaitForSeconds(hitClipLength + gameOverSoundDelay);
+
+        AudioManager.Play(gameOverSound);
     }
 
     /// <summary>
@@ -82,6 +125,7 @@ public class SharedGameplayManager : MonoBehaviour
     public void PlayHitFeedback()
     {
         CameraShake.ShakeAll(deathShakeDuration, deathShakePositionAmplitude, deathShakeRotationAmplitude);
+        AudioManager.Play(hitSound);
     }
 
     private System.Collections.IEnumerator ShowDeathPopupAfterDelay()

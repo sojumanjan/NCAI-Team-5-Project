@@ -15,6 +15,7 @@ public class TetrisFallSequencer : MonoBehaviour
     [SerializeField] private float spawnHeight = 45f;
     [SerializeField] private float fallSpeed = 3f;
     [SerializeField] private LayerMask landingMask;
+    [SerializeField] private SoundData landSound;
 
     [Header("Timing")]
     [Tooltip("블록이 착지한 후 다음 블록이 생성되기까지의 대기 시간 (초)")]
@@ -120,6 +121,7 @@ public class TetrisFallSequencer : MonoBehaviour
         }
         fallingBlock.SetFallSpeed(fallSpeed);
         fallingBlock.SetLandingMask(landingMask);
+        fallingBlock.SetLandSound(landSound);
 
         currentBlock = fallingBlock;
     }

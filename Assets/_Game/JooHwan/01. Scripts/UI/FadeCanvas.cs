@@ -16,6 +16,23 @@ public class FadeCanvas : MonoBehaviour
         canvasGroup.blocksRaycasts = false;
     }
 
+    /// <summary>
+    /// 애니메이션 없이 즉시 완전히 검은 상태로 만든다. 씬이 막 로드된 시점처럼,
+    /// 이미 다른 화면(메인씬 등)이 검게 가려둔 상태를 이어받을 때 쓴다 —
+    /// 여기서 다시 FadeOut(0→1)을 재생하면 잠깐 훤히 보였다가 어두워지는 어색한 깜빡임이 생긴다.
+    /// </summary>
+    public void SnapToBlack()
+    {
+        if (activeFade != null)
+        {
+            StopCoroutine(activeFade);
+            activeFade = null;
+        }
+
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
+    }
+
     public void FadeOut(Action onComplete = null)
     {
         StartFade(0f, 1f, onComplete);

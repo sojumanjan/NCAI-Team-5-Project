@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 테트리스/팩맨은 하나로 이어지는 연속 흐름이라, 두 미니게임 오브젝트는 SetActive로 껐다 켜지 않고
@@ -33,6 +35,28 @@ public class MiniGameFlowManager : MonoBehaviour
     [Tooltip("고스트 5마리 전멸 시 맵 중앙에 등장시킬 보상 상자")]
     [SerializeField] private GameObject rewardBox;
 
+    [Header("사운드")]
+    [Tooltip("테트리스 상태에서만 반복 재생되는 배경음. 다른 상태로 전환되면 멈춘다.")]
+    [SerializeField] private SoundData tetrisBgm;
+    [Tooltip("팩맨 상태에서만 반복 재생되는 배경음. 다른 상태로 전환되면 멈춘다.")]
+    [SerializeField] private SoundData pacmanBgm;
+
+    // RestartPacman()처럼 "같은 상태를 유지한 채로 재시작"하는 경우, ApplyState의 PlayBGM 호출이
+    // "이미 같은 곡 재생 중"으로 보고 무시(no-op)해버려 처음부터 다시 들리지 않는다.
+    // 다음 ApplyState 호출 한 번에 한해 강제로 껐다 켜도록 이 플래그로 표시해둔다.
+    private bool forceBgmRestartOnNextApply;
+
+    /// <summary>
+    /// 테트리스 재시작(사망 팝업 재시작, ESC "처음부터") 시 호출한다.
+    /// 상태 자체는 계속 Tetris라 ApplyState의 BGM 전환 로직이 다시 타지 않으므로,
+    /// 여기서 명시적으로 껐다 켜 처음부터 다시 들리게 한다.
+    /// </summary>
+    public void RestartTetrisBgm()
+    {
+        AudioManager.StopBGM(0f);
+        AudioManager.PlayBGM(tetrisBgm);
+    }
+
     [Header("Debug (팩맨 로직 작업 중 임시 사용)")]
     [Tooltip("체크하면 시작 시 인트로를 건너뛰고, 테트리스를 이미 클리어한 직후(문 앞 복도, 팩맨은 아직 비활성) 상태로 진입한다. 팩맨 구현이 끝나면 반드시 해제할 것.")]
     [SerializeField] private bool isDebugStartInPacman = false;
@@ -49,9 +73,21 @@ public class MiniGameFlowManager : MonoBehaviour
 
     public MiniGameState CurrentState => currentState;
 
+    // 옵션의 "처음부터"는 씬 자체를 리로드하는 방식이라 상태가 전부 초기화되는데, 이미 테트리스를
+    // 깨고 팩맨에 진입했었다면 다시 테트리스부터 갈 필요 없이 팩맨부터 이어서 시작해야 한다.
+    // static이라 씬이 다시 로드돼도 값이 유지되고(같은 Play 세션 안에서), 에디터에서 Play를
+    // 새로 누르면(도메인 리로드) 정상적으로 false로 초기화된다.
+    private static bool hasEnteredPacman;
+
     private void Awake()
     {
         Instance = this;
+
+        // AudioManager는 DontDestroyOnLoad라 씬을 통째로 다시 로드해도(옵션의 "처음부터" 등)
+        // 그대로 살아남는다. 그 상태로 StartTetris()가 PlayBGM(tetrisBgm)을 다시 불러도
+        // "같은 곡이 이미 재생 중"으로 보고 무시해버려 배경음이 처음부터 다시 들리지 않는다.
+        // 씬이 새로 뜬 시점에 한 번 강제로 끊어, 뒤이은 PlayBGM 호출이 진짜로 처음부터 재생되게 한다.
+        AudioManager.StopBGM(0f);
 
         if (pacmanGhosts != null)
         {
@@ -94,9 +130,56 @@ public class MiniGameFlowManager : MonoBehaviour
             return;
         }
 
+        if (hasEnteredPacman)
+        {
+            // 이전에 이미 팩맨에 진입했었다면(테트리스 클리어까지 마쳤다는 뜻), 씬을 다시 로드해도
+            // 테트리스부터가 아니라 팩맨부터 바로 이어서 시작한다.
+            var playerHealth = playerController.GetComponent<PacmanPlayerHealth>();
+            StartInitial(MiniGameState.Pacman, playerHealth != null ? playerHealth.PacmanRestartPoint : null);
+            return;
+        }
+
         // 게임시작/게임설명 인트로 UI(IntroUI)를 없애고, 씬 진입 즉시 테트리스 카운트다운으로 들어간다.
         // (기존에는 여기서 MainUI 상태로 대기하다가 GameSelectUI의 "게임시작" 버튼으로 StartTetris를 불렀다)
-        StartTetris();
+        StartInitial(MiniGameState.Tetris, null);
+    }
+
+    [Tooltip("씬이 막 로드된 시점에 검은 화면을 유지하는 시간. 메인씬 쪽 전환이 이미 화면을 가려둔 상태를 " +
+        "이어받아 게임 준비(텔레포트/고스트 배치 등)를 조용히 끝내기 위한 여유시간이다.")]
+    [SerializeField] private float initialBlackHoldDuration = 0.5f;
+
+    /// <summary>
+    /// 씬이 막 로드된 "진짜 시작" 시점 전용 진입점. 메인씬에서 넘어올 때 이미 화면이 검게 가려진
+    /// 상태이므로, SwitchTo()처럼 FadeOut(0→1)을 다시 재생하면 잠깐 게임 화면이 훤히 보였다가
+    /// 다시 어두워지는 어색한 깜빡임이 생긴다. 그래서 애니메이션 없이 즉시 검은 화면으로 스냅한 뒤
+    /// 잠깐 유지했다가, 준비를 마치고 곧장 FadeIn(화면 밝히기)만 재생한다.
+    /// </summary>
+    private void StartInitial(MiniGameState target, Transform teleportTarget)
+    {
+        if (target == MiniGameState.Pacman)
+        {
+            hasEnteredPacman = true;
+        }
+
+        fadeCanvas.SnapToBlack();
+        StartCoroutine(StartInitialRoutine(target, teleportTarget));
+    }
+
+    private IEnumerator StartInitialRoutine(MiniGameState target, Transform teleportTarget)
+    {
+        yield return new WaitForSeconds(initialBlackHoldDuration);
+
+        if (teleportTarget != null)
+        {
+            TeleportPlayer(teleportTarget);
+        }
+
+        if (target == MiniGameState.Pacman)
+        {
+            PrepareGhostsForPacman();
+        }
+
+        ApplyState(target, shouldPlayCountdown: true);
     }
 
     public void StartTetris()
@@ -105,12 +188,24 @@ public class MiniGameFlowManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 팩맨 보상 상자(최종 클리어)의 "처음부터" 버튼이 호출한다. hasEnteredPacman 기록 때문에
+    /// 그냥 씬만 리로드하면 팩맨부터 재개돼버리므로, 기록을 지운 뒤 씬을 다시 불러와
+    /// 진짜 테트리스 맨 처음부터 시작하게 한다.
+    /// </summary>
+    public void RestartFromVeryBeginning()
+    {
+        hasEnteredPacman = false;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    /// <summary>
     /// teleportTarget이 주어지면, 화면이 완전히 어두워진 뒤(FadeOut 완료 후) 플레이어를 그 위치로 옮긴다.
     /// (화면이 밝은 상태에서 순간이동이 보이지 않도록 페이드 콜백 안에서 처리한다)
     /// </summary>
-    public void StartPacman(Transform teleportTarget = null)
+    public void StartPacman(Transform teleportTarget = null, System.Action onScreenBlack = null)
     {
-        SwitchTo(MiniGameState.Pacman, shouldPlayCountdown: true, teleportTarget);
+        hasEnteredPacman = true;
+        SwitchTo(MiniGameState.Pacman, shouldPlayCountdown: true, teleportTarget, onScreenBlack);
     }
 
     /// <summary>
@@ -119,6 +214,10 @@ public class MiniGameFlowManager : MonoBehaviour
     /// </summary>
     public void RestartPacman(Transform teleportTarget, PacmanPlayerHealth playerHealth)
     {
+        // 상태 자체는 계속 Pacman이라 ApplyState의 PlayBGM 호출이 "이미 재생 중"으로 보고 무시해버린다.
+        // 화면이 어두워진 뒤(ApplyState 호출 시점)에 강제로 껐다 켜도록 표시해둔다.
+        forceBgmRestartOnNextApply = true;
+
         if (playerHealth != null)
         {
             playerHealth.ResetLives();
@@ -183,7 +282,7 @@ public class MiniGameFlowManager : MonoBehaviour
         rewardBox.SetActive(true);
     }
 
-    private void SwitchTo(MiniGameState target, bool shouldPlayCountdown, Transform teleportTarget = null)
+    private void SwitchTo(MiniGameState target, bool shouldPlayCountdown, Transform teleportTarget = null, System.Action onScreenBlack = null)
     {
         fadeCanvas.FadeOut(() =>
         {
@@ -192,6 +291,9 @@ public class MiniGameFlowManager : MonoBehaviour
             {
                 TeleportPlayer(teleportTarget);
             }
+
+            // 벽 막기 등 "화면이 밝을 때 보이면 안 되는" 즉시 반영 연출을 이 시점에 맞춰 실행한다.
+            onScreenBlack?.Invoke();
 
             if (target == MiniGameState.Pacman)
             {
@@ -273,6 +375,26 @@ public class MiniGameFlowManager : MonoBehaviour
     private void ApplyState(MiniGameState target, bool shouldPlayCountdown)
     {
         currentState = target;
+
+        if (forceBgmRestartOnNextApply)
+        {
+            forceBgmRestartOnNextApply = false;
+            AudioManager.StopBGM(0f);
+        }
+
+        if (target == MiniGameState.Tetris)
+        {
+            AudioManager.PlayBGM(tetrisBgm);
+        }
+        else if (target == MiniGameState.Pacman)
+        {
+            AudioManager.PlayBGM(pacmanBgm);
+        }
+        else
+        {
+            // 테트리스/팩맨 상태에서만 반복되어야 하므로, 메인 UI로 넘어가면 멈춘다.
+            AudioManager.StopBGM(fadeSeconds: 1f);
+        }
 
         if (target == MiniGameState.MainUI)
         {

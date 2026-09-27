@@ -102,6 +102,10 @@ MonoBehaviour:
   detectRange: 6
   detectAngle: 100
   loseSightRange: 9
+  wallMask:
+    serializedVersion: 2
+    m_Bits: 4096
+  sightHeightOffset: 1
   hitStunDuration: 1
   dimDuration: 3
   glowDuration: 1.5
@@ -111,6 +115,9 @@ MonoBehaviour:
   glowBrightness: 2.2
   defeatEffect: {fileID: 5021145225669151203}
   glowAura: {fileID: 7083897848467916827}
+  crackleSound: {fileID: 11400000, guid: 981a44e92635c9446b67012d842d7b5e, type: 2}
+  defeatSound: {fileID: 11400000, guid: bddf7e777f7304c4e8308cb78b10e43e, type: 2}
+  glowWarningSound: {fileID: 11400000, guid: 626f3679ad7c36541949469cf3a61b1b, type: 2}
 --- !u!114 &1407717932921504479
 MonoBehaviour:
   m_ObjectHideFlags: 0

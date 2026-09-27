@@ -9,6 +9,8 @@ using UnityEngine;
 public class ThrownPellet : MonoBehaviour
 {
     [SerializeField] private float lifeTime = 5f;
+    [Tooltip("무엇에 맞든(처치 성공 여부와 무관하게) 항상 재생되는 물리적 타격음.")]
+    [SerializeField] private SoundData popSound;
 
     private Rigidbody rb;
 
@@ -36,6 +38,9 @@ public class ThrownPellet : MonoBehaviour
 
     private void HandleHit(GameObject hitObject)
     {
+        // 처치 성공 여부와 무관하게, 뭔가에 맞았다는 물리적 피드백은 항상 재생한다.
+        AudioManager.PlayAt(popSound, transform.position);
+
         // 고스트에 맞았다면 고스트 쪽에서 처치 판정을 처리하도록 알린다.
         var ghost = hitObject.GetComponentInParent<Ghost>();
         if (ghost != null)

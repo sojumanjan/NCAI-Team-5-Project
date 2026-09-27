@@ -18,9 +18,12 @@ public class PelletThrower : MonoBehaviour
     [SerializeField] private float throwForce = 20f;
     [Tooltip("카메라(throwOrigin) 위치 그대로 스폰하면 Player 자신의 CharacterController와 겹쳐 즉시 충돌 판정이 나므로, 앞으로 이만큼 띄워서 스폰한다.")]
     [SerializeField] private float spawnForwardOffset = 0.8f;
+    [Tooltip("던지는 순간 재생되는 사운드.")]
+    [SerializeField] private SoundData throwSound;
 
     private InputAction throwAction;
     private PlayerController playerController;
+    private Collider[] ownColliders;
     private int carriedCount;
     private readonly System.Collections.Generic.List<GameObject> heldVisuals = new System.Collections.Generic.List<GameObject>();
 
@@ -31,6 +34,10 @@ public class PelletThrower : MonoBehaviour
         var playerMap = inputActions.FindActionMap("Player");
         throwAction = playerMap.FindAction("Throw");
         playerController = GetComponent<PlayerController>();
+
+        // CharacterController와 테트리스 끼임판정용 트리거 콜라이더까지, 플레이어에 달린
+        // 콜라이더를 전부 모아둔다. 던진 펠릿이 스폰 직후 자기 자신과 부딪혀 바로 사라지는 것을 막는 데 쓴다.
+        ownColliders = GetComponentsInChildren<Collider>();
     }
 
     private void OnEnable()
@@ -87,10 +94,25 @@ public class PelletThrower : MonoBehaviour
     {
         carriedCount--;
         UpdateHeldVisuals();
+        AudioManager.PlayAt(throwSound, throwOrigin.position);
 
         Vector3 spawnPosition = throwOrigin.position + throwOrigin.forward * spawnForwardOffset;
         GameObject pelletInstance = Instantiate(thrownPelletPrefab, spawnPosition, throwOrigin.rotation);
         var thrown = pelletInstance.GetComponent<ThrownPellet>();
+
+        // 스폰 위치 오프셋만으로는, 던지면서 같은 방향으로 계속 이동하면 플레이어가 곧바로
+        // 따라붙어 부딪히는 것까지는 못 막는다. 물리적으로 아예 서로 충돌하지 않게 막아둔다.
+        foreach (Collider pelletCollider in pelletInstance.GetComponentsInChildren<Collider>())
+        {
+            foreach (Collider playerCollider in ownColliders)
+            {
+                if (playerCollider != null)
+                {
+                    Physics.IgnoreCollision(pelletCollider, playerCollider, true);
+                }
+            }
+        }
+
         thrown.Launch(throwOrigin.forward * throwForce);
     }
 

@@ -62,11 +62,9 @@ public class PacmanEntranceWall : MonoBehaviour
             promptRoot.SetActive(false);
         }
 
-        // 벽을 다시 막아 뒤로 돌아갈 수 없게 한다.
-        meshRenderer.enabled = true;
-
-        // 텔레포트는 화면이 완전히 어두워진 뒤(FadeOut 완료 후) 처리되도록 MiniGameFlowManager에 위임한다.
-        MiniGameFlowManager.Instance.StartPacman(teleportTarget);
+        // 벽 막기와 텔레포트 모두 화면이 완전히 어두워진 뒤(FadeOut 완료 후)에 처리되도록
+        // MiniGameFlowManager에 위임한다. 즉시 막으면 화면이 밝은 상태에서 벽이 생기는 게 보인다.
+        MiniGameFlowManager.Instance.StartPacman(teleportTarget, () => meshRenderer.enabled = true);
     }
 
     /// <summary>interactTrigger(자식 오브젝트)가 감지를 대신 넘겨준다.</summary>

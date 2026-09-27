@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
     [Header("Jump")]
     [SerializeField] private bool isJumpEnabled = true;
     [SerializeField] private float jumpHeight = 1.5f;
+    [SerializeField] private SoundData jumpSound;
 
     [Header("Look")]
     [SerializeField] private float mouseSensitivity = 0.1f;
@@ -167,6 +168,7 @@ public class PlayerController : MonoBehaviour
             if (isJumpEnabled && jumpAction.WasPressedThisFrame())
             {
                 verticalVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                AudioManager.PlayAt(jumpSound, transform.position);
             }
         }
         else

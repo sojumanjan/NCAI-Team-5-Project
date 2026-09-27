@@ -8,6 +8,7 @@ public class FallingBlock : MonoBehaviour
 
     [SerializeField] private LayerMask landingMask;
     [SerializeField] private float landingCheckThickness = 0.1f;
+    [SerializeField] private SoundData landSound;
 
     [Header("Pinning (끼임 판정)")]
     [Tooltip("플레이어 캡슐이 셀에 파묻힌 비율(침투 깊이 / 캡슐 높이)이 이 값 이상이면 즉시 사망 처리한다.")]
@@ -102,6 +103,11 @@ public class FallingBlock : MonoBehaviour
         landingMask = mask;
     }
 
+    public void SetLandSound(SoundData sound)
+    {
+        landSound = sound;
+    }
+
     private void SetCellsTrigger(bool isTrigger)
     {
         foreach (var cell in cellColliders)
@@ -152,6 +158,8 @@ public class FallingBlock : MonoBehaviour
 
         if (currentPinPenetrationRatio >= pinDeathPenetrationRatio)
         {
+            // 낙하 중에 눌려 죽는 경우는 Land()를 거치지 않는 별도 경로라, 여기서도 직접 재생해야 한다.
+            AudioManager.PlayAt(landSound, transform.position);
             IsGlobalPaused = true;
             SharedGameplayManager.Instance.OnPlayerPinned();
         }
@@ -280,6 +288,7 @@ public class FallingBlock : MonoBehaviour
         isLanded = true;
 
         CameraShake.ShakeAll();
+        AudioManager.PlayAt(landSound, transform.position);
 
         // 착지하는 순간 플레이어가 이미 겹쳐 있다면, 그 깊이가 사망 임계값에 못 미쳤더라도
         // 바닥과 블록 사이에 완전히 끼인 것으로 간주해 즉시 사망 처리한다.

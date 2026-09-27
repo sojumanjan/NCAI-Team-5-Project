@@ -159,3 +159,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerPellet
   playerTag: Player
+  rotationSpeed: 90
+  pickupSound: {fileID: 11400000, guid: 0345bdcda7174ab4d9c3effaba2f58c9, type: 2}
+  bodyRenderer: {fileID: 977367367042408889}
+  glowIntensity: 0.3

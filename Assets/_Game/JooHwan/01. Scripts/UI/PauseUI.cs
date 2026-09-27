@@ -63,19 +63,16 @@ public class PauseUI : MonoBehaviour
             return;
         }
 
-        // 카운트다운(3,2,1) 중에는 아직 실제 게임 로직이 시작되지 않아 멈출 대상이 없고,
-        // 카운트다운 자체는 코루틴이라 일시정지해도 계속 흘러가 버리므로 아예 무시한다.
-        if (countdownUI.IsPlaying)
-        {
-            return;
-        }
-
         isPaused = true;
         root.SetActive(true);
 
         tetrisGameManager.SetTetrisGameplayPaused(true);
         MiniGameFlowManager.Instance.SetGhostsPaused(true);
         playerController.SetControlsLocked(true);
+
+        // 카운트다운(3,2,1) 도중이면 화면 숫자 진행과 사운드를 함께 멈춘다.
+        // 카운트다운이 이미 끝난 상태에서 불러도 안전하다(그 경우 아무 효과 없음).
+        countdownUI.SetPaused(true);
     }
 
     public void OnClickResume()
@@ -85,6 +82,7 @@ public class PauseUI : MonoBehaviour
 
         playerController.SetControlsLocked(false);
         MiniGameFlowManager.Instance.SetGhostsPaused(false);
+        countdownUI.SetPaused(false);
 
         // 테트리스 낙하는 팩맨 상태일 때는 원래도 멈춰 있어야 하므로, 현재 상태를 다시 물어 정확히 되돌린다.
         tetrisGameManager.SetTetrisGameplayPaused(MiniGameFlowManager.Instance.CurrentState != MiniGameState.Tetris);

@@ -69,6 +69,13 @@ public class MenuEscapeBridge : MonoBehaviour
         {
             playerController.SetControlsLocked(true);
         }
+
+        // Time.timeScale=0으로 화면 숫자는 이미 멈추지만, AudioSource 재생은 timeScale과 무관하게
+        // 계속 흘러가므로 사운드는 별도로 멈춰야 한다.
+        if (countdownUI != null)
+        {
+            countdownUI.SetPaused(true);
+        }
     }
 
     private void ApplyResume()
@@ -92,6 +99,11 @@ public class MenuEscapeBridge : MonoBehaviour
         if (playerController != null)
         {
             playerController.SetControlsLocked(false);
+        }
+
+        if (countdownUI != null)
+        {
+            countdownUI.SetPaused(false);
         }
 
         // 카운트다운(3,2,1)이 아직 끝나지 않았다면, 고스트와 테트리스 낙하 둘 다 아직 움직이면 안 되는

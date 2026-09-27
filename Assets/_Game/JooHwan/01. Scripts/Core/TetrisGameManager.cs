@@ -32,6 +32,8 @@ public class TetrisGameManager : MonoBehaviour
     [SerializeField] private float clearTextHoldDuration = 1f;
     [Tooltip("CLEAR 텍스트가 사라질 때 페이드아웃되는 시간")]
     [SerializeField] private float clearTextFadeOutDuration = 0.3f;
+    [Tooltip("클리어 순간 재생되는 사운드. 팩맨 보상 상자 오픈과 공용으로 쓴다.")]
+    [SerializeField] private SoundData clearSound;
 
     private bool isCleared;
 
@@ -107,6 +109,7 @@ public class TetrisGameManager : MonoBehaviour
         }
 
         CameraShake.ShakeAll(clearShakeDuration, clearShakePositionAmplitude, clearShakeRotationAmplitude);
+        AudioManager.Play(clearSound);
 
         if (clearTextRoot != null)
         {
@@ -171,6 +174,9 @@ public class TetrisGameManager : MonoBehaviour
         {
             fallSequencer.ResetSequence();
             respawnPlayer();
+
+            // 화면이 완전히 어두워진 틈에 배경음을 껐다가 처음부터 다시 재생한다.
+            MiniGameFlowManager.Instance.RestartTetrisBgm();
 
             FallingBlock.IsGlobalPaused = false;
 

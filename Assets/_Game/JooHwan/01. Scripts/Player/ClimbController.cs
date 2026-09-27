@@ -24,6 +24,7 @@ public class ClimbController : MonoBehaviour
     [SerializeField] private float reachDuration = 0.2f;
     [SerializeField] private float pullUpDuration = 0.3f;
     [SerializeField] private float forwardSettleDistance = 0.6f;
+    [SerializeField] private SoundData climbSound;
 
     private CharacterController controller;
     private InputAction jumpAction;
@@ -111,6 +112,7 @@ public class ClimbController : MonoBehaviour
     private void StartClimb(Vector3 standPosition, Vector3 edgePosition)
     {
         isClimbing = true;
+        AudioManager.PlayAt(climbSound, transform.position);
 
         // CharacterController는 켜둔 채로 유지해 이동 중에도 벽 충돌 감지를 받는다.
         playerController.SetMovementEnabled(false);

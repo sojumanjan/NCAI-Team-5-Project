@@ -14,6 +14,8 @@ public class RewardBoxTrigger : MonoBehaviour
     [SerializeField] private GameObject promptRoot;
     [SerializeField] private RewardPopupUI rewardPopupUI;
     [SerializeField] private PlayerController playerController;
+    [Tooltip("상자를 여는 순간 재생되는 사운드. 테트리스 클리어와 공용으로 쓴다.")]
+    [SerializeField] private SoundData clearSound;
 
     private InputAction interactAction;
     private bool isPlayerInRange;
@@ -51,6 +53,7 @@ public class RewardBoxTrigger : MonoBehaviour
     private void Open()
     {
         isOpened = true;
+        AudioManager.Play(clearSound);
 
         if (promptRoot != null)
         {

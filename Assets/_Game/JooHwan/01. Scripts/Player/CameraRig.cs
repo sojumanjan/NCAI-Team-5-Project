@@ -19,6 +19,10 @@ public class CameraRig : MonoBehaviour
     [Header("UI")]
     [SerializeField] private GameObject overviewUI;
 
+    [Header("사운드")]
+    [Tooltip("사용자가 직접 전환(Tab)할 때만 재생된다. 팩맨 진입 등으로 강제 리셋될 때는 재생되지 않는다.")]
+    [SerializeField] private SoundData cameraSwitchSound;
+
     [Header("Lighting")]
     [Tooltip("1인칭 시점의 파스텔톤 환경광 색상 (허브 분위기와 통일)")]
     [SerializeField] private Color firstPersonAmbientColor = new Color(0.55f, 0.5f, 0.42f, 1f);
@@ -99,6 +103,7 @@ public class CameraRig : MonoBehaviour
             return;
         }
 
+        AudioManager.Play(cameraSwitchSound);
         ApplyCameraState(!isOverviewActive);
     }
 
