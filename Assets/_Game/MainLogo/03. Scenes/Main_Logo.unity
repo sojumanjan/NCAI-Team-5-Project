@@ -1576,7 +1576,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 4053b0c65fd0c7b47af0d47bd802f6ba, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b7b66b2f410cfc641a49e36adc42ddf0, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1700,6 +1700,18 @@ MonoBehaviour:
         m_TargetAssemblyTypeName: Taegeon.HubSoundBindings, Assembly-CSharp
         m_MethodName: PlayButtonClick
         m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 982879088}
+        m_TargetAssemblyTypeName: Taegeon.MenuEscapeToggle, Assembly-CSharp
+        m_MethodName: QuitGame
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: 
