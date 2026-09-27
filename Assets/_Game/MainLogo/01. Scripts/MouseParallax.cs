@@ -45,6 +45,7 @@ public class MouseParallax : MonoBehaviour
     private Vector2 _rest;
     private Vector2 _drift;
     private Vector2 _velocity;
+    private Vector2 _measuredFor = new Vector2(-1f, -1f);
 
     private void Awake()
     {
@@ -59,16 +60,36 @@ public class MouseParallax : MonoBehaviour
         }
 
         _rest = _rect.anchoredPosition;
+    }
 
-        // 씬에 놓인 자리가 정중앙에서 얼마나 어긋나 있는지 재둔다. 어긋난 쪽은 여유가
-        // 그만큼 적으므로, 양쪽에서 이 값을 빼야 한쪽 끝에서 가장자리가 드러나지 않는다.
-        Vector2 centerNow = _parent.InverseTransformPoint(_rect.TransformPoint(_rect.rect.center));
-        Vector2 offset = centerNow - _parent.rect.center;
+    /// <summary>
+    /// 씬에 놓인 자리가 정중앙에서 얼마나 어긋나 있는지 잰다. 어긋난 쪽은 여유가
+    /// 그만큼 적으므로, 양쪽에서 이 값을 빼야 한쪽 끝에서 가장자리가 드러나지 않는다.
+    ///
+    /// Awake에서 한 번만 재면 안 된다. 빌드는 켜지는 순간 캔버스가 아직 실제 화면 크기에 맞춰지기 전이라,
+    /// 에디터(1920×1080)와 해상도가 다르면 크게 어긋났다고 잘못 재서 움직일 폭이 0이 된다(웹에서 배경만 멈춤).
+    /// 그래서 캔버스 크기가 바뀔 때마다, 움직인 자리가 아니라 제자리 기준으로 다시 잰다.
+    /// </summary>
+    private void MeasureDrift()
+    {
+        Vector2 now = _rect.anchoredPosition;
+        _rect.anchoredPosition = _rest;
+
+        Vector2 centerAtRest = _parent.InverseTransformPoint(_rect.TransformPoint(_rect.rect.center));
+        Vector2 offset = centerAtRest - _parent.rect.center;
         _drift = new Vector2(Mathf.Abs(offset.x), Mathf.Abs(offset.y));
+
+        _rect.anchoredPosition = now;
+        _measuredFor = _parent.rect.size;
     }
 
     private void Update()
     {
+        if (_parent.rect.size != _measuredFor)
+        {
+            MeasureDrift();
+        }
+
         Vector2 aim = ReadMouse();
         if (invert)
         {
