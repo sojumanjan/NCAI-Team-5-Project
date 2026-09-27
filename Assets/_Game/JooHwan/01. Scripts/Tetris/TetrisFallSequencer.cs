@@ -5,7 +5,10 @@ using UnityEngine;
 public class TetrisFallSequencer : MonoBehaviour
 {
     [Header("Data")]
-    [SerializeField] private TetrisFallSequence sequence;
+    [Tooltip("게임이 새로 시작될 때마다(최초 시작/사망 재시작/처음부터) 이 중 하나를 랜덤으로 골라 진행한다.")]
+    [SerializeField] private List<TetrisFallSequence> possibleSequences;
+
+    private TetrisFallSequence activeSequence;
 
     [Header("Spawn")]
     [SerializeField] private Transform arenaOrigin;
@@ -28,7 +31,7 @@ public class TetrisFallSequencer : MonoBehaviour
 
     private readonly List<GameObject> spawnedBlocks = new List<GameObject>();
 
-    public FallEntry NextEntry => nextEntryIndex < sequence.Entries.Count ? sequence.Entries[nextEntryIndex] : null;
+    public FallEntry NextEntry => activeSequence != null && nextEntryIndex < activeSequence.Entries.Count ? activeSequence.Entries[nextEntryIndex] : null;
 
     private void OnEnable()
     {
@@ -47,7 +50,19 @@ public class TetrisFallSequencer : MonoBehaviour
         }
 
         hasSequenceStarted = true;
+        activeSequence = PickRandomSequence();
         SpawnNext();
+    }
+
+    private TetrisFallSequence PickRandomSequence()
+    {
+        if (possibleSequences == null || possibleSequences.Count == 0)
+        {
+            Debug.LogError("TetrisFallSequencer: possibleSequences가 비어있어 시퀀스를 시작할 수 없습니다.");
+            return null;
+        }
+
+        return possibleSequences[Random.Range(0, possibleSequences.Count)];
     }
 
     public void SetPaused(bool isPaused)
@@ -96,12 +111,12 @@ public class TetrisFallSequencer : MonoBehaviour
 
     private void SpawnNext()
     {
-        if (nextEntryIndex >= sequence.Entries.Count)
+        if (activeSequence == null || nextEntryIndex >= activeSequence.Entries.Count)
         {
             return;
         }
 
-        FallEntry entry = sequence.Entries[nextEntryIndex];
+        FallEntry entry = activeSequence.Entries[nextEntryIndex];
         nextEntryIndex++;
 
         if (entry.Prefab == null)
