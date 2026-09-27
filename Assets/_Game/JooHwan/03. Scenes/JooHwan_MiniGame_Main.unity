@@ -2068,6 +2068,8 @@ MonoBehaviour:
   hitSound: {fileID: 11400000, guid: 42151c5d7ce69e24393203ac07df7a75, type: 2}
   gameOverSound: {fileID: 11400000, guid: ffbaf7f7980be9c44998e9a825990b30, type: 2}
   gameOverSoundDelay: 0.2
+  exitFade: {fileID: 536033607}
+  exitFadeSeconds: 1.2
   deathPopupDelay: 0.6
   deathShakeDuration: 0.6
   deathShakePositionAmplitude: 0.3
@@ -19931,7 +19933,7 @@ MonoBehaviour:
   pacmanBgm: {fileID: 11400000, guid: 94d8d7a6757e4e446a67b6ad5808c849, type: 2}
   isDebugStartInPacman: 0
   debugPacmanStartPoint: {fileID: 1831296196}
-  isDebugStartAtTetrisClear: 1
+  isDebugStartAtTetrisClear: 0
   debugExitTrigger: {fileID: 1374962738}
   initialBlackHoldDuration: 0.5
   debugClearPlatformWallMargin: 0.5
