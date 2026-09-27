@@ -30,7 +30,14 @@ public class SharedGameplayManager : MonoBehaviour
     [Tooltip("hitSound 재생 후 gameOverSound가 이어지기까지의 간격 (초).")]
     [SerializeField] private float gameOverSoundDelay = 0.2f;
 
+    [Header("허브로 돌아가기")]
+    [Tooltip("허브로 넘어가기 전에 화면을 덮을 페이드. 비워두면 덮지 않고 바로 넘어갑니다.")]
+    [SerializeField] private FadeCanvas exitFade;
+    [Tooltip("화면이 다 덮이기까지 걸리는 시간 (초). 배경음도 같은 시간 동안 사그라듭니다. 다른 미니게임과 같은 1.2초.")]
+    [SerializeField] private float exitFadeSeconds = 1.2f;
+
     private CharacterController playerCharacterController;
+    private bool isExitingToHub;
 
     private void Awake()
     {
@@ -164,8 +171,21 @@ public class SharedGameplayManager : MonoBehaviour
     /// </summary>
     public void OnClickExitToHub()
     {
+        // 덮이는 동안 버튼을 또 누르면 결과가 두 번 보고되고 씬도 두 번 넘어가려 한다.
+        if (isExitingToHub) return;
+        isExitingToHub = true;
+
         bool cleared = !deathPopupRoot.activeSelf;
         GameFlow.Instance.ReportCurrent(new MiniGameResult(cleared, cleared ? 1f : 0f));
-        GameFlow.Instance.ReturnToMain();
+
+        // 허브는 검은 화면에서 밝아지며 시작하므로, 이쪽이 검게 덮은 채 넘겨야 화면이 끊기지 않는다.
+        if (exitFade == null)
+        {
+            GameFlow.Instance.ReturnToMain();
+            return;
+        }
+
+        AudioManager.StopBGM(exitFadeSeconds);
+        exitFade.FadeOut(exitFadeSeconds, () => GameFlow.Instance.ReturnToMain());
     }
 }

@@ -38,6 +38,20 @@ public class FadeCanvas : MonoBehaviour
         StartFade(0f, 1f, onComplete);
     }
 
+    /// <summary>
+    /// 정해준 시간 동안 실제 시간으로 어두워진다. 허브로 넘어갈 때 쓴다 —
+    /// 다른 씬 전환과 같은 길이로 맞춰야 하고, 게임 시간이 멈춰 있어도 끝까지 덮여야 한다.
+    /// </summary>
+    public void FadeOut(float duration, Action onComplete)
+    {
+        if (activeFade != null)
+        {
+            StopCoroutine(activeFade);
+        }
+
+        activeFade = StartCoroutine(FadeRoutine(0f, 1f, duration, true, onComplete));
+    }
+
     public void FadeIn(Action onComplete = null)
     {
         StartFade(1f, 0f, onComplete);
@@ -50,18 +64,19 @@ public class FadeCanvas : MonoBehaviour
             StopCoroutine(activeFade);
         }
 
-        activeFade = StartCoroutine(FadeRoutine(from, to, onComplete));
+        activeFade = StartCoroutine(FadeRoutine(from, to, fadeDuration, false, onComplete));
     }
 
-    private IEnumerator FadeRoutine(float from, float to, Action onComplete)
+    private IEnumerator FadeRoutine(float from, float to, float duration, bool unscaled, Action onComplete)
     {
         canvasGroup.blocksRaycasts = true;
 
+        duration = Mathf.Max(0.01f, duration);
         float elapsed = 0f;
-        while (elapsed < fadeDuration)
+        while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
-            canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / fadeDuration);
+            elapsed += unscaled ? Time.unscaledDeltaTime : Time.deltaTime;
+            canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / duration);
             yield return null;
         }
 
