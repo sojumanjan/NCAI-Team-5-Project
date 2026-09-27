@@ -141,7 +141,17 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     [SerializeField, InspectorName("1번 주크박스 클리어")]
     [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다. 체크를 해제해도 지급 기록은 초기화되지 않습니다.")]
     private bool testClearJukebox = false;
+    [SerializeField, InspectorName("2번 룬 원판 클리어")]
+    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
+    private bool testClearDial = false;
+    [SerializeField, InspectorName("3번 슬라이딩 클리어")]
+    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
+    private bool testClearSliding = false;
+    [SerializeField, InspectorName("4번 라디오 클리어")]
+    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
+    private bool testClearRadio = false;
     [SerializeField] private SoundData minigameClearSound;
+    [SerializeField] private SoundData escapeClearSound;
     [SerializeField] private SoundData keyInsertSound;
     [SerializeField] private SoundData pickupSound;
     private SoundHandle pickupHandle = SoundHandle.None;
@@ -155,15 +165,6 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private readonly bool[] drawerSoundPlayed = new bool[4];
     private readonly SoundHandle[] drawerSoundHandles = new SoundHandle[4];
     private SoundHandle keyInsertHandle = SoundHandle.None;
-    [SerializeField, InspectorName("2번 룬 원판 클리어")]
-    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
-    private bool testClearDial = false;
-    [SerializeField, InspectorName("3번 슬라이딩 클리어")]
-    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
-    private bool testClearSliding = false;
-    [SerializeField, InspectorName("4번 라디오 클리어")]
-    [Tooltip("부품 장착 여부와 관계없이 클리어 보상을 한 번 지급합니다.")]
-    private bool testClearRadio = false;
 
     /// <summary>
     /// 해당 게임의 테스트용 클리어 설정을 확인합니다.
@@ -299,6 +300,7 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     private string notice;
     private float noticeUntil;
     private bool ending;
+    private EscapeSceneFade sceneFade;
     [SerializeField] private GameObject resultPanel;
     private bool returningToMain;
     public int PieceCount { get { int n=0; foreach(bool b in collected) if(b)n++; return n; } }
@@ -322,6 +324,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
     /// </summary>
     private void Awake()
     {
+        if (gameObject.scene.name == "EscapeRoom")
+            sceneFade = gameObject.AddComponent<EscapeSceneFade>();
         leftClosed = leftDoor.localPosition;
         leftDoorClosedRotation = leftDoor.localRotation;
         rightDoorClosedRotation = rightDoor.localRotation;
@@ -453,7 +457,8 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        flow.ReturnToMain();
+        if (sceneFade != null) sceneFade.CoverAndReturn(flow.ReturnToMain);
+        else flow.ReturnToMain();
     }
 
     #endregion
@@ -574,7 +579,12 @@ public sealed class EscapeRoomProgress : MonoBehaviour
         if (hintNote != null && hintNote.IsOpen) return false;
         int kind;int index=FindInteraction(out kind);
         if(index<0)return false;
-        if (kind == 5) { FinishGame(true, 1f); return ending; }
+        if (kind == 5)
+        {
+            FinishGame(true, 1f);
+            if (ending && escapeClearSound != null) AudioManager.Play(escapeClearSound);
+            return ending;
+        }
         if(kind==0)
         {
             carried[index]=true;
