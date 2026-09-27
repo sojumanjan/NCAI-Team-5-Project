@@ -99,14 +99,34 @@ public class UISpriteOutline : BaseMeshEffect, IMaterialModifier
         _material.CopyPropertiesFromMaterial(baseMaterial);
 
         Vector4 uvRect = SpriteUVRect();
-        Rect rect = graphic.rectTransform.rect;
+        Vector2 drawn = DrawnSize();
         _material.SetColor(OutlineColorId, color);
         _material.SetVector(OutlineUVId, new Vector4(
-            width / Mathf.Max(1f, rect.width) * (uvRect.z - uvRect.x),
-            width / Mathf.Max(1f, rect.height) * (uvRect.w - uvRect.y), 0f, 0f));
+            width / Mathf.Max(1f, drawn.x) * (uvRect.z - uvRect.x),
+            width / Mathf.Max(1f, drawn.y) * (uvRect.w - uvRect.y), 0f, 0f));
         _material.SetVector(UVRectId, uvRect);
 
         return _material;
+    }
+
+    /// <summary>
+    /// 그림이 실제로 그려지는 크기. Preserve Aspect를 켜면 그림이 사각형보다 작게 그려져서,
+    /// 사각형 크기로 굵기를 재면 한쪽 방향 선만 두꺼워진다.
+    /// </summary>
+    private Vector2 DrawnSize()
+    {
+        Rect rect = graphic.rectTransform.rect;
+
+        if (graphic is Image image && image.preserveAspect && image.type == Image.Type.Simple && image.sprite != null)
+        {
+            Vector2 size = image.sprite.rect.size;
+            if (size.x > 0f && size.y > 0f)
+            {
+                return size * Mathf.Min(rect.width / size.x, rect.height / size.y);
+            }
+        }
+
+        return rect.size;
     }
 
     /// <summary>텍스처 안에서 이 그림이 차지하는 UV 범위(min xy, max zw). 그 밖은 셰이더가 투명으로 본다.</summary>

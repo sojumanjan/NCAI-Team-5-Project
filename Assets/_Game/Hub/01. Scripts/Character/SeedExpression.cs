@@ -92,7 +92,23 @@ public class SeedExpression : MonoBehaviour
         }
     }
 
-    private bool IsBusy()
+    /// <summary>
+    /// 지금 바로 >< 표정을 짓고 <paramref name="seconds"/>초 뒤 되돌아온다. 씨앗을 만졌을 때 등.
+    /// 표정 되돌리기를 여기 한 곳에서만 해야, 가끔 짓는 표정의 타이머가 만진 표정을 도중에 끊지 않는다.
+    /// </summary>
+    public void ShowHappyFor(float seconds)
+    {
+        if (character == null || IsBusy())
+        {
+            return;
+        }
+
+        character.ShowHappy();
+        _showUntil = _showing ? Mathf.Max(_showUntil, Time.time + seconds) : Time.time + seconds;
+        _showing = true;
+    }
+
+    public bool IsBusy()
     {
         EvolutionController controller = evolution != null ? evolution : EvolutionController.Instance;
         if (controller != null && controller.IsPlaying)
