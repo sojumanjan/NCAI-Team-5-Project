@@ -1,5 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+
+/// <summary>스테이션 하나의 주문 확률 배율. 난이도가 레시피북에 넘긴다.</summary>
+[Serializable]
+public struct StationWeightScale
+{
+    [Tooltip("배율을 줄 스테이션. 이 스테이션에서 완성되는 메뉴 전부에 적용됩니다.")]
+    public StationKind station;
+
+    [Tooltip("그 메뉴들의 주문 가중치에 곱할 값. 1이면 레시피에 적힌 그대로, 2면 두 배로 자주 나옵니다.")]
+    public float scale;
+}
 
 /// <summary>
 /// 게임의 모든 레시피를 담은 에셋 하나. 스테이션들은 같은 책을 참조하고 자기
@@ -23,6 +35,41 @@ public class RecipeBook : ScriptableObject
     private readonly List<ItemData> _poolItems = new();
     private readonly List<float> _poolWeights = new();
     private readonly List<ItemData> _single = new();
+
+    // 난이도가 넣는 게임 중 전용 값. 에셋에 저장되면 에디터에서 한 번 어려움을 고른 기록이 파일에 남는다.
+    [NonSerialized] private StationWeightScale[] _stationScales = Array.Empty<StationWeightScale>();
+
+    /// <summary>
+    /// 스테이션별 주문 확률 배율을 넣는다. 레시피의 <see cref="RecipeData.OrderWeight"/> 위에 곱해진다.
+    /// 목록에 없는 스테이션은 1. 레시피 에셋을 고치지 않고 난이도마다 메뉴 비중을 바꾸려는 것이다.
+    /// </summary>
+    public void SetStationWeightScales(IReadOnlyList<StationWeightScale> scales)
+    {
+        if (scales == null || scales.Count == 0)
+        {
+            _stationScales = Array.Empty<StationWeightScale>();
+            return;
+        }
+
+        _stationScales = new StationWeightScale[scales.Count];
+        for (int i = 0; i < scales.Count; i++)
+        {
+            _stationScales[i] = scales[i];
+        }
+    }
+
+    private float ScaleFor(StationKind kind)
+    {
+        foreach (StationWeightScale entry in _stationScales)
+        {
+            if (entry.station == kind)
+            {
+                return Mathf.Max(0f, entry.scale);
+            }
+        }
+
+        return 1f;
+    }
 
     /// <summary>담긴 재료와 정확히 맞아떨어지는 레시피. 없으면 null.</summary>
     public RecipeData FindMatch(StationKind kind, IReadOnlyList<ItemData> loaded)
@@ -156,15 +203,17 @@ public class RecipeBook : ScriptableObject
                 continue;
             }
 
+            float weight = recipe.OrderWeight * ScaleFor(recipe.Station);
+
             int existing = _poolItems.IndexOf(recipe.Output);
             if (existing >= 0)
             {
-                _poolWeights[existing] = Mathf.Max(_poolWeights[existing], recipe.OrderWeight);
+                _poolWeights[existing] = Mathf.Max(_poolWeights[existing], weight);
                 continue;
             }
 
             _poolItems.Add(recipe.Output);
-            _poolWeights.Add(recipe.OrderWeight);
+            _poolWeights.Add(weight);
         }
     }
 
@@ -179,10 +228,10 @@ public class RecipeBook : ScriptableObject
 
         if (total <= 0f)
         {
-            return Random.Range(0, _poolItems.Count);
+            return UnityEngine.Random.Range(0, _poolItems.Count);
         }
 
-        float roll = Random.value * total;
+        float roll = UnityEngine.Random.value * total;
         for (int i = 0; i < _poolWeights.Count; i++)
         {
             roll -= _poolWeights[i];
