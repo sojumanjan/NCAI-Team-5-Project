@@ -28,6 +28,10 @@ public class CookingDifficultyPreset
     [Tooltip("주문 개수 1·2·3개가 나올 가중치.")]
     public float[] orderCountWeights = { 40f, 40f, 15f };
 
+    [Tooltip("스테이션별 주문 확률 배율. 레시피의 Order Weight에 곱해집니다. 목록에 없는 스테이션은 1. " +
+             "예: 오븐 2면 빵이 두 배로 자주 나옵니다.")]
+    public StationWeightScale[] menuWeightScales = Array.Empty<StationWeightScale>();
+
     [Header("평점")]
     [Tooltip("시작 평점.")]
     public float startingRating = 1f;
@@ -63,6 +67,9 @@ public class CookingDifficulty : MonoBehaviour
     [SerializeField] private CustomerSpawner spawner;
     [SerializeField] private RatingService rating;
     [SerializeField] private DayClock clock;
+
+    [Tooltip("손님 주문을 뽑는 레시피북. 난이도별 메뉴 확률 배율을 넘깁니다.")]
+    [SerializeField] private RecipeBook recipeBook;
 
     [Tooltip("셔터가 올라가기 시작하면 잠급니다. 셔터가 다 열려야 영업이 시작돼서, 그 사이에 바꾸지 못하게.")]
     [SerializeField] private ShopOpener opener;
@@ -123,6 +130,11 @@ public class CookingDifficulty : MonoBehaviour
         if (clock != null)
         {
             clock.SetDayLength(preset.dayLengthSeconds);
+        }
+
+        if (recipeBook != null)
+        {
+            recipeBook.SetStationWeightScales(preset.menuWeightScales);
         }
 
         if (session != null)

@@ -44,6 +44,27 @@ public class ResultUI : MonoBehaviour
 
     [SerializeField] private string countFormat = "성공한 주문  {0} / {1}";
 
+    [Header("난이도")]
+    [Tooltip("어느 난이도로 했는지 읽어올 곳.")]
+    [SerializeField] private CookingDifficulty difficulty;
+
+    [Tooltip("난이도를 보여줄 글. 비워두면 건너뜁니다.")]
+    [SerializeField] private TMP_Text difficultyText;
+
+    [SerializeField] private string easyLabel = "이지 모드";
+    [SerializeField] private string normalLabel = "노말 모드";
+    [SerializeField] private string hardLabel = "하드 모드";
+
+    // 색은 벽의 난이도 버튼 머티리얼에서 읽는다. 따로 적어두면 버튼 색을 바꾼 날 결과 화면만 옛 색으로 남는다.
+    [Tooltip("이지 버튼(누름쇠) 머티리얼. 이 색으로 글을 칠합니다.")]
+    [SerializeField] private Material easyMaterial;
+
+    [Tooltip("노말 버튼(누름쇠) 머티리얼.")]
+    [SerializeField] private Material normalMaterial;
+
+    [Tooltip("하드 버튼(누름쇠) 머티리얼.")]
+    [SerializeField] private Material hardMaterial;
+
     [Header("소리")]
     [Tooltip("결과 화면이 뜰 때, 클리어했으면.")]
     [SerializeField] private SoundData clearSound;
@@ -123,5 +144,51 @@ public class ResultUI : MonoBehaviour
         {
             countText.text = string.Format(countFormat, result.CorrectCount, result.ResolvedCount);
         }
+
+        ShowDifficulty();
+    }
+
+    /// <summary>
+    /// 이 판의 난이도를 글과 색으로 보여준다. 같은 평점이라도 어떤 난이도에서 낸 것인지 함께 보여야
+    /// 결과를 제대로 읽을 수 있다.
+    /// </summary>
+    private void ShowDifficulty()
+    {
+        if (difficultyText == null || difficulty == null)
+        {
+            return;
+        }
+
+        switch (difficulty.Current)
+        {
+            case CookingDifficultyLevel.Easy:
+                difficultyText.text = easyLabel;
+                ApplyColor(easyMaterial);
+                break;
+            case CookingDifficultyLevel.Hard:
+                difficultyText.text = hardLabel;
+                ApplyColor(hardMaterial);
+                break;
+            default:
+                difficultyText.text = normalLabel;
+                ApplyColor(normalMaterial);
+                break;
+        }
+    }
+
+    /// <summary>머티리얼의 기본 색으로 글을 칠한다. 머티리얼이 비어 있으면 씬에 적힌 색 그대로 둔다.</summary>
+    private void ApplyColor(Material source)
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        // URP Lit은 _BaseColor, 옛 셰이더는 _Color에 색이 있다.
+        Color color = source.HasProperty("_BaseColor") ? source.GetColor("_BaseColor")
+                    : source.HasProperty("_Color") ? source.GetColor("_Color")
+                    : difficultyText.color;
+        color.a = 1f;
+        difficultyText.color = color;
     }
 }
