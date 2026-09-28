@@ -64,6 +64,16 @@ public class GhostDefeatEffect : MonoBehaviour
     }
 
     /// <summary>
+    /// ladybug 모델은 색이 텍스처(알베도)로 표현되어 _BaseColor가 흰색으로 남아있으므로,
+    /// 파티클/디졸브에 쓸 "이 고스트만의 고유색"을 Ghost가 직접 넘겨준다
+    /// (Ghost.glowBaseColor와 동일한 값 — 발광 색과 처치 파티클 색을 일치시키기 위함).
+    /// </summary>
+    public void SetDefeatColor(Color color)
+    {
+        originalColor = color;
+    }
+
+    /// <summary>
     /// 처치 연출을 재생한 뒤 onComplete를 호출한다 (onComplete에서 실제 SetActive(false) 등을 처리).
     /// </summary>
     public void Play(System.Action onComplete)

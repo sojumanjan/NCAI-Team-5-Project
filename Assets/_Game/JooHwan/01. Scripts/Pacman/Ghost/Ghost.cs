@@ -111,6 +111,13 @@ public class Ghost : MonoBehaviour
                 auraRenderer.material = matInstance;
             }
         }
+
+        // ladybug 모델은 _BaseColor가 흰색으로 남아있어, GhostDefeatEffect가 그대로 읽으면
+        // 처치 파티클이 전부 흰색으로 나온다. 발광과 동일한 고유색(glowBaseColor)을 넘겨준다.
+        if (defeatEffect != null)
+        {
+            defeatEffect.SetDefeatColor(glowBaseColor);
+        }
     }
 
     private void Start()
